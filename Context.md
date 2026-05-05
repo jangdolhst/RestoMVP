@@ -28,3 +28,4 @@ El siguiente paso crítico es la **Integración de Pagos y Suscripciones con Str
 
 ## Historial de Cambios / QA
 - **Gestión de Precios de Extras**: Se añadió una tabla `extras` para registrar globalmente complementos con precio. Los componentes de creación (`NewItemModal`) y edición (`ExtrasModal`) fueron actualizados. Ahora el modal recomienda extras basados en los ingredientes e impide escribir extras manuales en modo cliente, delegando el cobro adicional al cálculo total del carrito en `TicketSidebar.jsx` y `POSContext.jsx`.
+- **QA Auditoría (05/05/2026)**: Eliminado código muerto (`handleAddExtraFromSelect`), renombrado `selectedExtraId` → `manualExtraText` por claridad, corregido formato de `cartTotal` (`.toFixed(2)`), verificadas políticas RLS de `extras` en Supabase, confirmado esquema BD vs `schema_consolidado.sql` sin incongruencias. Se añadieron funciones `updateExtra` y `deleteExtra` a `POSContext`.
