@@ -264,6 +264,28 @@ export const POSProvider = ({ children }) => {
     }
   };
 
+  const updateExtra = async (id, newPrice) => {
+    const { error } = await supabase
+      .from('extras')
+      .update({ price: newPrice })
+      .eq('id', id);
+
+    if (!error) {
+      setExtras(prev => prev.map(ex => ex.id === id ? { ...ex, price: newPrice } : ex));
+    }
+  };
+
+  const deleteExtra = async (id) => {
+    const { error } = await supabase
+      .from('extras')
+      .delete()
+      .eq('id', id);
+
+    if (!error) {
+      setExtras(prev => prev.filter(ex => ex.id !== id));
+    }
+  };
+
   const deleteCategory = async (id) => {
     setCategories(prev => prev.filter(c => c.id !== id));
     setProducts(prev => prev.filter(p => p.categoryId !== id));
@@ -302,6 +324,8 @@ export const POSProvider = ({ children }) => {
     addCategory,
     addProduct,
     addExtras,
+    updateExtra,
+    deleteExtra,
     deleteCategory,
     deleteProduct
   };
