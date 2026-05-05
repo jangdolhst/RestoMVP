@@ -139,7 +139,7 @@ const TicketSidebar = ({ isClientMode = false, isOpen = false, onClose }) => {
       <div className="p-4 border-t border-white/10 bg-black/10">
         <div className="flex justify-between items-center mb-4">
           <span className="text-lg text-slate-300">Total:</span>
-          <span className="text-2xl font-bold text-orange-400">${cartTotal}</span>
+          <span className="text-2xl font-bold text-orange-400">${cartTotal.toFixed(2)}</span>
         </div>
 
         <div className="space-y-3 mb-4">

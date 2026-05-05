@@ -5,7 +5,7 @@ import { usePOS } from '../../context/POSContext';
 const ExtrasModal = ({ product, isOpen, onClose, onConfirm, isClientMode }) => {
   const { extras } = usePOS();
   const [modifications, setModifications] = useState([]);
-  const [selectedExtraId, setSelectedExtraId] = useState('');
+  const [manualExtraText, setManualExtraText] = useState('');
 
   // Ingredientes del producto
   const productIngredients = useMemo(() => {
@@ -39,17 +39,6 @@ const ExtrasModal = ({ product, isOpen, onClose, onConfirm, isClientMode }) => {
     if (modifications.some(m => m.type === 'extra' && m.name === extra.name)) return;
     setModifications([...modifications, { type: 'extra', name: extra.name, price: Number(extra.price) }]);
   };
-
-  const handleAddExtraFromSelect = (e) => {
-    e.preventDefault();
-    if (!selectedExtraId) return;
-    const extra = extras.find(ex => ex.id === selectedExtraId);
-    if (extra) {
-      handleAddExtra(extra);
-    }
-    setSelectedExtraId('');
-  };
-
   const handleRemoveIngredient = (ingredient) => {
     if (modifications.some(m => m.type === 'remove' && m.name === ingredient)) return;
     setModifications([...modifications, { type: 'remove', name: ingredient, price: 0 }]);
@@ -62,7 +51,7 @@ const ExtrasModal = ({ product, isOpen, onClose, onConfirm, isClientMode }) => {
   const handleConfirm = () => {
     onConfirm(product, modifications);
     setModifications([]);
-    setSelectedExtraId('');
+    setManualExtraText('');
     onClose();
   };
 
@@ -106,23 +95,23 @@ const ExtrasModal = ({ product, isOpen, onClose, onConfirm, isClientMode }) => {
               <form 
                 onSubmit={(e) => {
                   e.preventDefault();
-                  if (!selectedExtraId.trim()) return;
+                  if (!manualExtraText.trim()) return;
                   
                   // Buscar si el texto coincide con algún extra global para asignarle precio
-                  const foundExtra = extras.find(ex => ex.name.toLowerCase() === selectedExtraId.trim().toLowerCase());
+                  const foundExtra = extras.find(ex => ex.name.toLowerCase() === manualExtraText.trim().toLowerCase());
                   const price = foundExtra ? Number(foundExtra.price) : 0;
                   
-                  if (modifications.some(m => m.type === 'extra' && m.name.toLowerCase() === selectedExtraId.trim().toLowerCase())) return;
+                  if (modifications.some(m => m.type === 'extra' && m.name.toLowerCase() === manualExtraText.trim().toLowerCase())) return;
                   
-                  setModifications([...modifications, { type: 'extra', name: selectedExtraId.trim(), price }]);
-                  setSelectedExtraId('');
+                  setModifications([...modifications, { type: 'extra', name: manualExtraText.trim(), price }]);
+                  setManualExtraText('');
                 }} 
                 className="flex gap-2"
               >
                 <input 
                   type="text"
-                  value={selectedExtraId}
-                  onChange={(e) => setSelectedExtraId(e.target.value)}
+                  value={manualExtraText}
+                  onChange={(e) => setManualExtraText(e.target.value)}
                   placeholder="Ej. Doble Queso"
                   className="glass-input flex-1 border-emerald-500/30 focus:border-emerald-500 focus:ring-emerald-500/30"
                   list="other-extras"
@@ -132,7 +121,7 @@ const ExtrasModal = ({ product, isOpen, onClose, onConfirm, isClientMode }) => {
                     <option key={ex.id} value={ex.name}>+${Number(ex.price).toFixed(2)}</option>
                   ))}
                 </datalist>
-                <button type="submit" disabled={!selectedExtraId.trim()} className="btn-success px-3 disabled:opacity-50 disabled:cursor-not-allowed">
+                <button type="submit" disabled={!manualExtraText.trim()} className="btn-success px-3 disabled:opacity-50 disabled:cursor-not-allowed">
                   <Plus size={20} />
                 </button>
               </form>
