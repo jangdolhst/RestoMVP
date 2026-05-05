@@ -49,15 +49,25 @@ export const POSProvider = ({ children }) => {
 
       setIsLoading(true);
       
-      const [catsRes, prodsRes, extrasRes, ordsRes] = await Promise.all([
-        supabase.from('categories').select('*').eq('tenant_id', currentTenantId).order('created_at', { ascending: true }),
-        supabase.from('products').select('*').eq('tenant_id', currentTenantId).order('created_at', { ascending: true }),
-        supabase.from('extras').select('*').eq('tenant_id', currentTenantId).order('created_at', { ascending: true }),
-        supabase.from('orders').select(`*, items:order_items(*)`).eq('tenant_id', currentTenantId).order('created_at', { ascending: false })
-      ]);
+      // Queries base (necesarias para todos: dueño y cliente)
+      const baseQueries = [
+        supabase.from('categories').select('id, tenant_id, name, image_url, created_at').eq('tenant_id', currentTenantId).order('created_at', { ascending: true }),
+        supabase.from('products').select('id, tenant_id, category_id, name, price, ingredients, image_url, created_at').eq('tenant_id', currentTenantId).order('created_at', { ascending: true }),
+        supabase.from('extras').select('id, tenant_id, name, price, created_at').eq('tenant_id', currentTenantId).order('created_at', { ascending: true }),
+      ];
+
+      // Solo el dueño necesita las órdenes (RLS bloquea al anon de todas formas)
+      if (!isClientMenu) {
+        baseQueries.push(
+          supabase.from('orders').select('id, tenant_id, order_number, client_name, table_name, phone, type, total, status, created_at, items:order_items(id, product_name, quantity, price, ingredients, modifications)').eq('tenant_id', currentTenantId).order('created_at', { ascending: false })
+        );
+      }
+
+      const results = await Promise.all(baseQueries);
+
+      const [catsRes, prodsRes, extrasRes] = results;
 
       if (catsRes.data) {
-        // Mapear image_url a image para compatibilidad con UI
         setCategories(catsRes.data.map(c => ({ ...c, image: c.image_url })));
       }
       if (prodsRes.data) {
@@ -66,8 +76,10 @@ export const POSProvider = ({ children }) => {
       if (extrasRes.data) {
         setExtras(extrasRes.data);
       }
-      if (ordsRes.data) {
-        setOrders(ordsRes.data.map(o => ({
+
+      // Orders solo si el dueño las cargó
+      if (!isClientMenu && results[3]?.data) {
+        setOrders(results[3].data.map(o => ({
           ...o,
           orderNumber: o.order_number,
           clientName: o.client_name,
@@ -81,16 +93,15 @@ export const POSProvider = ({ children }) => {
 
     fetchData();
 
-    // --- Suscripción a Realtime para órdenes ---
-    if (!currentTenantId) return;
+    // --- Suscripción a Realtime para órdenes (solo dueño, no cliente) ---
+    if (!currentTenantId || isClientMenu) return;
 
     const ordersSubscription = supabase
       .channel('public:orders')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `tenant_id=eq.${currentTenantId}` }, async () => {
-        // Al haber cambios, recargamos las órdenes
         const { data } = await supabase
           .from('orders')
-          .select(`*, items:order_items(*)`)
+          .select('id, tenant_id, order_number, client_name, table_name, phone, type, total, status, created_at, items:order_items(id, product_name, quantity, price, ingredients, modifications)')
           .eq('tenant_id', currentTenantId)
           .order('created_at', { ascending: false });
         
@@ -109,7 +120,7 @@ export const POSProvider = ({ children }) => {
     return () => {
       supabase.removeChannel(ordersSubscription);
     };
-  }, [currentTenantId]);
+  }, [currentTenantId, isClientMenu]);
 
   const cartTotal = useMemo(() => {
     return cartItems.reduce((total, item) => {

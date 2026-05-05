@@ -20,7 +20,7 @@ export const AuthProvider = ({ children }) => {
       .from('subscriptions')
       .select('*')
       .eq('tenant_id', userId)
-      .single();
+      .maybeSingle();
       
     if (!error && data) {
       setSubscriptionData(data);
