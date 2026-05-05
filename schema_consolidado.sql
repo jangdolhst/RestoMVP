@@ -126,9 +126,12 @@ CREATE POLICY "Clientes pueden ver productos" ON products
 -- Dueños: Pueden ver y actualizar sus órdenes
 CREATE POLICY "Dueños pueden gestionar sus órdenes" ON orders
   FOR ALL USING (auth.uid() = tenant_id) WITH CHECK (auth.uid() = tenant_id);
--- Clientes: Solo pueden insertar órdenes (enviar pedidos)
+-- Clientes: Solo pueden insertar órdenes a tenants reales
 CREATE POLICY "Clientes pueden insertar órdenes" ON orders
-  FOR INSERT WITH CHECK (true);
+  FOR INSERT WITH CHECK (
+    tenant_id IS NOT NULL 
+    AND EXISTS (SELECT 1 FROM auth.users WHERE id = tenant_id)
+  );
 
 -- DETALLES DE ÓRDENES (ORDER ITEMS)
 -- Dueños: Pueden gestionar detalles si la orden les pertenece
@@ -138,9 +141,12 @@ CREATE POLICY "Dueños pueden gestionar items" ON order_items
   ) WITH CHECK (
     EXISTS (SELECT 1 FROM orders WHERE orders.id = order_items.order_id AND orders.tenant_id = auth.uid())
   );
--- Clientes: Pueden insertar items
+-- Clientes: Pueden insertar items solo si la orden existe
 CREATE POLICY "Clientes pueden insertar items" ON order_items
-  FOR INSERT WITH CHECK (true);
+  FOR INSERT WITH CHECK (
+    order_id IS NOT NULL 
+    AND EXISTS (SELECT 1 FROM orders WHERE id = order_id)
+  );
 
 
 -- ==========================================
@@ -162,7 +168,11 @@ BEGIN
   VALUES (new.id, 'unpaid');
   RETURN new;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public;
+
+-- Bloquear acceso público a la función (solo ejecutable como trigger)
+REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM PUBLIC, anon, authenticated;
 
 -- Eliminar el trigger si existe para evitar errores al recrear
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
