@@ -11,6 +11,7 @@ DROP TABLE IF EXISTS order_items CASCADE;
 DROP TABLE IF EXISTS orders CASCADE;
 DROP TABLE IF EXISTS products CASCADE;
 DROP TABLE IF EXISTS categories CASCADE;
+DROP TABLE IF EXISTS extras CASCADE;
 
 -- 1. Tabla de Suscripciones (Stripe)
 CREATE TABLE subscriptions (
@@ -33,7 +34,16 @@ CREATE TABLE categories (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 2. Tabla de Productos
+-- 3. Tabla de Extras
+CREATE TABLE extras (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  tenant_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  price NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 4. Tabla de Productos
 CREATE TABLE products (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   tenant_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -45,7 +55,7 @@ CREATE TABLE products (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 3. Tabla de Órdenes
+-- 5. Tabla de Órdenes
 CREATE TABLE orders (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   tenant_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -59,7 +69,7 @@ CREATE TABLE orders (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 4. Tabla de Detalles de la Orden (Order Items)
+-- 6. Tabla de Detalles de la Orden (Order Items)
 CREATE TABLE order_items (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   order_id UUID REFERENCES orders(id) ON DELETE CASCADE,
@@ -77,6 +87,7 @@ CREATE TABLE order_items (
 
 ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE extras ENABLE ROW LEVEL SECURITY;
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
@@ -93,6 +104,14 @@ CREATE POLICY "Dueños pueden gestionar sus categorías" ON categories
   FOR ALL USING (auth.uid() = tenant_id) WITH CHECK (auth.uid() = tenant_id);
 -- Clientes: Pueden ver cualquier categoría (se filtra en frontend por tenant_id)
 CREATE POLICY "Clientes pueden ver categorías" ON categories
+  FOR SELECT USING (true);
+
+-- EXTRAS
+-- Dueños: Pueden gestionar sus extras
+CREATE POLICY "Dueños pueden gestionar sus extras" ON extras
+  FOR ALL USING (auth.uid() = tenant_id) WITH CHECK (auth.uid() = tenant_id);
+-- Clientes: Pueden ver extras
+CREATE POLICY "Clientes pueden ver extras" ON extras
   FOR SELECT USING (true);
 
 -- PRODUCTOS

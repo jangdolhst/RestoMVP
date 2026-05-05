@@ -93,33 +93,38 @@ const TicketSidebar = ({ isClientMode = false, isOpen = false, onClose }) => {
             <p className="text-sm">Selecciona productos para comenzar</p>
           </div>
         ) : (
-          cartItems.map((item) => (
-            <div key={item.cartId} className="bg-black/20 rounded-lg p-3 border border-white/5 relative group">
-              <div className="flex justify-between items-start">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-orange-400 font-bold text-sm">x{item.quantity}</span>
-                    <h3 className="text-white font-medium">{item.name}</h3>
-                  </div>
-                  {/* Modificaciones Extras/Quitar */}
-                  {item.modifications?.length > 0 && (
-                    <div className="mt-1 space-y-0.5">
-                      {item.modifications.map((mod, idx) => (
-                        <p key={idx} className={`text-xs ${mod.type === 'extra' ? 'text-emerald-400' : 'text-red-400'}`}>
-                          {mod.type === 'extra' ? '+ ' : '- '}
-                          {mod.name}
-                        </p>
-                      ))}
+          cartItems.map((item) => {
+            const extraCost = item.modifications?.reduce((sum, mod) => sum + (Number(mod.price) || 0), 0) || 0;
+            const itemTotal = (item.price + extraCost) * item.quantity;
+
+            return (
+              <div key={item.cartId} className="bg-black/20 rounded-lg p-3 border border-white/5 relative group">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-orange-400 font-bold text-sm">x{item.quantity}</span>
+                      <h3 className="text-white font-medium">{item.name}</h3>
                     </div>
-                  )}
-                </div>
-                <div className="flex flex-col items-end gap-2">
-                  <span className="text-orange-400 font-bold">${item.price * item.quantity}</span>
-                  <button 
-                    onClick={() => removeFromCart(item.cartId)}
-                    className="text-slate-400 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
-                    title="Eliminar producto"
-                  >
+                    {/* Modificaciones Extras/Quitar */}
+                    {item.modifications?.length > 0 && (
+                      <div className="mt-1 space-y-0.5">
+                        {item.modifications.map((mod, idx) => (
+                          <p key={idx} className={`text-xs ${mod.type === 'extra' ? 'text-emerald-400' : 'text-red-400'}`}>
+                            {mod.type === 'extra' ? '+ ' : '- '}
+                            {mod.name}
+                            {mod.type === 'extra' && mod.price > 0 && <span className="opacity-70 ml-1">(${Number(mod.price).toFixed(2)})</span>}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-col items-end gap-2">
+                    <span className="text-orange-400 font-bold">${itemTotal.toFixed(2)}</span>
+                    <button 
+                      onClick={() => removeFromCart(item.cartId)}
+                      className="text-slate-400 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                      title="Eliminar producto"
+                    >
                     <Trash2 size={16} />
                   </button>
                 </div>

@@ -27,6 +27,7 @@ export const POSProvider = ({ children }) => {
   // Estado desde Supabase
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
+  const [extras, setExtras] = useState([]);
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -48,9 +49,10 @@ export const POSProvider = ({ children }) => {
 
       setIsLoading(true);
       
-      const [catsRes, prodsRes, ordsRes] = await Promise.all([
+      const [catsRes, prodsRes, extrasRes, ordsRes] = await Promise.all([
         supabase.from('categories').select('*').eq('tenant_id', currentTenantId).order('created_at', { ascending: true }),
         supabase.from('products').select('*').eq('tenant_id', currentTenantId).order('created_at', { ascending: true }),
+        supabase.from('extras').select('*').eq('tenant_id', currentTenantId).order('created_at', { ascending: true }),
         supabase.from('orders').select(`*, items:order_items(*)`).eq('tenant_id', currentTenantId).order('created_at', { ascending: false })
       ]);
 
@@ -60,6 +62,9 @@ export const POSProvider = ({ children }) => {
       }
       if (prodsRes.data) {
         setProducts(prodsRes.data.map(p => ({ ...p, image: p.image_url, categoryId: p.category_id })));
+      }
+      if (extrasRes.data) {
+        setExtras(extrasRes.data);
       }
       if (ordsRes.data) {
         setOrders(ordsRes.data.map(o => ({
@@ -107,7 +112,10 @@ export const POSProvider = ({ children }) => {
   }, [currentTenantId]);
 
   const cartTotal = useMemo(() => {
-    return cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+    return cartItems.reduce((total, item) => {
+      const extraCost = item.modifications ? item.modifications.reduce((sum, mod) => sum + (Number(mod.price) || 0), 0) : 0;
+      return total + ((item.price + extraCost) * item.quantity);
+    }, 0);
   }, [cartItems]);
 
   const visibleItems = useMemo(() => {
@@ -238,6 +246,24 @@ export const POSProvider = ({ children }) => {
     if (newProd) setProducts(prev => [...prev, { ...newProd, image: newProd.image_url, categoryId: newProd.category_id }]);
   };
 
+  const addExtras = async (extrasArray) => {
+    if (!currentTenantId || !extrasArray.length) return;
+    const insertData = extrasArray.map(extra => ({
+      tenant_id: currentTenantId,
+      name: extra.name,
+      price: extra.price
+    }));
+
+    const { data: newExtras } = await supabase
+      .from('extras')
+      .insert(insertData)
+      .select();
+
+    if (newExtras) {
+      setExtras(prev => [...prev, ...newExtras]);
+    }
+  };
+
   const deleteCategory = async (id) => {
     setCategories(prev => prev.filter(c => c.id !== id));
     setProducts(prev => prev.filter(p => p.categoryId !== id));
@@ -252,6 +278,7 @@ export const POSProvider = ({ children }) => {
   const value = {
     categories,
     products,
+    extras,
     cartItems,
     clientName,
     setClientName,
@@ -274,6 +301,7 @@ export const POSProvider = ({ children }) => {
     updateOrderStatus,
     addCategory,
     addProduct,
+    addExtras,
     deleteCategory,
     deleteProduct
   };

@@ -14,6 +14,7 @@ const POSGrid = ({ isClientMode = false }) => {
     addToCart,
     addCategory,
     addProduct,
+    addExtras,
     deleteCategory,
     deleteProduct
   } = usePOS();
@@ -47,12 +48,14 @@ const POSGrid = ({ isClientMode = false }) => {
     addToCart(product, modifications);
   };
 
-  // Guardar nuevo item (Categoría o Producto)
+  // Guardar nuevo item (Categoría, Producto o Extra)
   const handleSaveNewItem = ({ type, data }) => {
     if (type === 'categoria') {
       addCategory(data);
     } else if (type === 'producto') {
       addProduct(data);
+    } else if (type === 'extra') {
+      addExtras(data);
     }
   };
 
@@ -129,6 +132,7 @@ const POSGrid = ({ isClientMode = false }) => {
           }}
           product={selectedProduct}
           onConfirm={handleConfirmProduct}
+          isClientMode={isClientMode}
         />
       )}
     </div>

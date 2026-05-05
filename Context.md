@@ -25,3 +25,6 @@ El siguiente paso crítico es la **Integración de Pagos y Suscripciones con Str
 - `src/context/AuthContext.jsx` y `src/context/POSContext.jsx`: Cerebros del estado global.
 - `src/components/auth/ProtectedRoute.jsx`: Componente de seguridad de rutas.
 - `src/layouts/MainLayout.jsx`: Contiene menú de navegación y modal QR (`qrcode.react`).
+
+## Historial de Cambios / QA
+- **Gestión de Precios de Extras**: Se añadió una tabla `extras` para registrar globalmente complementos con precio. Los componentes de creación (`NewItemModal`) y edición (`ExtrasModal`) fueron actualizados. Ahora el modal recomienda extras basados en los ingredientes e impide escribir extras manuales en modo cliente, delegando el cobro adicional al cálculo total del carrito en `TicketSidebar.jsx` y `POSContext.jsx`.

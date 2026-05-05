@@ -65,14 +65,14 @@ const BillingPage = () => {
             </ul>
           </div>
 
-          <a 
+          <a
             href={STRIPE_PAYMENT_LINK}
             className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 rounded-xl flex justify-center items-center gap-2 transition-all shadow-lg shadow-orange-500/20"
           >
             Suscribirse Ahora
           </a>
 
-          <button 
+          <button
             onClick={handleLogout}
             className="w-full mt-4 bg-transparent hover:bg-white/5 text-gray-400 font-medium py-3 rounded-xl flex justify-center items-center gap-2 transition-all"
           >
