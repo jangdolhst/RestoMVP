@@ -10,8 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@intl-tel-input/react": "^28.0.4",
     "@supabase/supabase-js": "^2.105.1",
     "@tailwindcss/vite": "^4.2.4",
+    "intl-tel-input": "^28.0.4",
     "lucide-react": "^1.14.0",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.5",

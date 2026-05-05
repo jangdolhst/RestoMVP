@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { usePOS } from '../../context/POSContext';
 import { Trash2, Send, X, AlertCircle } from 'lucide-react';
+import PhoneInput from '../ui/PhoneInput';
 
 const TicketSidebar = ({ isClientMode = false, isOpen = false, onClose }) => {
   const { 
@@ -155,13 +156,11 @@ const TicketSidebar = ({ isClientMode = false, isOpen = false, onClose }) => {
           </div>
 
           {isClientMode ? (
-            <div className="flex items-center gap-3">
-              <label className="text-sm text-slate-300 w-16">Celular:</label>
-              <input 
-                type="tel" 
+            <div>
+              <label className="text-sm text-slate-300 mb-1 block">Celular:</label>
+              <PhoneInput
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="glass-input flex-1 py-1.5" 
+                onChange={setPhone}
                 placeholder="Ingresa tu celular"
               />
             </div>
@@ -194,13 +193,11 @@ const TicketSidebar = ({ isClientMode = false, isOpen = false, onClose }) => {
               </div>
 
               {isOnline && (
-                <div className="flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
-                  <label className="text-sm text-slate-300 w-16">Celular:</label>
-                  <input 
-                    type="tel" 
+                <div className="animate-in fade-in slide-in-from-top-2">
+                  <label className="text-sm text-slate-300 mb-1 block">Celular:</label>
+                  <PhoneInput
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="glass-input flex-1 py-1.5" 
+                    onChange={setPhone}
                     placeholder="Celular del cliente"
                   />
                 </div>

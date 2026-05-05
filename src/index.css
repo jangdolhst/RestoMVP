@@ -62,3 +62,103 @@
     @apply bg-white/10 rounded-full hover:bg-white/20;
   }
 }
+
+/* === intl-tel-input Overrides (Glassmorphism Dark Theme) === */
+.phone-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+/* El contenedor principal del ITI ocupa todo el ancho */
+.phone-input-wrapper .iti {
+  width: 100%;
+}
+
+/* Input del teléfono */
+.phone-input-wrapper .iti input.phone-field {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  color: white;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+.phone-input-wrapper .iti input.phone-field:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.5);
+  border-color: rgba(249, 115, 22, 0.5);
+}
+
+/* Dial code separado */
+.phone-input-wrapper .iti .iti__selected-dial-code {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.875rem;
+}
+
+/* Dropdown de países — glassmorphism */
+.iti__dropdown-content {
+  background: rgba(15, 23, 42, 0.97) !important;
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 0.75rem !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+  overflow: hidden;
+}
+
+/* Search input dentro del dropdown */
+.iti__search-input {
+  background: rgba(0, 0, 0, 0.3) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 0.5rem !important;
+  color: white !important;
+  padding: 0.5rem 0.75rem !important;
+  margin: 0.5rem !important;
+}
+.iti__search-input::placeholder {
+  color: rgba(148, 163, 184, 0.6) !important;
+}
+
+/* Items del país */
+.iti__country {
+  color: rgba(255, 255, 255, 0.85) !important;
+  padding: 0.5rem 0.75rem !important;
+  transition: background 0.15s;
+}
+.iti__country:hover,
+.iti__country--highlight {
+  background: rgba(249, 115, 22, 0.15) !important;
+}
+
+/* Código de dial en la lista */
+.iti__dial-code {
+  color: rgba(249, 115, 22, 0.8) !important;
+}
+
+/* Divider de la lista */
+.iti__divider {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Arrow del selector */
+.iti__arrow {
+  border-top-color: rgba(255, 255, 255, 0.5) !important;
+}
+.iti__arrow--up {
+  border-bottom-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Hints de validación */
+.phone-hint {
+  display: block;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  transition: color 0.2s;
+}
+.phone-hint.valid {
+  color: #34d399;
+}
+.phone-hint.invalid {
+  color: #f87171;
+}
