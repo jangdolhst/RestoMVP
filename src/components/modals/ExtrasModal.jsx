@@ -99,24 +99,40 @@ const ExtrasModal = ({ product, isOpen, onClose, onConfirm, isClientMode }) => {
             </div>
           )}
 
-          {/* Otros Extras (Solo Cajero o Modo Libre) */}
-          {!isClientMode && otherExtras.length > 0 && (
+          {/* Añadir Extra Manual (Solo Cajero) */}
+          {!isClientMode && (
             <div>
-              <label className="block text-emerald-400 font-medium mb-2">+ Otros Extras</label>
-              <form onSubmit={handleAddExtraFromSelect} className="flex gap-2">
-                <select 
+              <label className="block text-emerald-400 font-medium mb-2">+ Añadir Extra Manual</label>
+              <form 
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!selectedExtraId.trim()) return;
+                  
+                  // Buscar si el texto coincide con algún extra global para asignarle precio
+                  const foundExtra = extras.find(ex => ex.name.toLowerCase() === selectedExtraId.trim().toLowerCase());
+                  const price = foundExtra ? Number(foundExtra.price) : 0;
+                  
+                  if (modifications.some(m => m.type === 'extra' && m.name.toLowerCase() === selectedExtraId.trim().toLowerCase())) return;
+                  
+                  setModifications([...modifications, { type: 'extra', name: selectedExtraId.trim(), price }]);
+                  setSelectedExtraId('');
+                }} 
+                className="flex gap-2"
+              >
+                <input 
+                  type="text"
                   value={selectedExtraId}
                   onChange={(e) => setSelectedExtraId(e.target.value)}
+                  placeholder="Ej. Doble Queso"
                   className="glass-input flex-1 border-emerald-500/30 focus:border-emerald-500 focus:ring-emerald-500/30"
-                >
-                  <option value="" className="bg-slate-800 text-slate-400">Selecciona un extra...</option>
+                  list="other-extras"
+                />
+                <datalist id="other-extras">
                   {otherExtras.map(ex => (
-                    <option key={ex.id} value={ex.id} className="bg-slate-800 text-white">
-                      {ex.name} (+${Number(ex.price).toFixed(2)})
-                    </option>
+                    <option key={ex.id} value={ex.name}>+${Number(ex.price).toFixed(2)}</option>
                   ))}
-                </select>
-                <button type="submit" disabled={!selectedExtraId} className="btn-success px-3 disabled:opacity-50 disabled:cursor-not-allowed">
+                </datalist>
+                <button type="submit" disabled={!selectedExtraId.trim()} className="btn-success px-3 disabled:opacity-50 disabled:cursor-not-allowed">
                   <Plus size={20} />
                 </button>
               </form>
