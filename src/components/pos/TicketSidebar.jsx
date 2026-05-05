@@ -130,7 +130,8 @@ const TicketSidebar = ({ isClientMode = false, isOpen = false, onClose }) => {
                 </div>
               </div>
             </div>
-          ))
+            );
+          })
         )}
       </div>
 
