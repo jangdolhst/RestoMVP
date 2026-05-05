@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Save, UploadCloud } from 'lucide-react';
+import { X, Save, UploadCloud, Plus } from 'lucide-react';
 
 const NewItemModal = ({ isOpen, onClose, onSave, currentCategoryId }) => {
   const [type, setType] = useState(currentCategoryId ? 'producto' : 'categoria');
