@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback, useEffect } from 'react';
+import { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import IntlTelInput from '@intl-tel-input/react';
 import 'intl-tel-input/styles';
 
@@ -18,7 +18,7 @@ const PhoneInput = ({ value, onChange, placeholder = 'Ingresa tu celular', class
   const [hasInput, setHasInput] = useState(false);
 
   // Detectar país del navegador (mismo approach que SaaS-MVP)
-  const detectCountry = () => {
+  const initialCountry = useMemo(() => {
     try {
       const lang = navigator.language || '';
       const parts = lang.split('-');
@@ -30,11 +30,12 @@ const PhoneInput = ({ value, onChange, placeholder = 'Ingresa tu celular', class
     } catch {
       return 'us';
     }
-  };
+  }, []);
 
   const handleChangeNumber = useCallback((num) => {
-    setHasInput(num.trim().length > 0);
-    if (onChange) onChange(num);
+    const safeNum = num || '';
+    setHasInput(safeNum.trim().length > 0);
+    if (onChange) onChange(safeNum);
   }, [onChange]);
 
   const handleChangeValidity = useCallback((valid) => {
@@ -58,7 +59,7 @@ const PhoneInput = ({ value, onChange, placeholder = 'Ingresa tu celular', class
     <div className={`phone-input-wrapper ${className}`}>
       <IntlTelInput
         ref={ref}
-        initialCountry={detectCountry()}
+        initialCountry={initialCountry}
         separateDialCode={true}
         countrySearch={true}
         loadUtils={() => import('intl-tel-input/utils')}
