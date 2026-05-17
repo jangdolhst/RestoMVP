@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Save, Upload, Image, Store, Loader2, CheckCircle2, AlertCircle, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import PhoneInput from '../components/ui/PhoneInput';
 
 const AVAILABLE_CATEGORIES = [
   'Pizza', 'Hamburguesas', 'Sushi', 'Tacos', 'Mariscos',
@@ -347,18 +348,13 @@ const SettingsPage = () => {
           </div>
 
           <div>
-            <label htmlFor="settings-phone" className="text-sm text-slate-300 font-medium mb-1 block">
+            <label className="text-sm text-slate-300 font-medium mb-1 block">
               Teléfono de Contacto
             </label>
-            <input
-              id="settings-phone"
-              name="phone"
-              type="tel"
+            <PhoneInput
               value={profile.phone}
-              onChange={(e) => handleChange('phone', e.target.value)}
-              placeholder="Ej: 55 1234 5678"
-              className="glass-input w-full"
-              maxLength={20}
+              onChange={(e164) => handleChange('phone', e164)}
+              placeholder="Teléfono del negocio"
             />
           </div>
         </div>

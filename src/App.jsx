@@ -7,6 +7,7 @@ import MainLayout from './layouts/MainLayout'
 import MarketplacePage from './pages/MarketplacePage'
 import LandingPage from './pages/LandingPage'
 import ClientePage from './pages/ClientePage'
+import OrderTrackingPage from './pages/OrderTrackingPage'
 import POSPage from './pages/POSPage'
 import PagosPage from './pages/PagosPage'
 import CocinaPage from './pages/CocinaPage'
@@ -29,6 +30,9 @@ function App() {
             
             {/* Ruta para clientes (Menú por Restaurante) */}
             <Route path="/menu/:tenantId" element={<ClientePage />} />
+            
+            {/* Seguimiento de pedidos (sin sesión, usa localStorage) */}
+            <Route path="/pedidos" element={<OrderTrackingPage />} />
             
             {/* Ruta de Facturación (Requiere login, pero no suscripción) */}
             <Route path="/billing" element={<BillingPage />} />

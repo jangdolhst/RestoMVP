@@ -36,3 +36,12 @@ El siguiente paso crítico es la **Integración de Pagos y Suscripciones con Str
   - *VULN-4 (Media)*: `SET search_path = public` en `handle_new_user()`.
   - *VULN-6 (Baja)*: Security headers (X-Frame-Options, X-Content-Type-Options, X-XSS-Protection, Referrer-Policy, Permissions-Policy) añadidos a `vercel.json`.
   - *VULN-5 (Media)*: Leaked Password Protection pendiente de activar manualmente en Dashboard de Supabase → Auth → Settings.
+- **Fix PhoneInput en Settings (17/05/2026)**: Integrado el componente reutilizable `PhoneInput` (intl-tel-input) en `SettingsPage.jsx`, reemplazando el `<input type="tel">` nativo. Ahora valida formato internacional con código de país.
+- **Fix Botón "Enviar Orden" (17/05/2026)**: El bug era causado por `.select().single()` después del INSERT en `POSContext.placeOrder()`. El RLS de SELECT solo permite lectura al dueño (`auth.uid() = tenant_id`), por lo que clientes anónimos obtenían `null`. Se eliminó `.select()` y se recupera la orden creada via RPC `get_orders_by_tokens`. Ahora `placeOrder()` retorna `{ success: true, orderToken }`.
+- **Seguimiento de Pedidos sin Sesión (17/05/2026)**: Nueva funcionalidad para que clientes sin cuenta puedan rastrear sus pedidos:
+  - Columna `order_token UUID` agregada a tabla `orders` con índice para búsqueda rápida.
+  - RPC `get_orders_by_tokens(UUID[])` creada con `SECURITY DEFINER` — devuelve solo campos públicos.
+  - Al enviar orden, se genera token con `crypto.randomUUID()` y se guarda en `localStorage` (máx. 20 tokens).
+  - Nueva página `/pedidos` (`OrderTrackingPage.jsx`) muestra estado visual con auto-refresh cada 15s.
+  - Enlace "Mis Pedidos" visible en el header del Marketplace si hay tokens guardados.
+  - Seguridad: sin token no se puede ver ningún pedido. UUID v4 tiene 2^122 combinaciones = imposible de adivinar.

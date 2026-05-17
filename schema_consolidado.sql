@@ -82,8 +82,12 @@ CREATE TABLE orders (
   type TEXT NOT NULL CHECK (type IN ('online', 'local')),
   total NUMERIC(10, 2) NOT NULL,
   status TEXT NOT NULL DEFAULT 'pendiente_cocina' CHECK (status IN ('pendiente_cocina', 'listo', 'pagado')),
+  order_token UUID DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Índice para búsqueda rápida por token de seguimiento
+CREATE INDEX idx_orders_order_token ON orders (order_token);
 
 -- 6. Tabla de Detalles de la Orden (Order Items)
 CREATE TABLE order_items (
@@ -229,3 +233,55 @@ DROP TRIGGER IF EXISTS on_auth_user_created_profile ON auth.users;
 CREATE TRIGGER on_auth_user_created_profile
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_restaurant_profile();
+
+-- ==========================================
+-- RPC: SEGUIMIENTO DE PEDIDOS POR TOKEN
+-- ==========================================
+-- Permite a clientes sin sesión consultar sus pedidos usando tokens secretos.
+-- SECURITY DEFINER: ejecuta con privilegios del creador para bypasear RLS.
+-- Solo expone campos públicos (sin tenant_id ni datos internos).
+
+CREATE OR REPLACE FUNCTION get_orders_by_tokens(tokens UUID[])
+RETURNS TABLE (
+  id UUID,
+  order_number INTEGER,
+  client_name TEXT,
+  status TEXT,
+  total NUMERIC,
+  created_at TIMESTAMPTZ,
+  order_token UUID,
+  restaurant_name TEXT,
+  items JSONB
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    o.id,
+    o.order_number,
+    o.client_name,
+    o.status,
+    o.total,
+    o.created_at,
+    o.order_token,
+    COALESCE(rp.name, '') AS restaurant_name,
+    COALESCE(
+      (SELECT jsonb_agg(jsonb_build_object(
+        'product_name', oi.product_name,
+        'quantity', oi.quantity,
+        'price', oi.price
+      ))
+      FROM order_items oi WHERE oi.order_id = o.id),
+      '[]'::jsonb
+    ) AS items
+  FROM orders o
+  LEFT JOIN restaurant_profiles rp ON rp.id = o.tenant_id
+  WHERE o.order_token = ANY(tokens)
+  ORDER BY o.created_at DESC;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION get_orders_by_tokens(UUID[]) TO anon, authenticated;

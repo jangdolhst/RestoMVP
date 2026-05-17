@@ -171,6 +171,9 @@ export const POSProvider = ({ children }) => {
       finalTableName = `Mesa ${tableName}`;
     }
 
+    // Generar token secreto para seguimiento del cliente
+    const orderToken = crypto.randomUUID();
+
     const newOrderData = {
       tenant_id: currentTenantId,
       client_name: clientName || 'Sin Nombre',
@@ -178,46 +181,81 @@ export const POSProvider = ({ children }) => {
       phone: phone || null,
       type: orderIsOnline ? 'online' : 'local',
       total: cartTotal,
-      status: 'pendiente_cocina'
+      status: 'pendiente_cocina',
+      order_token: orderToken,
     };
 
-    // Insertar orden
-    const { data: orderData, error: orderError } = await supabase
-      .from('orders')
-      .insert(newOrderData)
-      .select()
-      .single();
+    try {
+      // INSERT sin .select() — el RLS de SELECT no aplica para anon
+      const { error: orderError } = await supabase
+        .from('orders')
+        .insert(newOrderData);
 
-    if (orderError || !orderData) {
-      console.error('Error creando orden:', orderError);
+      if (orderError) {
+        console.error('Error creando orden:', orderError);
+        return false;
+      }
+
+      // Para insertar order_items necesitamos el order_id.
+      // Usamos el token para obtenerlo via RPC.
+      const { data: createdOrders } = await supabase
+        .rpc('get_orders_by_tokens', { tokens: [orderToken] });
+
+      const createdOrder = createdOrders?.[0];
+      if (!createdOrder) {
+        console.error('No se pudo recuperar la orden creada');
+        return false;
+      }
+
+      // Insertar items de la orden
+      const orderItemsData = cartItems.map(item => ({
+        order_id: createdOrder.id,
+        product_name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+        ingredients: item.ingredients,
+        modifications: item.modifications,
+      }));
+
+      await supabase.from('order_items').insert(orderItemsData);
+
+      // Guardar token en localStorage para seguimiento
+      if (isClientMenu) {
+        try {
+          const stored = JSON.parse(localStorage.getItem('resto_order_tokens') || '[]');
+          stored.push({
+            token: orderToken,
+            timestamp: Date.now(),
+            restaurantName: '',
+          });
+          // Mantener solo los últimos 20 tokens (limpieza automática)
+          const trimmed = stored.slice(-20);
+          localStorage.setItem('resto_order_tokens', JSON.stringify(trimmed));
+        } catch {
+          // localStorage no disponible — silenciar
+        }
+      }
+
+      // Actualización local (solo para dueño, no cliente)
+      if (!isClientMenu) {
+        const newOrderFull = { 
+          ...newOrderData,
+          id: createdOrder.id,
+          orderNumber: createdOrder.order_number,
+          clientName: newOrderData.client_name,
+          tableName: newOrderData.table_name,
+          createdAt: createdOrder.created_at,
+          items: orderItemsData,
+        };
+        setOrders(prev => [newOrderFull, ...prev]);
+      }
+
+      clearCart();
+      return { success: true, orderToken };
+    } catch (err) {
+      console.error('Error en placeOrder:', err);
       return false;
     }
-
-    // Insertar items
-    const orderItemsData = cartItems.map(item => ({
-      order_id: orderData.id,
-      product_name: item.name,
-      quantity: item.quantity,
-      price: item.price,
-      ingredients: item.ingredients,
-      modifications: item.modifications
-    }));
-
-    await supabase.from('order_items').insert(orderItemsData);
-
-    // Actualización local rápida
-    const newOrderFull = { 
-      ...orderData, 
-      orderNumber: orderData.order_number,
-      clientName: orderData.client_name,
-      tableName: orderData.table_name,
-      createdAt: orderData.created_at,
-      items: orderItemsData 
-    };
-    setOrders(prev => [newOrderFull, ...prev]);
-
-    clearCart();
-    return true;
   };
 
   const updateOrderStatus = async (orderId, newStatus) => {

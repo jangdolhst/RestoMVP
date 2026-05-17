@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { usePOS } from '../../context/POSContext';
 import { Trash2, Send, X, AlertCircle } from 'lucide-react';
 import PhoneInput from '../ui/PhoneInput';
 
 const TicketSidebar = ({ isClientMode = false, isOpen = false, onClose }) => {
+  const navigate = useNavigate();
   const { 
     cartItems, 
     cartTotal, 
@@ -20,6 +22,7 @@ const TicketSidebar = ({ isClientMode = false, isOpen = false, onClose }) => {
   } = usePOS();
 
   const [toastMsg, setToastMsg] = useState(null);
+  const [isSending, setIsSending] = useState(false);
 
   const showToast = (msg) => {
     setToastMsg(msg);
@@ -36,10 +39,20 @@ const TicketSidebar = ({ isClientMode = false, isOpen = false, onClose }) => {
       if (isOnline && !phone.trim()) return showToast('Ingresa el celular del cliente para el pedido en línea.');
     }
 
-    const success = await placeOrder(isClientMode ? true : isOnline);
-    if (success) {
-      showToast('¡Orden enviada a la cocina!');
-      if (onClose) onClose();
+    setIsSending(true);
+    const result = await placeOrder(isClientMode ? true : isOnline);
+    setIsSending(false);
+
+    if (result && result.success) {
+      if (isClientMode) {
+        // Redirigir al cliente a la página de seguimiento
+        navigate('/pedidos');
+      } else {
+        showToast('¡Orden enviada a la cocina!');
+        if (onClose) onClose();
+      }
+    } else {
+      showToast('Error al enviar la orden. Intenta de nuevo.');
     }
   };
 
@@ -208,10 +221,20 @@ const TicketSidebar = ({ isClientMode = false, isOpen = false, onClose }) => {
 
         <button 
           onClick={handleEnviar}
-          className="btn-primary w-full flex items-center justify-center gap-2 py-3 text-lg"
+          disabled={isSending || cartItems.length === 0}
+          className="btn-primary w-full flex items-center justify-center gap-2 py-3 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <Send size={20} />
-          Enviar Orden
+          {isSending ? (
+            <>
+              <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/></svg>
+              Enviando...
+            </>
+          ) : (
+            <>
+              <Send size={20} />
+              Enviar Orden
+            </>
+          )}
         </button>
       </div>
     </aside>

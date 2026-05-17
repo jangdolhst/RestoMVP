@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, ChefHat, MapPin, Clock, Store, Sparkles, X } from 'lucide-react';
+import { Search, ChefHat, MapPin, Clock, Store, Sparkles, X, Package } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 const FOOD_CATEGORIES = [
@@ -77,6 +77,17 @@ const MarketplacePage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('Todos');
+  const [hasOrders, setHasOrders] = useState(false);
+
+  // Verificar si hay pedidos en localStorage
+  useEffect(() => {
+    try {
+      const tokens = JSON.parse(localStorage.getItem('resto_order_tokens') || '[]');
+      setHasOrders(tokens.length > 0);
+    } catch {
+      setHasOrders(false);
+    }
+  }, []);
 
   useEffect(() => {
     const fetchRestaurants = async () => {
@@ -143,6 +154,15 @@ const MarketplacePage = () => {
           </div>
 
           <div className="flex items-center gap-2">
+            {hasOrders && (
+              <button
+                onClick={() => navigate('/pedidos')}
+                className="text-sm text-orange-400 hover:text-orange-300 transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-500/10 border border-orange-500/20 hover:bg-orange-500/15"
+              >
+                <Package size={14} />
+                Mis Pedidos
+              </button>
+            )}
             <button
               onClick={() => navigate('/partners')}
               className="text-sm text-slate-400 hover:text-orange-400 transition-colors hidden sm:block"
