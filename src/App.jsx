@@ -4,6 +4,7 @@ import { POSProvider } from './context/POSContext'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 
 import MainLayout from './layouts/MainLayout'
+import MarketplacePage from './pages/MarketplacePage'
 import LandingPage from './pages/LandingPage'
 import ClientePage from './pages/ClientePage'
 import POSPage from './pages/POSPage'
@@ -11,6 +12,7 @@ import PagosPage from './pages/PagosPage'
 import CocinaPage from './pages/CocinaPage'
 import LoginPage from './pages/LoginPage'
 import BillingPage from './pages/BillingPage'
+import SettingsPage from './pages/SettingsPage'
 
 function App() {
   return (
@@ -18,8 +20,11 @@ function App() {
       <BrowserRouter>
         <POSProvider>
           <Routes>
-            {/* Rutas Públicas */}
-            <Route path="/" element={<LandingPage />} />
+            {/* Marketplace — Inicio para clientes/comensales */}
+            <Route path="/" element={<MarketplacePage />} />
+            
+            {/* Landing Page del SaaS — Para venderle el sistema a los dueños */}
+            <Route path="/partners" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
             
             {/* Ruta para clientes (Menú por Restaurante) */}
@@ -33,6 +38,7 @@ function App() {
               <Route element={<MainLayout />}>
                 <Route path="/pos" element={<POSPage />} />
                 <Route path="/pagos" element={<PagosPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
               </Route>
               
               {/* Ruta para Cocina (KDS) - Aislada sin Header pero protegida */}

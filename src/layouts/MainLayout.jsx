@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { ChefHat, CreditCard, LayoutGrid, LogOut, QrCode, X, Copy, Check } from 'lucide-react';
+import { ChefHat, CreditCard, LayoutGrid, LogOut, QrCode, X, Copy, Check, Store } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -55,6 +55,19 @@ const MainLayout = () => {
             >
               <CreditCard size={18} />
               <span className="hidden sm:inline">Pagos</span>
+            </NavLink>
+            <NavLink
+              to="/settings"
+              className={({ isActive }) =>
+                `flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 rounded-lg font-medium transition-all duration-200 ${
+                  isActive
+                    ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20'
+                    : 'text-slate-300 hover:bg-white/10 hover:text-white'
+                }`
+              }
+            >
+              <Store size={18} />
+              <span className="hidden sm:inline">Mi Negocio</span>
             </NavLink>
             
             <div className="w-px h-6 bg-white/10 mx-1 hidden sm:block"></div>

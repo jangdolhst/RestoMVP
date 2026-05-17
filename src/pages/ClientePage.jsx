@@ -1,23 +1,75 @@
-import { useState } from 'react';
-import { ChefHat, ShoppingBag } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { ChefHat, ShoppingBag, ArrowLeft } from 'lucide-react';
 import POSGrid from '../components/pos/POSGrid';
 import TicketSidebar from '../components/pos/TicketSidebar';
 import { usePOS } from '../context/POSContext';
+import { supabase } from '../lib/supabase';
 
 const ClientePage = () => {
+  const { tenantId } = useParams();
+  const navigate = useNavigate();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const { cartItems, cartTotal } = usePOS();
+  const [restaurantInfo, setRestaurantInfo] = useState(null);
+
+  useEffect(() => {
+    if (!tenantId) return;
+
+    const fetchRestaurantInfo = async () => {
+      try {
+        const { data } = await supabase
+          .from('restaurant_profiles')
+          .select('name, logo_url')
+          .eq('id', tenantId)
+          .maybeSingle();
+
+        if (data) {
+          setRestaurantInfo(data);
+        }
+      } catch (err) {
+        console.error('Error cargando info del restaurante:', err.message);
+      }
+    };
+
+    fetchRestaurantInfo();
+  }, [tenantId]);
 
   return (
     <div className="flex flex-col h-screen bg-slate-950 overflow-hidden relative">
-      {/* Client Header */}
-      <header className="h-16 border-b border-white/5 bg-slate-900/50 backdrop-blur-md flex items-center px-6 justify-center shadow-md relative z-10 shrink-0">
+      {/* Client Header — muestra info real del restaurante */}
+      <header className="h-16 border-b border-white/5 bg-slate-900/50 backdrop-blur-md flex items-center px-4 sm:px-6 justify-between shadow-md relative z-10 shrink-0">
+        {/* Botón volver al directorio */}
+        <button
+          onClick={() => navigate('/')}
+          className="text-slate-400 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-colors"
+          aria-label="Volver al directorio"
+        >
+          <ArrowLeft size={20} />
+        </button>
+
+        {/* Logo + Nombre */}
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
-            <ChefHat className="text-white" size={18} />
-          </div>
-          <span className="text-xl font-bold text-white tracking-tight">Resto<span className="text-orange-400">MVP</span></span>
+          {restaurantInfo?.logo_url ? (
+            <img
+              src={restaurantInfo.logo_url}
+              alt={restaurantInfo.name || 'Restaurante'}
+              className="w-8 h-8 rounded-lg object-cover border border-white/10"
+            />
+          ) : (
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
+              <ChefHat className="text-white" size={18} />
+            </div>
+          )}
+          <span className="text-lg sm:text-xl font-bold text-white tracking-tight truncate max-w-[200px]">
+            {restaurantInfo?.name || (
+              <>Resto<span className="text-orange-400">MVP</span></>
+            )}
+          </span>
         </div>
+
+        {/* Spacer para centrar el nombre */}
+        <div className="w-10" />
       </header>
 
       {/* Main Content Area */}
