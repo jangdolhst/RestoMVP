@@ -27,6 +27,7 @@ function App() {
             {/* Landing Page del SaaS — Para venderle el sistema a los dueños */}
             <Route path="/partners" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/test-settings" element={<SettingsPage />} />
             
             {/* Ruta para clientes (Menú por Restaurante) */}
             <Route path="/menu/:tenantId" element={<ClientePage />} />
