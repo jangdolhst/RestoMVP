@@ -75,7 +75,7 @@ CREATE TABLE products (
 CREATE TABLE orders (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   tenant_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  order_number SERIAL,
+  order_number INTEGER,
   client_name TEXT NOT NULL,
   table_name TEXT,
   phone TEXT,
@@ -162,7 +162,7 @@ CREATE POLICY "Dueños pueden gestionar sus órdenes" ON orders
 CREATE POLICY "Clientes pueden insertar órdenes" ON orders
   FOR INSERT WITH CHECK (
     tenant_id IS NOT NULL 
-    AND EXISTS (SELECT 1 FROM auth.users WHERE id = tenant_id)
+    AND EXISTS (SELECT 1 FROM restaurant_profiles WHERE id = tenant_id)
   );
 
 -- DETALLES DE ÓRDENES (ORDER ITEMS)
@@ -173,11 +173,10 @@ CREATE POLICY "Dueños pueden gestionar items" ON order_items
   ) WITH CHECK (
     EXISTS (SELECT 1 FROM orders WHERE orders.id = order_items.order_id AND orders.tenant_id = auth.uid())
   );
--- Clientes: Pueden insertar items solo si la orden existe
+-- Clientes: Pueden insertar items (la FK garantiza que la orden exista)
 CREATE POLICY "Clientes pueden insertar items" ON order_items
   FOR INSERT WITH CHECK (
     order_id IS NOT NULL 
-    AND EXISTS (SELECT 1 FROM orders WHERE id = order_id)
   );
 
 
@@ -233,6 +232,27 @@ DROP TRIGGER IF EXISTS on_auth_user_created_profile ON auth.users;
 CREATE TRIGGER on_auth_user_created_profile
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_restaurant_profile();
+
+-- Trigger para autogenerar número de orden secuencial diario por restaurante (tenant)
+CREATE OR REPLACE FUNCTION set_next_order_number()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.order_number IS NULL OR NEW.order_number = 0 THEN
+    SELECT COALESCE(MAX(order_number), 0) + 1
+    INTO NEW.order_number
+    FROM orders
+    WHERE tenant_id = NEW.tenant_id
+      AND created_at::date = CURRENT_DATE;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_set_next_order_number ON orders;
+CREATE TRIGGER trg_set_next_order_number
+  BEFORE INSERT ON orders
+  FOR EACH ROW
+  EXECUTE FUNCTION set_next_order_number();
 
 -- ==========================================
 -- RPC: SEGUIMIENTO DE PEDIDOS POR TOKEN

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Clock, ChefHat, CheckCircle2, Package, RefreshCw, Trash2 } from 'lucide-react';
+import { ArrowLeft, Clock, ChefHat, CheckCircle2, Package, RefreshCw, Trash2, History } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 const STATUS_CONFIG = {
@@ -35,6 +35,7 @@ const OrderTrackingPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState(null);
+  const [showHistory, setShowHistory] = useState(false);
 
   const getStoredTokens = useCallback(() => {
     try {
@@ -124,6 +125,10 @@ const OrderTrackingPage = () => {
     );
   }
 
+  const activeOrders = orders.filter(o => o.status !== 'pagado');
+  const historyOrders = orders.filter(o => o.status === 'pagado');
+  const displayOrders = showHistory ? historyOrders : activeOrders;
+
   return (
     <div className="min-h-screen bg-slate-950">
       {/* Header */}
@@ -131,16 +136,16 @@ const OrderTrackingPage = () => {
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => navigate('/')}
+              onClick={() => showHistory ? setShowHistory(false) : navigate('/')}
               className="text-slate-400 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-colors"
-              aria-label="Volver al directorio"
+              aria-label={showHistory ? "Volver a activos" : "Volver al directorio"}
             >
               <ArrowLeft size={20} />
             </button>
             <div>
               <h1 className="text-xl font-bold text-white flex items-center gap-2">
-                <Package size={22} className="text-orange-400" />
-                Mis Pedidos
+                {showHistory ? <History size={22} className="text-blue-400" /> : <Package size={22} className="text-orange-400" />}
+                {showHistory ? 'Historial' : 'Mis Pedidos'}
               </h1>
               {lastRefresh && (
                 <p className="text-xs text-slate-500 mt-0.5">
@@ -175,26 +180,32 @@ const OrderTrackingPage = () => {
 
       {/* Content */}
       <main className="max-w-2xl mx-auto px-4 py-6 space-y-4">
-        {orders.length === 0 ? (
+        {displayOrders.length === 0 ? (
           /* Estado vacío */
-          <div className="text-center py-20">
+          <div className="text-center py-20 animate-fade-in">
             <div className="w-20 h-20 mx-auto rounded-full bg-white/5 flex items-center justify-center mb-4">
-              <Package size={36} className="text-slate-600" />
+              {showHistory ? <History size={36} className="text-slate-600" /> : <Package size={36} className="text-slate-600" />}
             </div>
-            <h2 className="text-xl font-semibold text-white mb-2">No tienes pedidos</h2>
+            <h2 className="text-xl font-semibold text-white mb-2">
+              {showHistory ? 'No hay historial' : 'No tienes pedidos activos'}
+            </h2>
             <p className="text-slate-400 mb-6 max-w-sm mx-auto">
-              Cuando hagas un pedido desde el menú de un restaurante, aparecerá aquí para que puedas seguir su estado.
+              {showHistory 
+                ? 'Los pedidos que ya han sido pagados y recogidos aparecerán aquí.' 
+                : 'Cuando hagas un pedido desde el menú de un restaurante, aparecerá aquí para que puedas seguir su estado.'}
             </p>
-            <button
-              onClick={() => navigate('/')}
-              className="btn-primary px-6 py-3 inline-flex items-center gap-2"
-            >
-              Explorar Restaurantes
-            </button>
+            {!showHistory && (
+              <button
+                onClick={() => navigate('/')}
+                className="btn-primary px-6 py-3 inline-flex items-center gap-2"
+              >
+                Explorar Restaurantes
+              </button>
+            )}
           </div>
         ) : (
           /* Lista de pedidos */
-          orders.map((order) => {
+          displayOrders.map((order) => {
             const status = STATUS_CONFIG[order.status] || STATUS_CONFIG.pendiente_cocina;
             const StatusIcon = status.icon;
             const items = typeof order.items === 'string' ? JSON.parse(order.items) : (order.items || []);
@@ -270,9 +281,22 @@ const OrderTrackingPage = () => {
           })
         )}
 
+        {/* Botón para ir al Historial */}
+        {!showHistory && historyOrders.length > 0 && (
+          <div className="pt-4 mt-8 border-t border-white/10 text-center animate-fade-in">
+            <button
+              onClick={() => setShowHistory(true)}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-800/50 hover:bg-slate-800 text-slate-300 transition-colors border border-white/5 font-medium"
+            >
+              <History size={18} className="text-blue-400" />
+              Ver historial de pedidos ({historyOrders.length})
+            </button>
+          </div>
+        )}
+
         {/* Auto-refresh indicator */}
-        {orders.length > 0 && (
-          <p className="text-center text-xs text-slate-600 pb-6">
+        {!showHistory && activeOrders.length > 0 && (
+          <p className="text-center text-xs text-slate-600 pt-6 pb-2">
             <Clock size={12} className="inline mr-1 -mt-0.5" />
             Se actualiza automáticamente cada 15 segundos
           </p>

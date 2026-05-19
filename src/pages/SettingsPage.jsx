@@ -14,7 +14,7 @@ const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 
 const SettingsPage = () => {
   const { user } = useAuth();
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null); // 'success' | 'error' | null
   const [uploadingField, setUploadingField] = useState(null); // 'logo' | 'banner' | null

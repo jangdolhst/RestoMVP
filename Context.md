@@ -1,39 +1,44 @@
 # Contexto del Proyecto: Resto-MVP
 
 ## Estado Actual (Fase 2 Completada)
-Hemos finalizado exitosamente la migración del Frontend a una arquitectura SaaS Multi-Tenant lista para producción.
-- **Base de Datos (Supabase)**: Tablas re-estructuradas con `tenant_id`. Políticas RLS implementadas y seguridad estricta para dueños y clientes.
-- **Autenticación (Supabase Auth)**: Flujos de registro, login y logout creados (`AuthContext.jsx`, `LoginPage.jsx`).
-- **Rutas Protegidas**: Módulos de administración (`/pos`, `/pagos`, `/cocina`) bloqueados tras `<ProtectedRoute>`.
-- **Aislamiento Multi-Tenant**: El menú de los clientes ahora funciona bajo `/menu/:tenantId`. El frontend inyecta automáticamente el ID del usuario dueño en todas las consultas para garantizar privacidad absoluta.
-- **Utilidades**: Generación de código QR (`qrcode.react`) añadida en el `MainLayout` para facilitar a los negocios compartir su menú.
+Hemos finalizado exitosamente la migraciÃ³n del Frontend a una arquitectura SaaS Multi-Tenant lista para producciÃ³n.
+- **Base de Datos (Supabase)**: Tablas re-estructuradas con `tenant_id`. PolÃ­ticas RLS implementadas y seguridad estricta para dueÃ±os y clientes.
+- **AutenticaciÃ³n (Supabase Auth)**: Flujos de registro, login y logout creados (`AuthContext.jsx`, `LoginPage.jsx`).
+- **Rutas Protegidas**: MÃ³dulos de administraciÃ³n (`/pos`, `/pagos`, `/cocina`) bloqueados tras `<ProtectedRoute>`.
+- **Aislamiento Multi-Tenant**: El menÃº de los clientes ahora funciona bajo `/menu/:tenantId`. El frontend inyecta automÃ¡ticamente el ID del usuario dueÃ±o en todas las consultas para garantizar privacidad absoluta.
+- **Utilidades**: GeneraciÃ³n de cÃ³digo QR (`qrcode.react`) aÃ±adida en el `MainLayout` para facilitar a los negocios compartir su menÃº.
 
 ## Siguientes Pasos (Fase 3)
-El siguiente paso crítico es la **Integración de Pagos y Suscripciones con Stripe**.
-1. Configuración de Stripe (Checkout / Payment Element).
-2. Manejo de Webhooks para actualizar estados de suscripción en la Base de Datos.
-3. Bloquear el acceso a `/pos` a usuarios cuya suscripción haya expirado o no exista.
-4. Integración de la UI para comprar/gestionar la membresía.
+El siguiente paso crÃ­tico es la **IntegraciÃ³n de Pagos y Suscripciones con Stripe**.
+1. ConfiguraciÃ³n de Stripe (Checkout / Payment Element).
+2. Manejo de Webhooks para actualizar estados de suscripciÃ³n en la Base de Datos.
+3. Bloquear el acceso a `/pos` a usuarios cuya suscripciÃ³n haya expirado o no exista.
+4. IntegraciÃ³n de la UI para comprar/gestionar la membresÃ­a.
 
-## Decisiones Técnicas y de Diseño
+## Decisiones TÃ©cnicas y de DiseÃ±o
 - **Frontend**: React + Vite + Tailwind v4 + Lucide React.
 - **UI/UX**: Premium Glassmorphism, paleta Slate oscura (Slate-900), detalles Naranja (Orange-500).
-- **Seguridad**: Todas las llamadas a DB respetan el tenant_id. Email de confirmación desactivado en Supabase para facilitar onboarding.
+- **Seguridad**: Todas las llamadas a DB respetan el tenant_id. Email de confirmaciÃ³n desactivado en Supabase para facilitar onboarding.
 
 ## Archivos Clave
-- `schema_consolidado.sql`: Única fuente de verdad de la estructura en Supabase y RLS.
+- `schema_consolidado.sql`: Ãšnica fuente de verdad de la estructura en Supabase y RLS.
 - `src/context/AuthContext.jsx` y `src/context/POSContext.jsx`: Cerebros del estado global.
 - `src/components/auth/ProtectedRoute.jsx`: Componente de seguridad de rutas.
-- `src/layouts/MainLayout.jsx`: Contiene menú de navegación y modal QR (`qrcode.react`).
+- `src/layouts/MainLayout.jsx`: Contiene menÃº de navegaciÃ³n y modal QR (`qrcode.react`).
 
 ## Historial de Cambios / QA
-- **Gestión de Precios de Extras**: Se añadió una tabla `extras` para registrar globalmente complementos con precio. Los componentes de creación (`NewItemModal`) y edición (`ExtrasModal`) fueron actualizados. Ahora el modal recomienda extras basados en los ingredientes e impide escribir extras manuales en modo cliente, delegando el cobro adicional al cálculo total del carrito en `TicketSidebar.jsx` y `POSContext.jsx`.
-- **QA Auditoría (05/05/2026)**: Eliminado código muerto (`handleAddExtraFromSelect`), renombrado `selectedExtraId` → `manualExtraText` por claridad, corregido formato de `cartTotal` (`.toFixed(2)`), verificadas políticas RLS de `extras` en Supabase, confirmado esquema BD vs `schema_consolidado.sql` sin incongruencias. Se añadieron funciones `updateExtra` y `deleteExtra` a `POSContext`.
-- **Validación Telefónica Internacional (05/05/2026)**: Integrado `intl-tel-input` v28 + `@intl-tel-input/react` como paquetes npm. Componente reutilizable `PhoneInput` (`src/components/ui/PhoneInput.jsx`) con detección automática de país desde el navegador, `separateDialCode`, validación en tiempo real, y estilos glassmorphism en `index.css`. Reemplazados 2 inputs `type="tel"` nativos en `TicketSidebar.jsx`. El teléfono se guarda en formato E.164 (`+521234567890`).
-- **Auditoría de Seguridad (05/05/2026)**: Análisis de 7 vectores de ataque (XSS, SQL Injection, RLS bypass, RPC exposure, headers HTTP, credenciales, rutas). Se corrigieron 5 vulnerabilidades:
-  - *VULN-1 (Crítica)*: Políticas RLS de `orders` y `order_items` cambiadas de `WITH CHECK (true)` a validación contra `auth.users` y `orders` respectivamente.
-  - *VULN-2/3 (Alta)*: `REVOKE EXECUTE FROM PUBLIC` en `handle_new_user()` y `rls_auto_enable()` para bloquear invocación vía REST API.
+- **GestiÃ³n de Precios de Extras**: Se aÃ±adiÃ³ una tabla `extras` para registrar globalmente complementos con precio. Los componentes de creaciÃ³n (`NewItemModal`) y ediciÃ³n (`ExtrasModal`) fueron actualizados. Ahora el modal recomienda extras basados en los ingredientes e impide escribir extras manuales en modo cliente, delegando el cobro adicional al cÃ¡lculo total del carrito en `TicketSidebar.jsx` y `POSContext.jsx`.
+- **QA AuditorÃ­a (05/05/2026)**: Eliminado cÃ³digo muerto (`handleAddExtraFromSelect`), renombrado `selectedExtraId` â†’ `manualExtraText` por claridad, corregido formato de `cartTotal` (`.toFixed(2)`), verificadas polÃ­ticas RLS de `extras` en Supabase, confirmado esquema BD vs `schema_consolidado.sql` sin incongruencias. Se aÃ±adieron funciones `updateExtra` y `deleteExtra` a `POSContext`.
+- **ValidaciÃ³n TelefÃ³nica Internacional (05/05/2026)**: Integrado `intl-tel-input` v28 + `@intl-tel-input/react` como paquetes npm. Componente reutilizable `PhoneInput` (`src/components/ui/PhoneInput.jsx`) con detecciÃ³n automÃ¡tica de paÃ­s desde el navegador, `separateDialCode`, validaciÃ³n en tiempo real, y estilos glassmorphism en `index.css`. Reemplazados 2 inputs `type="tel"` nativos en `TicketSidebar.jsx`. El telÃ©fono se guarda en formato E.164 (`+521234567890`).
+- **AuditorÃ­a de Seguridad (05/05/2026)**: AnÃ¡lisis de 7 vectores de ataque (XSS, SQL Injection, RLS bypass, RPC exposure, headers HTTP, credenciales, rutas). Se corrigieron 5 vulnerabilidades:
+  - *VULN-1 (CrÃ­tica)*: PolÃ­ticas RLS de `orders` y `order_items` cambiadas de `WITH CHECK (true)` a validaciÃ³n contra `auth.users` y `orders` respectivamente.
+  - *VULN-2/3 (Alta)*: `REVOKE EXECUTE FROM PUBLIC` en `handle_new_user()` y `rls_auto_enable()` para bloquear invocaciÃ³n vÃ­a REST API.
   - *VULN-4 (Media)*: `SET search_path = public` en `handle_new_user()`.
+  - *VULN-6 (Baja)*: Security headers (X-Frame-Options, X-Content-Type-Options, X-XSS-Protection, Referrer-Policy, Permissions-Policy) aÃ±adidos a `vercel.json`.
+  - *VULN-5 (Media)*: Leaked Password Protection pendiente de activar manualmente en Dashboard de Supabase â†’ Auth â†’ Settings.
+- **Fix PhoneInput en Settings (17/05/2026)**: Integrado el componente reutilizable `PhoneInput` (intl-tel-input) en `SettingsPage.jsx`, reemplazando el `<input type="tel">` nativo. Ahora valida formato internacional con cÃ³digo de paÃ­s.
+- **Fix BotÃ³n "Enviar Orden" (17/05/2026)**: El bug era causado por `.select().single()` despuÃ©s del INSERT en `POSContext.placeOrder()`. El RLS de SELECT solo permite lectura al dueÃ±o (`auth.uid() = tenant_id`), por lo que clientes anÃ³nimos obtenÃ­an `null`. Se eliminÃ³ `.select()` y se recupera la orden creada via RPC `get_orders_by_tokens`. Ahora `placeOrder()` retorna `{ success: true, orderToken }`.
+- **Seguimiento de Pedidos sin SesiÃ³n (17/05/2026)**: Nueva funcionalidad para que clientes sin cuenta puedan rastrear sus pedidos:
   - *VULN-6 (Baja)*: Security headers (X-Frame-Options, X-Content-Type-Options, X-XSS-Protection, Referrer-Policy, Permissions-Policy) añadidos a `vercel.json`.
   - *VULN-5 (Media)*: Leaked Password Protection pendiente de activar manualmente en Dashboard de Supabase → Auth → Settings.
 - **Fix PhoneInput en Settings (17/05/2026)**: Integrado el componente reutilizable `PhoneInput` (intl-tel-input) en `SettingsPage.jsx`, reemplazando el `<input type="tel">` nativo. Ahora valida formato internacional con código de país.
@@ -45,3 +50,13 @@ El siguiente paso crítico es la **Integración de Pagos y Suscripciones con Str
   - Nueva página `/pedidos` (`OrderTrackingPage.jsx`) muestra estado visual con auto-refresh cada 15s.
   - Enlace "Mis Pedidos" visible en el header del Marketplace si hay tokens guardados.
   - Seguridad: sin token no se puede ver ningún pedido. UUID v4 tiene 2^122 combinaciones = imposible de adivinar.
+- **Fix Definitivo Bug Infinite Loop en PhoneInput (19/05/2026)**: Se resolvió por completo el error crítico ('Maximum update depth exceeded') que causaba que `SettingsPage` colapsara y dejara de renderizar ('no se ve el contenido'). Inicialmente se retiró el `useEffect` problemático, pero el error persistía porque el componente controlado de `@intl-tel-input/react` seguía emitiendo eventos `onChangeNumber` al recibir el prop `value`, lo que generaba un bucle con el re-render de `SettingsPage`.
+  - Se implementó un control de igualdad estricta (`safeNum !== value`) dentro de `handleChangeNumber` en `PhoneInput.jsx`.
+  - Ahora el input solo emite el nuevo valor si realmente hubo un cambio desde la perspectiva del usuario o del formateo, rompiendo efectivamente el ciclo de actualizaciones infinitas.
+  - Se validó el renderizado a través de un test E2E con Playwright sobre el servidor de desarrollo en la ruta `/test-settings`, confirmando la ausencia de errores en consola y logrando renderizado exitoso de la UI.
+- **Fix RLS Orders Permission Denied (19/05/2026)**: Se resolvió un error 403 (Forbidden) al insertar una orden ('permission denied for table users'). El error ocurría porque la política RLS 'Clientes pueden insertar órdenes' hacía un SELECT a auth.users, tabla a la cual los usuarios 'authenticated' y 'anon' no tienen acceso de lectura directo, provocando que Postgres rechazara toda la operación. Se modificó el RLS de 'orders' para verificar contra 'restaurant_profiles' en su lugar, y se simplificó el RLS de 'order_items' para depender de la integridad referencial (FOREIGN KEY) sin subconsultas problemáticas a 'orders', permitiendo la creación fluida de pedidos por clientes.
+- **Correlativo Diario de Pedidos por Restaurante (19/05/2026)**: Se solucionó el problema donde los números de pedido eran globales y acumulativos (`SERIAL`).
+  - Se modificó la columna `order_number` de `SERIAL` a `INTEGER` en `schema_consolidado.sql` (eliminando la secuencia global por defecto en base de datos).
+  - Se implementó la función y trigger `set_next_order_number()` en PostgreSQL para calcular dinámicamente el siguiente número correlativo (`MAX(order_number) + 1`) de manera aislada por restaurante (`tenant_id`) y **reiniciándose a #1 cada día** (`created_at::date = CURRENT_DATE`).
+  - Esto garantiza que cada restaurante tenga su propia secuencia diaria de pedidos independiente.
+- **Historial de Pedidos en Cliente (19/05/2026)**: Se separaron los pedidos activos de los completados en `OrderTrackingPage.jsx`. Los pedidos marcados como `pagado` ahora desaparecen de la vista principal y se agrupan bajo un nuevo botón "Ver historial de pedidos", manteniendo la pantalla principal limpia para el usuario.

@@ -32,28 +32,27 @@ const PhoneInput = ({ value, onChange, placeholder = 'Ingresa tu celular', class
     }
   }, []);
 
+  const onChangeRef = useRef(onChange);
+
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
+
   const handleChangeNumber = useCallback((num) => {
     const safeNum = num || '';
     setHasInput(safeNum.trim().length > 0);
-    if (onChange) onChange(safeNum);
-  }, [onChange]);
+    // Evitar loop infinito: Solo emitir si el valor cambió con respecto al prop actual
+    if (safeNum !== value) {
+      if (onChangeRef.current) onChangeRef.current(safeNum);
+    }
+  }, [value]);
 
   const handleChangeValidity = useCallback((valid) => {
     setIsValid(valid);
   }, []);
 
-  // Sincronizar valor externo con la instancia ITI
-  useEffect(() => {
-    if (value && ref.current) {
-      const instance = ref.current.getInstance?.();
-      if (instance) {
-        const currentNumber = instance.getNumber?.() || '';
-        if (currentNumber !== value) {
-          instance.setNumber?.(value);
-        }
-      }
-    }
-  }, [value]);
+  // The @intl-tel-input/react component now handles controlled values natively.
+  // We no longer need the manual useEffect synchronization that caused infinite loops.
 
   return (
     <div className={`phone-input-wrapper ${className}`}>
@@ -65,6 +64,7 @@ const PhoneInput = ({ value, onChange, placeholder = 'Ingresa tu celular', class
         loadUtils={() => import('intl-tel-input/utils')}
         onChangeNumber={handleChangeNumber}
         onChangeValidity={handleChangeValidity}
+        value={value}
         inputProps={{
           placeholder,
           className: 'glass-input phone-field',
