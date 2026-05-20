@@ -14,22 +14,25 @@ const RestaurantCard = ({ restaurant, onClick }) => {
   return (
     <button
       onClick={onClick}
-      className="group glass-card overflow-hidden text-left w-full focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:ring-offset-2 focus:ring-offset-slate-950"
+      className="group relative overflow-hidden text-left w-full rounded-3xl transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-orange-500/20 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
     >
-      {/* Banner */}
-      <div className="relative h-40 sm:h-44 overflow-hidden">
+      {/* Premium Glass Background */}
+      <div className="absolute inset-0 bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl group-hover:bg-white/10 group-hover:border-white/20 transition-all duration-500" />
+      
+      {/* Banner con clip-path / borde curvo interior */}
+      <div className="relative h-48 sm:h-52 overflow-hidden rounded-t-3xl border-b border-white/5">
         <img
           src={restaurant.banner_url || placeholderBanner}
           alt={`Banner de ${restaurant.name}`}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
           loading="lazy"
           onError={(e) => { e.target.src = placeholderBanner; }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/40 to-transparent" />
 
-        {/* Logo overlay */}
+        {/* Logo overlay flotante premium */}
         {restaurant.logo_url && (
-          <div className="absolute bottom-3 left-3 w-12 h-12 rounded-xl border-2 border-white/20 overflow-hidden shadow-lg bg-slate-900">
+          <div className="absolute bottom-4 left-4 w-14 h-14 rounded-2xl border-2 border-white/10 overflow-hidden shadow-2xl bg-slate-900/80 backdrop-blur-md group-hover:border-orange-500/50 transition-colors duration-500">
             <img
               src={restaurant.logo_url}
               alt={`Logo de ${restaurant.name}`}
@@ -38,30 +41,36 @@ const RestaurantCard = ({ restaurant, onClick }) => {
             />
           </div>
         )}
+        
+        {/* Status indicator flotante */}
+        <div className="absolute top-4 right-4 px-3 py-1 bg-black/50 backdrop-blur-md border border-white/10 rounded-full flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="text-xs font-medium text-white">Abierto</span>
+        </div>
       </div>
 
-      {/* Info */}
-      <div className="p-4">
-        <h3 className="text-lg font-bold text-white mb-1 truncate group-hover:text-orange-400 transition-colors">
+      {/* Info content */}
+      <div className="relative p-5 z-10">
+        <h3 className="text-xl font-bold text-white mb-2 truncate group-hover:text-orange-400 transition-colors duration-300">
           {restaurant.name || 'Sin nombre'}
         </h3>
 
         {restaurant.description && (
-          <p className="text-sm text-slate-400 mb-3 line-clamp-2 leading-relaxed">
+          <p className="text-sm text-slate-400 mb-4 line-clamp-2 leading-relaxed">
             {restaurant.description}
           </p>
         )}
 
-        <div className="flex items-center gap-3 text-xs text-slate-500 flex-wrap">
+        <div className="flex items-center gap-4 text-xs font-medium text-slate-400 flex-wrap">
           {restaurant.address && (
-            <span className="flex items-center gap-1">
-              <MapPin size={12} className="text-orange-400/60" />
-              <span className="truncate max-w-[140px]">{restaurant.address}</span>
+            <span className="flex items-center gap-1.5 bg-white/5 px-2.5 py-1 rounded-lg border border-white/5">
+              <MapPin size={14} className="text-orange-400" />
+              <span className="truncate max-w-[120px]">{restaurant.address}</span>
             </span>
           )}
           {restaurant.categories?.length > 0 && (
-            <span className="flex items-center gap-1">
-              <Store size={12} className="text-blue-400/60" />
+            <span className="flex items-center gap-1.5 bg-white/5 px-2.5 py-1 rounded-lg border border-white/5">
+              <Store size={14} className="text-blue-400" />
               {restaurant.categories.slice(0, 2).join(' · ')}
             </span>
           )}
@@ -136,12 +145,12 @@ const MarketplacePage = () => {
   }, [restaurants, searchQuery, activeCategory]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white relative overflow-x-hidden">
+    <div className="min-h-screen text-white relative overflow-x-hidden">
       {/* Ambient Background (Campfire/Ember Effect - Zero Lag GPU Optimized) */}
       <div className="ambient-background" />
 
       {/* Header / Navbar */}
-      <header className="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-white/5">
+      <header className="sticky top-0 z-50 bg-black/40 backdrop-blur-xl border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-500/20">
@@ -203,7 +212,7 @@ const MarketplacePage = () => {
             placeholder="Buscar restaurante, comida o dirección..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-11 pr-10 py-3.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500/30 transition-all text-sm sm:text-base"
+            className="w-full pl-11 pr-10 py-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/80 focus:border-orange-500/50 focus:bg-white/15 transition-all text-sm sm:text-base shadow-xl"
           />
           {searchQuery && (
             <button

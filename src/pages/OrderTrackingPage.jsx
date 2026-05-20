@@ -130,11 +130,11 @@ const OrderTrackingPage = () => {
   const displayOrders = showHistory ? historyOrders : activeOrders;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white relative overflow-x-hidden">
+    <div className="min-h-screen text-white relative overflow-x-hidden">
       {/* Ambient Background (Campfire/Ember Effect) */}
       <div className="ambient-background" />
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-slate-900/80 backdrop-blur-xl border-b border-white/5">
+      <header className="sticky top-0 z-10 bg-black/40 backdrop-blur-xl border-b border-white/10">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
