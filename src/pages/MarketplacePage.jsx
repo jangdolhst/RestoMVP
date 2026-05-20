@@ -137,9 +137,8 @@ const MarketplacePage = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 text-white relative overflow-x-hidden">
-      {/* Background decorative orbs */}
-      <div className="fixed top-[-15%] left-[-10%] w-[45%] h-[45%] bg-orange-500/10 rounded-full blur-[150px] pointer-events-none" />
-      <div className="fixed bottom-[-15%] right-[-10%] w-[45%] h-[45%] bg-blue-500/8 rounded-full blur-[150px] pointer-events-none" />
+      {/* Ambient Background (Campfire/Ember Effect - Zero Lag GPU Optimized) */}
+      <div className="ambient-background" />
 
       {/* Header / Navbar */}
       <header className="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-white/5">

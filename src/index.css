@@ -199,3 +199,71 @@
   animation: scale-up 0.2s ease-out;
 }
 
+/* === Ambient Background (Campfire/Ember Effect - Zero Lag) === */
+.ambient-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  background-color: #0f172a;
+  overflow: hidden;
+}
+
+/* Glowing orbs using hardware-accelerated properties */
+.ambient-background::before,
+.ambient-background::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  will-change: transform, opacity;
+  pointer-events: none;
+}
+
+/* Ember / Fire Glow 1 */
+.ambient-background::before {
+  width: 80vw;
+  height: 80vw;
+  background: radial-gradient(circle, rgba(249, 115, 22, 0.15), transparent 70%);
+  top: -20vh;
+  left: -20vw;
+  animation: ember-float 15s ease-in-out infinite alternate;
+}
+
+/* Ember / Fire Glow 2 */
+.ambient-background::after {
+  width: 60vw;
+  height: 60vw;
+  background: radial-gradient(circle, rgba(220, 38, 38, 0.1), transparent 70%);
+  bottom: -10vh;
+  right: -10vw;
+  animation: ember-float-reverse 20s ease-in-out infinite alternate;
+}
+
+@keyframes ember-float {
+  0% { transform: translate(0, 0) scale(1); opacity: 0.4; }
+  50% { transform: translate(3vw, 5vh) scale(1.1); opacity: 0.8; }
+  100% { transform: translate(-3vw, 8vh) scale(0.9); opacity: 0.4; }
+}
+
+@keyframes ember-float-reverse {
+  0% { transform: translate(0, 0) scale(1); opacity: 0.3; }
+  50% { transform: translate(-4vw, -4vh) scale(1.15); opacity: 0.6; }
+  100% { transform: translate(4vw, -8vh) scale(0.85); opacity: 0.3; }
+}
+
+/* Future Video Background Support */
+.ambient-video {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  min-width: 100%;
+  min-height: 100%;
+  object-fit: cover;
+  transform: translate(-50%, -50%);
+  opacity: 0.2;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}

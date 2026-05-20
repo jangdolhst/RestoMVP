@@ -36,7 +36,8 @@ const ClientePage = () => {
   }, [tenantId]);
 
   return (
-    <div className="flex flex-col h-screen bg-slate-950 overflow-hidden relative">
+    <div className="flex flex-col h-screen text-white overflow-hidden relative">
+      <div className="ambient-background" />
       {/* Client Header — muestra info real del restaurante */}
       <header className="h-16 border-b border-white/5 bg-slate-900/50 backdrop-blur-md flex items-center px-4 sm:px-6 justify-between shadow-md relative z-10 shrink-0">
         {/* Botón volver al directorio */}
