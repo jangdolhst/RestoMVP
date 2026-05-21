@@ -102,8 +102,8 @@ const PagosPage = () => {
         }
       }
 
-      // Sonar si hay nuevos pedidos
-      if (validOrders.length > prevPendingCount && prevPendingCount >= 0) {
+      // Sonar mientras haya pedidos pendientes
+      if (validOrders.length > 0) {
         playNotificationSound();
       }
       setPrevPendingCount(validOrders.length);
@@ -111,7 +111,7 @@ const PagosPage = () => {
     } catch (err) {
       console.error('Error fetching pending orders:', err.message);
     }
-  }, [user?.id, prevPendingCount, playNotificationSound]);
+  }, [user?.id, playNotificationSound]);
 
   useEffect(() => {
     fetchPendingOrders();
