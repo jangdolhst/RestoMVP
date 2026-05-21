@@ -74,7 +74,8 @@ const MapPage = () => {
 
   // GPS del usuario
   const [userPosition, setUserPosition] = useState(null);
-  const [gpsStatus, setGpsStatus] = useState('loading'); // 'loading' | 'granted' | 'denied'
+  const [gpsStatus, setGpsStatus] = useState('loading'); // 'loading' | 'granted' | 'denied' | 'error'
+  const [gpsError, setGpsError] = useState('');
   const [flyTrigger, setFlyTrigger] = useState(0);
 
   // Cargar restaurantes con coordenadas
@@ -102,36 +103,47 @@ const MapPage = () => {
     fetchRestaurants();
   }, []);
 
-  // Detectar GPS del usuario
-  useEffect(() => {
+  // Función para solicitar GPS
+  const requestGPS = useCallback(() => {
     if (!navigator.geolocation) {
-      setGpsStatus('denied');
+      setGpsStatus('error');
+      setGpsError('Tu navegador no soporta geolocalización.');
       return;
     }
 
-    // Intentar obtener posición con alta precisión
+    setGpsStatus('loading');
+    setGpsError('');
+
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setUserPosition([pos.coords.latitude, pos.coords.longitude]);
         setGpsStatus('granted');
       },
       (err) => {
-        console.warn('GPS error:', err.message);
-        // Retry sin alta precisión como fallback
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            setUserPosition([pos.coords.latitude, pos.coords.longitude]);
-            setGpsStatus('granted');
-          },
-          () => {
-            setGpsStatus('denied');
-          },
-          { enableHighAccuracy: false, timeout: 15000, maximumAge: 300000 }
-        );
+        console.warn('GPS error:', err.code, err.message);
+
+        if (err.code === 1) {
+          // PERMISSION_DENIED
+          setGpsStatus('denied');
+          setGpsError('Permiso de ubicación denegado. Actívalo en la configuración de tu navegador.');
+        } else if (err.code === 2) {
+          // POSITION_UNAVAILABLE
+          setGpsStatus('error');
+          setGpsError('No se pudo determinar tu ubicación. Verifica que el GPS esté encendido.');
+        } else {
+          // TIMEOUT
+          setGpsStatus('error');
+          setGpsError('La solicitud de ubicación tardó demasiado. Inténtalo de nuevo.');
+        }
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
     );
   }, []);
+
+  // Solicitar GPS automáticamente al cargar
+  useEffect(() => {
+    requestGPS();
+  }, [requestGPS]);
 
   const handleMarkerClick = useCallback((restaurant) => {
     setSelectedRestaurant(restaurant);
@@ -252,12 +264,25 @@ const MapPage = () => {
         </div>
       )}
 
-      {/* Info GPS denegado */}
-      {gpsStatus === 'denied' && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[500] bg-amber-500/10 backdrop-blur-xl border border-amber-500/20 rounded-xl px-4 py-2.5 text-center">
-          <p className="text-xs text-amber-400">
-            📍 Activa tu GPS para ver los restaurantes más cercanos a ti.
+      {/* GPS denegado o error */}
+      {(gpsStatus === 'denied' || gpsStatus === 'error') && (
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[500] bg-amber-500/10 backdrop-blur-xl border border-amber-500/20 rounded-2xl px-5 py-3 text-center max-w-sm w-[90vw]">
+          <p className="text-xs text-amber-400 mb-2">
+            {gpsError || '📍 Activa tu GPS para ver los restaurantes más cercanos a ti.'}
           </p>
+          {gpsStatus === 'error' && (
+            <button
+              onClick={requestGPS}
+              className="text-xs font-medium text-white bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 px-4 py-1.5 rounded-lg transition-colors"
+            >
+              🔄 Reintentar GPS
+            </button>
+          )}
+          {gpsStatus === 'denied' && (
+            <p className="text-[10px] text-amber-500/60 mt-1">
+              En tu celular: Configuración → Navegador → Permisos → Ubicación
+            </p>
+          )}
         </div>
       )}
 
