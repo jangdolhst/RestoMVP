@@ -71,3 +71,5 @@ El siguiente paso crÃ­tico es la **IntegraciÃ³n de Pagos y Suscripciones con
   - **Nuevo Componente**: `MapPage.jsx` (página completa del mapa).
   - **Ruta**: `/mapa` (pública, accesible desde botón "Ver en Mapa" en el Marketplace).
   - **Dark Theme**: Tiles de OpenStreetMap oscurecidos con filtros CSS. Controles de zoom y atribución con glassmorphism.
+- **Fix GPS Permissions-Policy (20/05/2026)**: El GPS no funcionaba en producción porque `vercel.json` tenía `geolocation=()` que bloqueaba la API Geolocation a nivel HTTP. Se cambió a `geolocation=(self)` para permitir GPS solo en el dominio propio.
+- **Fix Validación de Teléfono en Órdenes (21/05/2026)**: El componente `PhoneInput` (intl-tel-input) validaba internamente si el número era correcto (largo, formato, país), pero **no comunicaba** ese estado al componente padre. Se agregó prop `onValidityChange` a `PhoneInput.jsx` y se conectó a `TicketSidebar.jsx` con un state `isPhoneValid`. Ahora el botón "Enviar Orden" bloquea el envío si el número no pasa la validación de intl-tel-input (largo correcto para el país seleccionado).

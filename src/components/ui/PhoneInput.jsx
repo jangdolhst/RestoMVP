@@ -9,15 +9,16 @@ import 'intl-tel-input/styles';
  * Props:
  *  - value: string (E.164 o raw)
  *  - onChange: (e164Number: string) => void
+ *  - onValidityChange: (isValid: boolean) => void
  *  - placeholder: string
  *  - className: string (clases extra para el wrapper)
  */
-const PhoneInput = ({ value, onChange, placeholder = 'Ingresa tu celular', className = '' }) => {
+const PhoneInput = ({ value, onChange, onValidityChange, placeholder = 'Ingresa tu celular', className = '' }) => {
   const ref = useRef(null);
-  const [isValid, setIsValid] = useState(true);
+  const [isValid, setIsValid] = useState(false);
   const [hasInput, setHasInput] = useState(false);
 
-  // Detectar país del navegador (mismo approach que SaaS-MVP)
+  // Detectar país del navegador
   const initialCountry = useMemo(() => {
     try {
       const lang = navigator.language || '';
@@ -33,15 +34,19 @@ const PhoneInput = ({ value, onChange, placeholder = 'Ingresa tu celular', class
   }, []);
 
   const onChangeRef = useRef(onChange);
+  const onValidityChangeRef = useRef(onValidityChange);
 
   useEffect(() => {
     onChangeRef.current = onChange;
   }, [onChange]);
 
+  useEffect(() => {
+    onValidityChangeRef.current = onValidityChange;
+  }, [onValidityChange]);
+
   const handleChangeNumber = useCallback((num) => {
     const safeNum = num || '';
     setHasInput(safeNum.trim().length > 0);
-    // Evitar loop infinito: Solo emitir si el valor cambió con respecto al prop actual
     if (safeNum !== value) {
       if (onChangeRef.current) onChangeRef.current(safeNum);
     }
@@ -49,10 +54,9 @@ const PhoneInput = ({ value, onChange, placeholder = 'Ingresa tu celular', class
 
   const handleChangeValidity = useCallback((valid) => {
     setIsValid(valid);
+    // Comunicar validez al componente padre
+    if (onValidityChangeRef.current) onValidityChangeRef.current(valid);
   }, []);
-
-  // The @intl-tel-input/react component now handles controlled values natively.
-  // We no longer need the manual useEffect synchronization that caused infinite loops.
 
   return (
     <div className={`phone-input-wrapper ${className}`}>

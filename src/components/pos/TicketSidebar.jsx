@@ -23,6 +23,7 @@ const TicketSidebar = ({ isClientMode = false, isOpen = false, onClose }) => {
 
   const [toastMsg, setToastMsg] = useState(null);
   const [isSending, setIsSending] = useState(false);
+  const [isPhoneValid, setIsPhoneValid] = useState(false);
 
   const showToast = (msg) => {
     setToastMsg(msg);
@@ -33,10 +34,13 @@ const TicketSidebar = ({ isClientMode = false, isOpen = false, onClose }) => {
     if (cartItems.length === 0) return showToast('La orden está vacía');
     
     if (isClientMode) {
-      if (!clientName.trim() || !phone.trim()) return showToast('Por favor ingresa tu nombre y celular para enviar la orden.');
+      if (!clientName.trim()) return showToast('Por favor ingresa tu nombre.');
+      if (!phone.trim()) return showToast('Por favor ingresa tu número de celular.');
+      if (!isPhoneValid) return showToast('El número de celular no es válido. Verifica que esté completo.');
     } else {
       if (!clientName.trim() && !tableName.trim()) return showToast('Ingresa un nombre de cliente o mesa.');
       if (isOnline && !phone.trim()) return showToast('Ingresa el celular del cliente para el pedido en línea.');
+      if (isOnline && phone.trim() && !isPhoneValid) return showToast('El número de celular no es válido. Verifica que esté completo.');
     }
 
     setIsSending(true);
@@ -174,6 +178,7 @@ const TicketSidebar = ({ isClientMode = false, isOpen = false, onClose }) => {
               <PhoneInput
                 value={phone}
                 onChange={setPhone}
+                onValidityChange={setIsPhoneValid}
                 placeholder="Ingresa tu celular"
               />
             </div>
@@ -211,6 +216,7 @@ const TicketSidebar = ({ isClientMode = false, isOpen = false, onClose }) => {
                   <PhoneInput
                     value={phone}
                     onChange={setPhone}
+                    onValidityChange={setIsPhoneValid}
                     placeholder="Celular del cliente"
                   />
                 </div>
