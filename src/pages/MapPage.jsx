@@ -77,6 +77,7 @@ const MapPage = () => {
   const [gpsStatus, setGpsStatus] = useState('loading'); // 'loading' | 'granted' | 'denied' | 'error'
   const [gpsError, setGpsError] = useState('');
   const [flyTrigger, setFlyTrigger] = useState(0);
+  const watchIdRef = useRef(null);
 
   // Cargar restaurantes con coordenadas
   useEffect(() => {
@@ -103,47 +104,57 @@ const MapPage = () => {
     fetchRestaurants();
   }, []);
 
-  // Función para solicitar GPS
-  const requestGPS = useCallback(() => {
+  // Iniciar monitoreo GPS continuo con watchPosition
+  const startGPSWatch = useCallback(() => {
     if (!navigator.geolocation) {
       setGpsStatus('error');
       setGpsError('Tu navegador no soporta geolocalización.');
       return;
     }
 
+    // Limpiar watcher anterior si existe
+    if (watchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+    }
+
     setGpsStatus('loading');
     setGpsError('');
 
-    navigator.geolocation.getCurrentPosition(
+    watchIdRef.current = navigator.geolocation.watchPosition(
       (pos) => {
-        setUserPosition([pos.coords.latitude, pos.coords.longitude]);
+        const newPos = [pos.coords.latitude, pos.coords.longitude];
+        setUserPosition(newPos);
         setGpsStatus('granted');
+        setGpsError('');
       },
       (err) => {
-        console.warn('GPS error:', err.code, err.message);
+        console.warn('GPS watchPosition error:', err.code, err.message);
 
         if (err.code === 1) {
-          // PERMISSION_DENIED
           setGpsStatus('denied');
-          setGpsError('Permiso de ubicación denegado. Actívalo en la configuración de tu navegador.');
+          setGpsError('Permiso de ubicación denegado.');
         } else if (err.code === 2) {
-          // POSITION_UNAVAILABLE
           setGpsStatus('error');
           setGpsError('No se pudo determinar tu ubicación. Verifica que el GPS esté encendido.');
         } else {
-          // TIMEOUT
           setGpsStatus('error');
-          setGpsError('La solicitud de ubicación tardó demasiado. Inténtalo de nuevo.');
+          setGpsError('La solicitud de ubicación tardó demasiado.');
         }
       },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 30000 }
     );
   }, []);
 
-  // Solicitar GPS automáticamente al cargar
+  // Iniciar GPS al montar el componente, limpiar al desmontar
   useEffect(() => {
-    requestGPS();
-  }, [requestGPS]);
+    startGPSWatch();
+
+    return () => {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+    };
+  }, [startGPSWatch]);
 
   const handleMarkerClick = useCallback((restaurant) => {
     setSelectedRestaurant(restaurant);
@@ -270,17 +281,15 @@ const MapPage = () => {
           <p className="text-xs text-amber-400 mb-2">
             {gpsError || '📍 Activa tu GPS para ver los restaurantes más cercanos a ti.'}
           </p>
-          {gpsStatus === 'error' && (
-            <button
-              onClick={requestGPS}
-              className="text-xs font-medium text-white bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 px-4 py-1.5 rounded-lg transition-colors"
-            >
-              🔄 Reintentar GPS
-            </button>
-          )}
+          <button
+            onClick={startGPSWatch}
+            className="text-xs font-medium text-white bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 px-4 py-1.5 rounded-lg transition-colors"
+          >
+            🔄 Reintentar GPS
+          </button>
           {gpsStatus === 'denied' && (
-            <p className="text-[10px] text-amber-500/60 mt-1">
-              En tu celular: Configuración → Navegador → Permisos → Ubicación
+            <p className="text-[10px] text-amber-500/60 mt-2">
+              En tu celular: toca el candado 🔒 junto a la URL → Permisos → Ubicación → Permitir
             </p>
           )}
         </div>
