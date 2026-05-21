@@ -73,3 +73,11 @@ El siguiente paso crÃ­tico es la **IntegraciÃ³n de Pagos y Suscripciones con
   - **Dark Theme**: Tiles de OpenStreetMap oscurecidos con filtros CSS. Controles de zoom y atribución con glassmorphism.
 - **Fix GPS Permissions-Policy (20/05/2026)**: El GPS no funcionaba en producción porque `vercel.json` tenía `geolocation=()` que bloqueaba la API Geolocation a nivel HTTP. Se cambió a `geolocation=(self)` para permitir GPS solo en el dominio propio.
 - **Fix Validación de Teléfono en Órdenes (21/05/2026)**: El componente `PhoneInput` (intl-tel-input) validaba internamente si el número era correcto (largo, formato, país), pero **no comunicaba** ese estado al componente padre. Se agregó prop `onValidityChange` a `PhoneInput.jsx` y se conectó a `TicketSidebar.jsx` con un state `isPhoneValid`. Ahora el botón "Enviar Orden" bloquea el envío si el número no pasa la validación de intl-tel-input (largo correcto para el país seleccionado).
+- **Confirmación de Órdenes por WhatsApp (21/05/2026)**:
+  - **Flujo**: Cliente envía orden → se crea con `status: pendiente_confirmacion` + `confirmation_code` de 4 chars → se abre modal con botón WhatsApp → cliente envía mensaje con código al restaurante → restaurante confirma en dashboard ("Órdenes") → orden pasa a `pendiente_cocina` y aparece en Cocina.
+  - **Código de confirmación**: 4 caracteres alfanuméricos sin ambiguos (sin O/0/I/1/L). Pool: `ABCDEFGHJKMNPQRSTUVWXYZ23456789`.
+  - **Auto-cancelación**: Órdenes con más de 15 min en `pendiente_confirmacion` se auto-cancelan.
+  - **Sonido**: Triple beep via Web Audio API cuando llega un nuevo pedido por confirmar.
+  - **Navegación renombrada**: "Órdenes" → "Menú", "Pagos" → "Órdenes".
+  - **Archivos**: `WhatsAppConfirmationModal.jsx` (nuevo), `POSContext.jsx`, `TicketSidebar.jsx`, `PagosPage.jsx`, `OrderTrackingPage.jsx`, `MainLayout.jsx`.
+  - **DB**: Columna `confirmation_code CHAR(4)` + status CHECK actualizado con `pendiente_confirmacion` y `cancelado`.
