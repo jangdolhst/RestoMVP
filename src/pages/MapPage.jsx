@@ -77,7 +77,6 @@ const MapPage = () => {
   const [gpsStatus, setGpsStatus] = useState('loading'); // 'loading' | 'granted' | 'denied' | 'error'
   const [gpsError, setGpsError] = useState('');
   const [flyTrigger, setFlyTrigger] = useState(0);
-  const watchIdRef = useRef(null);
 
   // Cargar restaurantes con coordenadas
   useEffect(() => {
@@ -104,57 +103,76 @@ const MapPage = () => {
     fetchRestaurants();
   }, []);
 
-  // Iniciar monitoreo GPS continuo con watchPosition
-  const startGPSWatch = useCallback(() => {
+  // Solicitar ubicación GPS
+  const requestGPS = useCallback(() => {
     if (!navigator.geolocation) {
       setGpsStatus('error');
       setGpsError('Tu navegador no soporta geolocalización.');
       return;
     }
 
-    // Limpiar watcher anterior si existe
-    if (watchIdRef.current !== null) {
-      navigator.geolocation.clearWatch(watchIdRef.current);
-    }
-
     setGpsStatus('loading');
     setGpsError('');
 
-    watchIdRef.current = navigator.geolocation.watchPosition(
+    // Primero intentar sin alta precisión (más rápido y confiable)
+    navigator.geolocation.getCurrentPosition(
       (pos) => {
-        const newPos = [pos.coords.latitude, pos.coords.longitude];
-        setUserPosition(newPos);
+        setUserPosition([pos.coords.latitude, pos.coords.longitude]);
         setGpsStatus('granted');
         setGpsError('');
       },
       (err) => {
-        console.warn('GPS watchPosition error:', err.code, err.message);
+        // Mostrar el error exacto para debug
+        const errorDetail = `Código: ${err.code} | ${err.message}`;
+        console.error('GPS Error:', errorDetail);
 
         if (err.code === 1) {
           setGpsStatus('denied');
-          setGpsError('Permiso de ubicación denegado.');
-        } else if (err.code === 2) {
-          setGpsStatus('error');
-          setGpsError('No se pudo determinar tu ubicación. Verifica que el GPS esté encendido.');
+          setGpsError(`Permiso denegado. ${errorDetail}`);
         } else {
           setGpsStatus('error');
-          setGpsError('La solicitud de ubicación tardó demasiado.');
+          setGpsError(`GPS no disponible. ${errorDetail}`);
         }
       },
-      { enableHighAccuracy: true, timeout: 20000, maximumAge: 30000 }
+      {
+        enableHighAccuracy: false,
+        timeout: 30000,
+        maximumAge: 300000,
+      }
     );
   }, []);
 
-  // Iniciar GPS al montar el componente, limpiar al desmontar
+  // Verificar el estado del permiso al montar
   useEffect(() => {
-    startGPSWatch();
+    // Primero checar si la Permissions API está disponible
+    if (navigator.permissions && navigator.permissions.query) {
+      navigator.permissions.query({ name: 'geolocation' }).then((result) => {
+        if (result.state === 'denied') {
+          setGpsStatus('denied');
+          setGpsError('Permiso bloqueado. Debes habilitarlo manualmente en tu navegador.');
+        } else {
+          // 'granted' o 'prompt' - intentar obtener ubicación
+          requestGPS();
+        }
 
-    return () => {
-      if (watchIdRef.current !== null) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-      }
-    };
-  }, [startGPSWatch]);
+        // Escuchar cambios de permiso en tiempo real
+        result.onchange = () => {
+          if (result.state === 'granted') {
+            requestGPS();
+          } else if (result.state === 'denied') {
+            setGpsStatus('denied');
+            setGpsError('Permiso bloqueado. Debes habilitarlo manualmente en tu navegador.');
+          }
+        };
+      }).catch(() => {
+        // Permissions API no disponible, intentar directamente
+        requestGPS();
+      });
+    } else {
+      // Navegador sin Permissions API (ej: Safari), intentar directamente
+      requestGPS();
+    }
+  }, [requestGPS]);
 
   const handleMarkerClick = useCallback((restaurant) => {
     setSelectedRestaurant(restaurant);
@@ -282,14 +300,14 @@ const MapPage = () => {
             {gpsError || '📍 Activa tu GPS para ver los restaurantes más cercanos a ti.'}
           </p>
           <button
-            onClick={startGPSWatch}
+            onClick={requestGPS}
             className="text-xs font-medium text-white bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 px-4 py-1.5 rounded-lg transition-colors"
           >
             🔄 Reintentar GPS
           </button>
           {gpsStatus === 'denied' && (
             <p className="text-[10px] text-amber-500/60 mt-2">
-              En tu celular: toca el candado 🔒 junto a la URL → Permisos → Ubicación → Permitir
+              Chrome: toca ⋮ → Información del sitio → Permisos → Ubicación → Permitir
             </p>
           )}
         </div>
