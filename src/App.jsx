@@ -8,6 +8,7 @@ import MarketplacePage from './pages/MarketplacePage'
 import LandingPage from './pages/LandingPage'
 import ClientePage from './pages/ClientePage'
 import OrderTrackingPage from './pages/OrderTrackingPage'
+import MapPage from './pages/MapPage'
 import POSPage from './pages/POSPage'
 import PagosPage from './pages/PagosPage'
 import CocinaPage from './pages/CocinaPage'
@@ -34,6 +35,9 @@ function App() {
             
             {/* Seguimiento de pedidos (sin sesión, usa localStorage) */}
             <Route path="/pedidos" element={<OrderTrackingPage />} />
+            
+            {/* Mapa interactivo de restaurantes */}
+            <Route path="/mapa" element={<MapPage />} />
             
             {/* Ruta de Facturación (Requiere login, pero no suscripción) */}
             <Route path="/billing" element={<BillingPage />} />

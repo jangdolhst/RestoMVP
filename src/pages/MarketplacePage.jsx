@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, ChefHat, MapPin, Clock, Store, Sparkles, X, Package } from 'lucide-react';
+import { Search, ChefHat, MapPin, Clock, Store, Sparkles, X, Package, Map } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 const FOOD_CATEGORIES = [
@@ -223,6 +223,18 @@ const MarketplacePage = () => {
               <X size={16} />
             </button>
           )}
+        </div>
+
+        {/* Botón Ver en Mapa */}
+        <div className="max-w-xl mx-auto mt-4 flex justify-center">
+          <button
+            onClick={() => navigate('/mapa')}
+            className="group inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-semibold text-sm shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 hover:scale-105 active:scale-95 transition-all duration-300"
+          >
+            <Map size={18} className="group-hover:animate-pulse" />
+            Ver en Mapa
+            <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">GPS</span>
+          </button>
         </div>
       </section>
 

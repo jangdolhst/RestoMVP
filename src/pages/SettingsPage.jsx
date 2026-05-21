@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Save, Upload, Image, Store, Loader2, CheckCircle2, AlertCircle, X } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Save, Upload, Image, Store, Loader2, CheckCircle2, AlertCircle, X, MapPin } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import PhoneInput from '../components/ui/PhoneInput';
+import AddressMapPreview from '../components/ui/AddressMapPreview';
 
 const AVAILABLE_CATEGORIES = [
   'Pizza', 'Hamburguesas', 'Sushi', 'Tacos', 'Mariscos',
@@ -19,6 +20,9 @@ const SettingsPage = () => {
   const [saveStatus, setSaveStatus] = useState(null); // 'success' | 'error' | null
   const [uploadingField, setUploadingField] = useState(null); // 'logo' | 'banner' | null
 
+  const [isGeocoding, setIsGeocoding] = useState(false);
+  const geocodeTimerRef = useRef(null);
+
   const [profile, setProfile] = useState({
     name: '',
     description: '',
@@ -28,6 +32,8 @@ const SettingsPage = () => {
     phone: '',
     categories: [],
     is_active: false,
+    latitude: null,
+    longitude: null,
   });
 
   // Cargar perfil existente
@@ -39,7 +45,7 @@ const SettingsPage = () => {
       try {
         const { data, error } = await supabase
           .from('restaurant_profiles')
-          .select('name, description, logo_url, banner_url, address, phone, categories, is_active')
+          .select('name, description, logo_url, banner_url, address, phone, categories, is_active, latitude, longitude')
           .eq('id', user.id)
           .maybeSingle();
 
@@ -55,6 +61,8 @@ const SettingsPage = () => {
             phone: data.phone || '',
             categories: data.categories || [],
             is_active: data.is_active || false,
+            latitude: data.latitude || null,
+            longitude: data.longitude || null,
           });
         }
       } catch (err) {
@@ -69,6 +77,50 @@ const SettingsPage = () => {
 
   const handleChange = (field, value) => {
     setProfile(prev => ({ ...prev, [field]: value }));
+    setSaveStatus(null);
+  };
+
+  /**
+   * Geocodificar la dirección usando Nominatim (OpenStreetMap) con debounce.
+   */
+  const geocodeAddress = useCallback((address) => {
+    if (geocodeTimerRef.current) clearTimeout(geocodeTimerRef.current);
+
+    if (!address || address.trim().length < 5) return;
+
+    geocodeTimerRef.current = setTimeout(async () => {
+      setIsGeocoding(true);
+      try {
+        const encoded = encodeURIComponent(address.trim());
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encoded}&limit=1`,
+          { headers: { 'Accept-Language': 'es' } }
+        );
+        const results = await response.json();
+
+        if (results.length > 0) {
+          const { lat, lon } = results[0];
+          setProfile(prev => ({
+            ...prev,
+            latitude: parseFloat(lat),
+            longitude: parseFloat(lon),
+          }));
+        }
+      } catch (err) {
+        console.error('Error geocodificando dirección:', err.message);
+      } finally {
+        setIsGeocoding(false);
+      }
+    }, 1500);
+  }, []);
+
+  const handleAddressChange = (value) => {
+    handleChange('address', value);
+    geocodeAddress(value);
+  };
+
+  const handleMapPositionChange = (lat, lng) => {
+    setProfile(prev => ({ ...prev, latitude: lat, longitude: lng }));
     setSaveStatus(null);
   };
 
@@ -148,6 +200,8 @@ const SettingsPage = () => {
           phone: profile.phone.trim(),
           categories: profile.categories,
           is_active: profile.is_active,
+          latitude: profile.latitude,
+          longitude: profile.longitude,
           updated_at: new Date().toISOString(),
         }, { onConflict: 'id' });
 
@@ -333,17 +387,36 @@ const SettingsPage = () => {
 
           <div>
             <label htmlFor="settings-address" className="text-sm text-slate-300 font-medium mb-1 block">
+              <MapPin size={14} className="inline mr-1 text-orange-400" />
               Dirección
             </label>
-            <input
-              id="settings-address"
-              name="address"
-              type="text"
-              value={profile.address}
-              onChange={(e) => handleChange('address', e.target.value)}
-              placeholder="Ej: Av. Reforma 123, Col. Centro"
-              className="glass-input w-full"
-              maxLength={200}
+            <div className="relative">
+              <input
+                id="settings-address"
+                name="address"
+                type="text"
+                value={profile.address}
+                onChange={(e) => handleAddressChange(e.target.value)}
+                placeholder="Ej: Av. Reforma 123, Col. Centro, Ciudad de México"
+                className="glass-input w-full pr-10"
+                maxLength={200}
+              />
+              {isGeocoding && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <Loader2 size={16} className="animate-spin text-orange-400" />
+                </div>
+              )}
+            </div>
+            {profile.latitude && profile.longitude && (
+              <p className="text-xs text-emerald-400/80 mt-1 flex items-center gap-1">
+                <CheckCircle2 size={12} />
+                Ubicación detectada ({profile.latitude.toFixed(4)}, {profile.longitude.toFixed(4)})
+              </p>
+            )}
+            <AddressMapPreview
+              latitude={profile.latitude}
+              longitude={profile.longitude}
+              onPositionChange={handleMapPositionChange}
             />
           </div>
 

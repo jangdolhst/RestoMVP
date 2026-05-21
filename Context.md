@@ -60,3 +60,14 @@ El siguiente paso crÃ­tico es la **IntegraciÃ³n de Pagos y Suscripciones con
   - Se implementó la función y trigger `set_next_order_number()` en PostgreSQL para calcular dinámicamente el siguiente número correlativo (`MAX(order_number) + 1`) de manera aislada por restaurante (`tenant_id`) y **reiniciándose a #1 cada día** (`created_at::date = CURRENT_DATE`).
   - Esto garantiza que cada restaurante tenga su propia secuencia diaria de pedidos independiente.
 - **Historial de Pedidos en Cliente (19/05/2026)**: Se separaron los pedidos activos de los completados en `OrderTrackingPage.jsx`. Los pedidos marcados como `pagado` ahora desaparecen de la vista principal y se agrupan bajo un nuevo botón "Ver historial de pedidos", manteniendo la pantalla principal limpia para el usuario.
+- **Módulo de Mapa Interactivo (20/05/2026)**: Se implementó un mapa interactivo a pantalla completa (`/mapa`) con las siguientes características:
+  - **Librería**: `leaflet` + `react-leaflet` con tiles de OpenStreetMap (gratuito, sin API key).
+  - **Geocodificación en Settings**: Al escribir la dirección en "Mi Negocio", se geocodifica automáticamente usando Nominatim (debounce 1.5s) y se muestra un mini-mapa de confirmación debajo. El marcador es draggable para ajuste manual. Se guardan `latitude` y `longitude` en `restaurant_profiles`.
+  - **Base de Datos**: Se agregaron columnas `latitude NUMERIC(10,7)` y `longitude NUMERIC(10,7)` a `restaurant_profiles`. SQL: `ALTER TABLE restaurant_profiles ADD COLUMN latitude NUMERIC(10,7); ALTER TABLE restaurant_profiles ADD COLUMN longitude NUMERIC(10,7);`
+  - **GPS del Cliente**: Al abrir el mapa, se solicita permiso de geolocalización. Si acepta, se muestra un punto azul pulsante con su ubicación y el mapa se centra en él. Si no acepta, se muestra un aviso.
+  - **Marcadores Personalizados**: Cada restaurante se muestra con un marcador circular que contiene su `logo_url`. Al hacer clic, se abre un popup flotante glassmorphism con banner, info, 3 productos destacados y botón "Ver Local".
+  - **Nuevo Componente**: `AddressMapPreview.jsx` (mini-mapa reutilizable para Settings).
+  - **Nuevo Componente**: `RestaurantPreviewPopup.jsx` (popup flotante glassmorphism).
+  - **Nuevo Componente**: `MapPage.jsx` (página completa del mapa).
+  - **Ruta**: `/mapa` (pública, accesible desde botón "Ver en Mapa" en el Marketplace).
+  - **Dark Theme**: Tiles de OpenStreetMap oscurecidos con filtros CSS. Controles de zoom y atribución con glassmorphism.

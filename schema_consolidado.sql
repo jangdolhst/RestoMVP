@@ -55,6 +55,8 @@ CREATE TABLE restaurant_profiles (
   phone TEXT DEFAULT '',
   categories TEXT[] DEFAULT '{}',
   is_active BOOLEAN NOT NULL DEFAULT false,
+  latitude NUMERIC(10, 7),
+  longitude NUMERIC(10, 7),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
