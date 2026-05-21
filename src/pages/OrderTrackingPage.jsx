@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Clock, ChefHat, CheckCircle2, Package, RefreshCw, Trash2, History, MessageCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, Clock, ChefHat, CheckCircle2, Package, RefreshCw, Trash2, History, MessageCircle, XCircle, Navigation2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 const STATUS_CONFIG = {
@@ -290,6 +290,36 @@ const OrderTrackingPage = () => {
                     <p className="text-sm text-emerald-400 font-medium text-center">
                       🎉 ¡Tu pedido está listo para recoger!
                     </p>
+                  </div>
+                )}
+
+                {/* Esperando confirmación */}
+                {order.status === 'pendiente_confirmacion' && (
+                  <div className="px-4 py-2.5 bg-yellow-500/10 border-t border-yellow-500/20">
+                    <p className="text-sm text-yellow-400 font-medium text-center">
+                      ⏳ Envía el mensaje de WhatsApp para confirmar tu pedido
+                    </p>
+                  </div>
+                )}
+
+                {/* Botón Ir por pedido — abre Google Maps con ruta */}
+                {order.restaurant_latitude && order.restaurant_longitude && order.status !== 'pagado' && order.status !== 'cancelado' && (
+                  <div className="px-4 py-3 border-t border-white/5">
+                    <button
+                      onClick={() => {
+                        const url = `https://www.google.com/maps/dir/?api=1&destination=${order.restaurant_latitude},${order.restaurant_longitude}`;
+                        window.open(url, '_blank');
+                      }}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/25 text-blue-400 hover:text-blue-300 font-medium text-sm transition-all hover:scale-[1.01] active:scale-95"
+                    >
+                      <Navigation2 size={16} />
+                      Ir por pedido
+                    </button>
+                    {order.restaurant_address && (
+                      <p className="text-[11px] text-slate-600 text-center mt-1.5">
+                        📍 {order.restaurant_address}
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
