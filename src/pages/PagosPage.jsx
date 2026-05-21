@@ -102,22 +102,35 @@ const PagosPage = () => {
         }
       }
 
-      // Sonar mientras haya pedidos pendientes
-      if (validOrders.length > 0) {
-        playNotificationSound();
-      }
       setPrevPendingCount(validOrders.length);
       setPendingOrders(validOrders);
     } catch (err) {
       console.error('Error fetching pending orders:', err.message);
     }
-  }, [user?.id, playNotificationSound]);
+  }, [user?.id]);
 
+  // Polling de datos cada 10s
   useEffect(() => {
     fetchPendingOrders();
     intervalRef.current = setInterval(fetchPendingOrders, 10000);
     return () => clearInterval(intervalRef.current);
   }, [fetchPendingOrders]);
+
+  // Sonido continuo mientras haya pedidos pendientes (cada 2s)
+  const soundIntervalRef = useRef(null);
+
+  useEffect(() => {
+    if (pendingOrders.length > 0) {
+      // Sonar inmediatamente
+      playNotificationSound();
+      // Repetir cada 2 segundos
+      soundIntervalRef.current = setInterval(playNotificationSound, 2000);
+    } else {
+      clearInterval(soundIntervalRef.current);
+    }
+
+    return () => clearInterval(soundIntervalRef.current);
+  }, [pendingOrders.length, playNotificationSound]);
 
   // Confirmar orden → pasa a pendiente_cocina
   const handleConfirmOrder = async (orderId) => {
