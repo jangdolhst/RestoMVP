@@ -122,16 +122,14 @@ const MapPage = () => {
         setGpsError('');
       },
       (err) => {
-        // Mostrar el error exacto para debug
-        const errorDetail = `Código: ${err.code} | ${err.message}`;
-        console.error('GPS Error:', errorDetail);
+        console.error('GPS Error:', err.code, err.message);
 
         if (err.code === 1) {
           setGpsStatus('denied');
-          setGpsError(`Permiso denegado. ${errorDetail}`);
+          setGpsError('Permiso de ubicación denegado.');
         } else {
           setGpsStatus('error');
-          setGpsError(`GPS no disponible. ${errorDetail}`);
+          setGpsError('No se pudo obtener tu ubicación. Verifica que el GPS esté encendido.');
         }
       },
       {
