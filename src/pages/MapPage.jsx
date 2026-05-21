@@ -1,17 +1,14 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { ArrowLeft, Navigation, Loader2, MapPin } from 'lucide-react';
+import { ArrowLeft, Navigation, Loader2, MapPin, LocateFixed } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import RestaurantPreviewPopup from '../components/map/RestaurantPreviewPopup';
 
 // ─── Helpers para íconos personalizados ────────────────────────────
 
-/**
- * Crea un ícono de marcador circular con logo del restaurante.
- */
 const createRestaurantIcon = (logoUrl) => {
   const html = logoUrl
     ? `<div class="restaurant-marker"><img src="${logoUrl}" alt="logo" /></div>`
@@ -26,9 +23,6 @@ const createRestaurantIcon = (logoUrl) => {
   });
 };
 
-/**
- * Crea el punto azul GPS del usuario.
- */
 const userLocationIcon = L.divIcon({
   html: '<div class="user-location-dot"></div>',
   className: '',
@@ -36,16 +30,36 @@ const userLocationIcon = L.divIcon({
   iconAnchor: [9, 9],
 });
 
-// ─── Componente para mover el mapa al usuario ─────────────────────
+// ─── Componente que controla movimientos del mapa ──────────────────
 
-const FlyToUser = ({ position }) => {
+const MapController = ({ userPosition, restaurants, gpsReady, flyTrigger }) => {
   const map = useMap();
+  const hasFlownToUser = useRef(false);
 
+  // Volar a la posición del usuario cuando el GPS esté listo
   useEffect(() => {
-    if (position) {
-      map.flyTo(position, 15, { duration: 1.5 });
+    if (userPosition && gpsReady && !hasFlownToUser.current) {
+      hasFlownToUser.current = true;
+      map.flyTo(userPosition, 15, { duration: 1.5 });
     }
-  }, [position, map]);
+  }, [userPosition, gpsReady, map]);
+
+  // Re-centrar cuando el usuario presiona el botón "Mi Ubicación"
+  useEffect(() => {
+    if (flyTrigger > 0 && userPosition) {
+      map.flyTo(userPosition, 15, { duration: 1 });
+    }
+  }, [flyTrigger, userPosition, map]);
+
+  // Si no hay GPS pero hay restaurantes, ajustar bounds para mostrarlos todos
+  useEffect(() => {
+    if (!gpsReady && restaurants.length > 0) {
+      const bounds = L.latLngBounds(
+        restaurants.map((r) => [r.latitude, r.longitude])
+      );
+      map.fitBounds(bounds, { padding: [60, 60], maxZoom: 15 });
+    }
+  }, [gpsReady, restaurants, map]);
 
   return null;
 };
@@ -61,6 +75,7 @@ const MapPage = () => {
   // GPS del usuario
   const [userPosition, setUserPosition] = useState(null);
   const [gpsStatus, setGpsStatus] = useState('loading'); // 'loading' | 'granted' | 'denied'
+  const [flyTrigger, setFlyTrigger] = useState(0);
 
   // Cargar restaurantes con coordenadas
   useEffect(() => {
@@ -94,37 +109,40 @@ const MapPage = () => {
       return;
     }
 
+    // Intentar obtener posición con alta precisión
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setUserPosition([pos.coords.latitude, pos.coords.longitude]);
         setGpsStatus('granted');
       },
-      () => {
-        setGpsStatus('denied');
+      (err) => {
+        console.warn('GPS error:', err.message);
+        // Retry sin alta precisión como fallback
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            setUserPosition([pos.coords.latitude, pos.coords.longitude]);
+            setGpsStatus('granted');
+          },
+          () => {
+            setGpsStatus('denied');
+          },
+          { enableHighAccuracy: false, timeout: 15000, maximumAge: 300000 }
+        );
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
     );
   }, []);
-
-  // Centro del mapa: GPS del usuario > primer restaurante > CDMX
-  const mapCenter = useMemo(() => {
-    if (userPosition) return userPosition;
-    if (restaurants.length > 0) {
-      return [restaurants[0].latitude, restaurants[0].longitude];
-    }
-    return [19.4326, -99.1332]; // CDMX default
-  }, [userPosition, restaurants]);
 
   const handleMarkerClick = useCallback((restaurant) => {
     setSelectedRestaurant(restaurant);
   }, []);
 
   const handleCenterOnUser = useCallback(() => {
-    if (userPosition) {
-      // Force re-center via state refresh
-      setUserPosition([...userPosition]);
-    }
-  }, [userPosition]);
+    setFlyTrigger((prev) => prev + 1);
+  }, []);
+
+  // Centrar inicial: CDMX default (el MapController se encargará de moverlo)
+  const defaultCenter = [19.4326, -99.1332];
 
   if (isLoading) {
     return (
@@ -141,8 +159,8 @@ const MapPage = () => {
     <div className="h-screen w-screen relative overflow-hidden">
       {/* Mapa fullscreen */}
       <MapContainer
-        center={mapCenter}
-        zoom={userPosition ? 14 : 12}
+        center={defaultCenter}
+        zoom={5}
         style={{ height: '100%', width: '100%' }}
         zoomControl={false}
         className="dark-tiles"
@@ -152,15 +170,17 @@ const MapPage = () => {
           attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a>'
         />
 
-        {/* Zoom control en posición custom */}
-        {/* Se deja el built-in disabled, usamos controles propios abajo */}
+        {/* Controlador inteligente del mapa */}
+        <MapController
+          userPosition={userPosition}
+          restaurants={restaurants}
+          gpsReady={gpsStatus === 'granted'}
+          flyTrigger={flyTrigger}
+        />
 
         {/* Marcador GPS del usuario */}
         {userPosition && (
-          <>
-            <Marker position={userPosition} icon={userLocationIcon} />
-            <FlyToUser position={userPosition} />
-          </>
+          <Marker position={userPosition} icon={userLocationIcon} />
         )}
 
         {/* Marcadores de restaurantes */}
@@ -194,6 +214,7 @@ const MapPage = () => {
               </h1>
               <p className="text-xs text-slate-400">
                 {restaurants.length} local{restaurants.length !== 1 ? 'es' : ''} disponible{restaurants.length !== 1 ? 's' : ''}
+                {gpsStatus === 'loading' && ' · 📡 Buscando GPS...'}
               </p>
             </div>
           </div>
@@ -205,7 +226,7 @@ const MapPage = () => {
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-500/15 border border-blue-500/25 text-blue-400 hover:bg-blue-500/25 transition-colors text-sm font-medium"
               aria-label="Centrar en mi ubicación"
             >
-              <Navigation size={14} />
+              <LocateFixed size={16} />
               <span className="hidden sm:inline">Mi Ubicación</span>
             </button>
           )}
@@ -220,6 +241,14 @@ const MapPage = () => {
           <p className="text-xs text-slate-500 mt-1">
             Los restaurantes deben configurar su dirección para aparecer en el mapa.
           </p>
+        </div>
+      )}
+
+      {/* Loading GPS indicator */}
+      {gpsStatus === 'loading' && (
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[500] bg-blue-500/10 backdrop-blur-xl border border-blue-500/20 rounded-xl px-4 py-2.5 text-center flex items-center gap-2">
+          <Loader2 size={14} className="animate-spin text-blue-400" />
+          <p className="text-xs text-blue-400">Obteniendo tu ubicación GPS...</p>
         </div>
       )}
 
