@@ -1,9 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { usePOS } from '../context/POSContext';
-import { DollarSign, Search, CheckCircle, Receipt, Calendar } from 'lucide-react';
+import { DollarSign, Search, CheckCircle, Receipt, Calendar, Bell, XCircle, Clock, MessageCircle, Phone } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
 
 const PagosPage = () => {
   const { orders, updateOrderStatus } = usePOS();
+  const { user } = useAuth();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDate, setFilterDate] = useState(() => {
@@ -11,14 +14,150 @@ const PagosPage = () => {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   });
 
+  // ─── Pedidos pendientes de confirmación ──────────────────────────
+  const [pendingOrders, setPendingOrders] = useState([]);
+  const [prevPendingCount, setPrevPendingCount] = useState(0);
+  const audioRef = useRef(null);
+  const intervalRef = useRef(null);
+
+  // Crear sonido de notificación usando Web Audio API
+  const playNotificationSound = useCallback(() => {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+      // Primer beep
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(880, ctx.currentTime);
+      gain1.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc1.start(ctx.currentTime);
+      osc1.stop(ctx.currentTime + 0.3);
+
+      // Segundo beep (más alto)
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(1100, ctx.currentTime + 0.35);
+      gain2.gain.setValueAtTime(0.3, ctx.currentTime + 0.35);
+      gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.65);
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(ctx.currentTime + 0.35);
+      osc2.stop(ctx.currentTime + 0.65);
+
+      // Tercer beep (más alto aún)
+      const osc3 = ctx.createOscillator();
+      const gain3 = ctx.createGain();
+      osc3.type = 'sine';
+      osc3.frequency.setValueAtTime(1320, ctx.currentTime + 0.7);
+      gain3.gain.setValueAtTime(0.3, ctx.currentTime + 0.7);
+      gain3.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.0);
+      osc3.connect(gain3);
+      gain3.connect(ctx.destination);
+      osc3.start(ctx.currentTime + 0.7);
+      osc3.stop(ctx.currentTime + 1.0);
+
+      // Cleanup
+      setTimeout(() => ctx.close(), 2000);
+    } catch (err) {
+      console.warn('Audio notification failed:', err);
+    }
+  }, []);
+
+  // Fetch pendientes de confirmación cada 10 segundos
+  const fetchPendingOrders = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('id, order_number, client_name, phone, total, type, confirmation_code, created_at')
+        .eq('tenant_id', user.id)
+        .eq('status', 'pendiente_confirmacion')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const now = new Date();
+      const validOrders = [];
+
+      for (const order of (data || [])) {
+        const createdAt = new Date(order.created_at);
+        const minutesElapsed = (now - createdAt) / 60000;
+
+        if (minutesElapsed > 15) {
+          // Auto-cancelar órdenes viejas
+          await supabase
+            .from('orders')
+            .update({ status: 'cancelado' })
+            .eq('id', order.id);
+        } else {
+          validOrders.push({
+            ...order,
+            minutesElapsed: Math.floor(minutesElapsed),
+          });
+        }
+      }
+
+      // Sonar si hay nuevos pedidos
+      if (validOrders.length > prevPendingCount && prevPendingCount >= 0) {
+        playNotificationSound();
+      }
+      setPrevPendingCount(validOrders.length);
+      setPendingOrders(validOrders);
+    } catch (err) {
+      console.error('Error fetching pending orders:', err.message);
+    }
+  }, [user?.id, prevPendingCount, playNotificationSound]);
+
+  useEffect(() => {
+    fetchPendingOrders();
+    intervalRef.current = setInterval(fetchPendingOrders, 10000);
+    return () => clearInterval(intervalRef.current);
+  }, [fetchPendingOrders]);
+
+  // Confirmar orden → pasa a pendiente_cocina
+  const handleConfirmOrder = async (orderId) => {
+    try {
+      await supabase
+        .from('orders')
+        .update({ status: 'pendiente_cocina' })
+        .eq('id', orderId);
+      setPendingOrders((prev) => prev.filter((o) => o.id !== orderId));
+      // También actualizar en el contexto POS si existe
+      updateOrderStatus(orderId, 'pendiente_cocina');
+    } catch (err) {
+      console.error('Error confirmando orden:', err.message);
+    }
+  };
+
+  // Rechazar orden → cancelado
+  const handleRejectOrder = async (orderId) => {
+    try {
+      await supabase
+        .from('orders')
+        .update({ status: 'cancelado' })
+        .eq('id', orderId);
+      setPendingOrders((prev) => prev.filter((o) => o.id !== orderId));
+      updateOrderStatus(orderId, 'cancelado');
+    } catch (err) {
+      console.error('Error rechazando orden:', err.message);
+    }
+  };
+
+  // ─── Filtro de órdenes normales ──────────────────────────────────
   const filteredOrders = orders.filter(o => {
-    // 1. Filtrar por Fecha
+    // Excluir pendiente_confirmacion y cancelado
+    if (o.status === 'pendiente_confirmacion' || o.status === 'cancelado') return false;
+
     const orderDate = new Date(o.createdAt);
     const orderDateStr = `${orderDate.getFullYear()}-${String(orderDate.getMonth() + 1).padStart(2, '0')}-${String(orderDate.getDate()).padStart(2, '0')}`;
     
     if (filterDate && orderDateStr !== filterDate) return false;
 
-    // 2. Filtrar por Búsqueda (Cliente o Mesa)
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       const matchClient = o.clientName.toLowerCase().includes(term);
@@ -31,11 +170,93 @@ const PagosPage = () => {
 
   return (
     <div className="flex-1 p-6 overflow-y-auto h-[calc(100vh-100px)]">
+      {/* ─── Sección: Pedidos por Confirmar ─────────────────────── */}
+      {pendingOrders.length > 0 && (
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="relative">
+              <Bell size={22} className="text-amber-400 animate-pulse" />
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[10px] text-white font-bold flex items-center justify-center">
+                {pendingOrders.length}
+              </span>
+            </div>
+            <h2 className="text-xl font-bold text-amber-400">
+              Pedidos por Confirmar
+            </h2>
+            <span className="text-xs text-slate-500 bg-slate-800 px-2 py-1 rounded-full">
+              Verifica el WhatsApp antes de confirmar
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {pendingOrders.map((order) => (
+              <div
+                key={order.id}
+                className="glass-card p-4 border-l-4 border-l-amber-500 relative overflow-hidden"
+                style={{ animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}
+              >
+                {/* Glow de fondo */}
+                <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 to-transparent pointer-events-none" />
+
+                <div className="relative z-10">
+                  {/* Header: código + tiempo */}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl font-black text-amber-400 tracking-widest font-mono">
+                        {order.confirmation_code}
+                      </span>
+                      <span className="text-xs text-slate-500">#{order.order_number}</span>
+                    </div>
+                    <div className="flex items-center gap-1 text-xs text-slate-500">
+                      <Clock size={12} />
+                      <span>{order.minutesElapsed}min</span>
+                      {order.minutesElapsed >= 10 && (
+                        <span className="text-red-400 font-bold ml-1">⚠️</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Info cliente */}
+                  <div className="space-y-1 mb-3">
+                    <p className="text-sm text-white font-medium">{order.client_name}</p>
+                    {order.phone && (
+                      <p className="text-xs text-slate-400 flex items-center gap-1">
+                        <Phone size={11} />
+                        {order.phone}
+                      </p>
+                    )}
+                    <p className="text-lg font-bold text-emerald-400">${Number(order.total).toFixed(2)}</p>
+                  </div>
+
+                  {/* Botones confirmar/rechazar */}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleConfirmOrder(order.id)}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-white font-bold text-sm transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-emerald-500/20"
+                    >
+                      <CheckCircle size={16} />
+                      Confirmar
+                    </button>
+                    <button
+                      onClick={() => handleRejectOrder(order.id)}
+                      className="px-3 py-2.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-sm transition-all"
+                      title="Rechazar orden"
+                    >
+                      <XCircle size={16} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ─── Sección: Historial de Órdenes ──────────────────────── */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-        <h1 className="text-3xl font-bold text-white tracking-tight">Gestión de Pagos e Historial</h1>
+        <h1 className="text-3xl font-bold text-white tracking-tight">Órdenes e Historial</h1>
         
         <div className="flex items-center gap-4 w-full md:w-auto">
-          {/* Filtro por Fecha */}
           <div className="relative">
             <input 
               type="date" 
@@ -46,7 +267,6 @@ const PagosPage = () => {
             <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           </div>
 
-          {/* Barra de Búsqueda */}
           <div className="relative flex-1 md:w-64">
             <input 
               type="text" 

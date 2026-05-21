@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { ChefHat, CreditCard, LayoutGrid, LogOut, QrCode, X, Copy, Check, Store } from 'lucide-react';
+import { ChefHat, ClipboardList, LayoutGrid, LogOut, QrCode, X, Copy, Check, Store } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -41,7 +41,7 @@ const MainLayout = () => {
               }
             >
               <LayoutGrid size={18} />
-              <span className="hidden sm:inline">Órdenes</span>
+              <span className="hidden sm:inline">Menú</span>
             </NavLink>
             <NavLink
               to="/pagos"
@@ -53,8 +53,8 @@ const MainLayout = () => {
                 }`
               }
             >
-              <CreditCard size={18} />
-              <span className="hidden sm:inline">Pagos</span>
+              <ClipboardList size={18} />
+              <span className="hidden sm:inline">Órdenes</span>
             </NavLink>
             <NavLink
               to="/settings"

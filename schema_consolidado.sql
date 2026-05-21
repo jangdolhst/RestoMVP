@@ -83,7 +83,8 @@ CREATE TABLE orders (
   phone TEXT,
   type TEXT NOT NULL CHECK (type IN ('online', 'local')),
   total NUMERIC(10, 2) NOT NULL,
-  status TEXT NOT NULL DEFAULT 'pendiente_cocina' CHECK (status IN ('pendiente_cocina', 'listo', 'pagado')),
+  status TEXT NOT NULL DEFAULT 'pendiente_cocina' CHECK (status IN ('pendiente_confirmacion', 'pendiente_cocina', 'listo', 'pagado', 'cancelado')),
+  confirmation_code CHAR(4),
   order_token UUID DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );

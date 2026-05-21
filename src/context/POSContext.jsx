@@ -174,6 +174,16 @@ export const POSProvider = ({ children }) => {
     // Generar token secreto para seguimiento del cliente
     const orderToken = crypto.randomUUID();
 
+    // Generar código de confirmación de 4 caracteres (sin chars ambiguos)
+    const CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+    const confirmationCode = Array.from({ length: 4 }, () =>
+      CHARS[Math.floor(Math.random() * CHARS.length)]
+    ).join('');
+
+    // Status: online de cliente → pendiente_confirmacion, resto → pendiente_cocina
+    const isOnlineClientOrder = isClientMenu && orderIsOnline;
+    const initialStatus = isOnlineClientOrder ? 'pendiente_confirmacion' : 'pendiente_cocina';
+
     const newOrderData = {
       tenant_id: currentTenantId,
       client_name: clientName || 'Sin Nombre',
@@ -181,7 +191,8 @@ export const POSProvider = ({ children }) => {
       phone: phone || null,
       type: orderIsOnline ? 'online' : 'local',
       total: cartTotal,
-      status: 'pendiente_cocina',
+      status: initialStatus,
+      confirmation_code: isOnlineClientOrder ? confirmationCode : null,
       order_token: orderToken,
     };
 
@@ -236,6 +247,21 @@ export const POSProvider = ({ children }) => {
         }
       }
 
+      // Obtener teléfono del restaurante para WhatsApp (solo para órdenes online de cliente)
+      let restaurantPhone = '';
+      if (isOnlineClientOrder) {
+        try {
+          const { data: profile } = await supabase
+            .from('restaurant_profiles')
+            .select('phone, name')
+            .eq('id', currentTenantId)
+            .maybeSingle();
+          restaurantPhone = profile?.phone || '';
+        } catch {
+          // silenciar
+        }
+      }
+
       // Actualización local (solo para dueño, no cliente)
       if (!isClientMenu) {
         const newOrderFull = { 
@@ -250,8 +276,20 @@ export const POSProvider = ({ children }) => {
         setOrders(prev => [newOrderFull, ...prev]);
       }
 
+      // Guardar items para el modal de confirmación antes de limpiar
+      const savedItems = [...cartItems];
+      const savedTotal = cartTotal;
       clearCart();
-      return { success: true, orderToken };
+
+      return {
+        success: true,
+        orderToken,
+        confirmationCode: isOnlineClientOrder ? confirmationCode : null,
+        orderNumber: createdOrder.order_number,
+        restaurantPhone,
+        items: savedItems,
+        total: savedTotal,
+      };
     } catch (err) {
       console.error('Error en placeOrder:', err);
       return false;

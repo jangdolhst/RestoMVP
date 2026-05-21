@@ -1,9 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Clock, ChefHat, CheckCircle2, Package, RefreshCw, Trash2, History } from 'lucide-react';
+import { ArrowLeft, Clock, ChefHat, CheckCircle2, Package, RefreshCw, Trash2, History, MessageCircle, XCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 const STATUS_CONFIG = {
+  pendiente_confirmacion: {
+    label: 'Esperando Confirmación',
+    icon: MessageCircle,
+    color: 'text-yellow-400',
+    bg: 'bg-yellow-500/10 border-yellow-500/20',
+    pulse: true,
+  },
   pendiente_cocina: {
     label: 'En Cocina',
     icon: ChefHat,
@@ -23,6 +30,13 @@ const STATUS_CONFIG = {
     icon: Package,
     color: 'text-blue-400',
     bg: 'bg-blue-500/10 border-blue-500/20',
+    pulse: false,
+  },
+  cancelado: {
+    label: 'Cancelado',
+    icon: XCircle,
+    color: 'text-red-400',
+    bg: 'bg-red-500/10 border-red-500/20',
     pulse: false,
   },
 };
@@ -125,8 +139,8 @@ const OrderTrackingPage = () => {
     );
   }
 
-  const activeOrders = orders.filter(o => o.status !== 'pagado');
-  const historyOrders = orders.filter(o => o.status === 'pagado');
+  const activeOrders = orders.filter(o => o.status !== 'pagado' && o.status !== 'cancelado');
+  const historyOrders = orders.filter(o => o.status === 'pagado' || o.status === 'cancelado');
   const displayOrders = showHistory ? historyOrders : activeOrders;
 
   return (

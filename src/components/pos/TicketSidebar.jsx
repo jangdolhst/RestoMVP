@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { usePOS } from '../../context/POSContext';
 import { Trash2, Send, X, AlertCircle } from 'lucide-react';
 import PhoneInput from '../ui/PhoneInput';
+import WhatsAppConfirmationModal from '../ui/WhatsAppConfirmationModal';
 
 const TicketSidebar = ({ isClientMode = false, isOpen = false, onClose }) => {
   const navigate = useNavigate();
@@ -24,6 +25,7 @@ const TicketSidebar = ({ isClientMode = false, isOpen = false, onClose }) => {
   const [toastMsg, setToastMsg] = useState(null);
   const [isSending, setIsSending] = useState(false);
   const [isPhoneValid, setIsPhoneValid] = useState(false);
+  const [confirmationData, setConfirmationData] = useState(null);
 
   const showToast = (msg) => {
     setToastMsg(msg);
@@ -49,8 +51,19 @@ const TicketSidebar = ({ isClientMode = false, isOpen = false, onClose }) => {
 
     if (result && result.success) {
       if (isClientMode) {
-        // Redirigir al cliente a la página de seguimiento
-        navigate('/pedidos');
+        if (result.confirmationCode) {
+          // Mostrar modal de confirmación WhatsApp
+          setConfirmationData({
+            confirmationCode: result.confirmationCode,
+            orderNumber: result.orderNumber,
+            clientName,
+            items: result.items,
+            total: result.total,
+            restaurantPhone: result.restaurantPhone,
+          });
+        } else {
+          navigate('/pedidos');
+        }
       } else {
         showToast('¡Orden enviada a la cocina!');
         if (onClose) onClose();
@@ -244,6 +257,21 @@ const TicketSidebar = ({ isClientMode = false, isOpen = false, onClose }) => {
         </button>
       </div>
     </aside>
+
+      {/* Modal de Confirmación WhatsApp */}
+      {confirmationData && (
+        <WhatsAppConfirmationModal
+          {...confirmationData}
+          onClose={() => {
+            setConfirmationData(null);
+            navigate('/pedidos');
+          }}
+          onGoToTracking={() => {
+            setConfirmationData(null);
+            navigate('/pedidos');
+          }}
+        />
+      )}
     </>
   );
 };
