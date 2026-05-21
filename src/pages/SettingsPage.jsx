@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Save, Upload, Image, Store, Loader2, CheckCircle2, AlertCircle, X, MapPin } from 'lucide-react';
+import { Save, Upload, Image, Store, Loader2, CheckCircle2, AlertCircle, X, MapPin, Search } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import PhoneInput from '../components/ui/PhoneInput';
@@ -81,42 +81,109 @@ const SettingsPage = () => {
   };
 
   /**
-   * Geocodificar la dirección usando Nominatim (OpenStreetMap) con debounce.
+   * Geocodificar la dirección usando Nominatim (OpenStreetMap).
+   * Devuelve { lat, lng } o null si falla.
    */
-  const geocodeAddress = useCallback((address) => {
-    if (geocodeTimerRef.current) clearTimeout(geocodeTimerRef.current);
+  const runGeocode = useCallback(async (address) => {
+    if (!address || address.trim().length < 5) return null;
 
-    if (!address || address.trim().length < 5) return;
+    try {
+      const encoded = encodeURIComponent(address.trim());
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encoded}&limit=1&addressdetails=0`,
+        {
+          headers: {
+            'Accept': 'application/json',
+            'Accept-Language': 'es',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        console.error('Nominatim HTTP error:', response.status);
+        return null;
+      }
+
+      const results = await response.json();
+
+      if (results && results.length > 0) {
+        return {
+          lat: parseFloat(results[0].lat),
+          lng: parseFloat(results[0].lon),
+        };
+      }
+
+      console.warn('Nominatim: sin resultados para:', address);
+      return null;
+    } catch (err) {
+      console.error('Error geocodificando dirección:', err);
+      return null;
+    }
+  }, []);
+
+  /**
+   * Geocodificación con debounce al teclear.
+   */
+  const geocodeWithDebounce = useCallback((address) => {
+    if (geocodeTimerRef.current) clearTimeout(geocodeTimerRef.current);
 
     geocodeTimerRef.current = setTimeout(async () => {
       setIsGeocoding(true);
-      try {
-        const encoded = encodeURIComponent(address.trim());
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encoded}&limit=1`,
-          { headers: { 'Accept-Language': 'es' } }
-        );
-        const results = await response.json();
+      const result = await runGeocode(address);
+      if (result) {
+        setProfile(prev => ({
+          ...prev,
+          latitude: result.lat,
+          longitude: result.lng,
+        }));
+      }
+      setIsGeocoding(false);
+    }, 1500);
+  }, [runGeocode]);
 
-        if (results.length > 0) {
-          const { lat, lon } = results[0];
+  /**
+   * Auto-geocodificar al cargar si hay dirección pero no coordenadas.
+   */
+  useEffect(() => {
+    if (isLoading) return;
+    if (profile.address && profile.address.trim().length >= 5 && !profile.latitude && !profile.longitude) {
+      const autoGeocode = async () => {
+        setIsGeocoding(true);
+        const result = await runGeocode(profile.address);
+        if (result) {
           setProfile(prev => ({
             ...prev,
-            latitude: parseFloat(lat),
-            longitude: parseFloat(lon),
+            latitude: result.lat,
+            longitude: result.lng,
           }));
         }
-      } catch (err) {
-        console.error('Error geocodificando dirección:', err.message);
-      } finally {
         setIsGeocoding(false);
-      }
-    }, 1500);
-  }, []);
+      };
+      autoGeocode();
+    }
+  }, [isLoading, profile.address, profile.latitude, profile.longitude, runGeocode]);
 
   const handleAddressChange = (value) => {
     handleChange('address', value);
-    geocodeAddress(value);
+    geocodeWithDebounce(value);
+  };
+
+  /**
+   * Botón manual para forzar geocodificación.
+   */
+  const handleManualGeocode = async () => {
+    setIsGeocoding(true);
+    const result = await runGeocode(profile.address);
+    if (result) {
+      setProfile(prev => ({
+        ...prev,
+        latitude: result.lat,
+        longitude: result.lng,
+      }));
+    } else {
+      alert('No se pudo encontrar la ubicación. Intenta con una dirección más específica (ej: incluye ciudad y país).');
+    }
+    setIsGeocoding(false);
   };
 
   const handleMapPositionChange = (lat, lng) => {
@@ -412,6 +479,16 @@ const SettingsPage = () => {
                 <CheckCircle2 size={12} />
                 Ubicación detectada ({profile.latitude.toFixed(4)}, {profile.longitude.toFixed(4)})
               </p>
+            )}
+            {!profile.latitude && !profile.longitude && profile.address && profile.address.trim().length >= 5 && !isGeocoding && (
+              <button
+                type="button"
+                onClick={handleManualGeocode}
+                className="mt-2 text-xs text-orange-400 hover:text-orange-300 underline underline-offset-2 flex items-center gap-1 transition-colors"
+              >
+                <Search size={12} />
+                Buscar ubicación manualmente
+              </button>
             )}
             <AddressMapPreview
               latitude={profile.latitude}
