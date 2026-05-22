@@ -1,14 +1,17 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, ChefHat, MapPin, Clock, Store, Sparkles, X, Package, Map } from 'lucide-react';
+import { Search, ChefHat, MapPin, Clock, Store, Sparkles, X, Package, Map, Navigation, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import useCityDetection, { haversineDistance } from '../hooks/useCityDetection';
+
+const MAX_DISTANCE_KM = 15;
 
 const FOOD_CATEGORIES = [
   'Todos', 'Pizza', 'Hamburguesas', 'Sushi', 'Tacos', 'Mariscos',
   'Italiana', 'China', 'Postres', 'Café', 'Saludable', 'BBQ', 'Pollo'
 ];
 
-const RestaurantCard = ({ restaurant, onClick }) => {
+const RestaurantCard = ({ restaurant, onClick, distance }) => {
   const placeholderBanner = `https://ui-avatars.com/api/?name=${encodeURIComponent(restaurant.name)}&background=f97316&color=fff&size=400&font-size=0.33&bold=true&format=svg`;
 
   return (
@@ -74,6 +77,12 @@ const RestaurantCard = ({ restaurant, onClick }) => {
               {restaurant.categories.slice(0, 2).join(' · ')}
             </span>
           )}
+          {distance !== null && distance !== undefined && (
+            <span className="flex items-center gap-1.5 bg-orange-500/10 px-2.5 py-1 rounded-lg border border-orange-500/20 text-orange-400 ml-auto">
+              <Navigation size={12} />
+              {distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`}
+            </span>
+          )}
         </div>
       </div>
     </button>
@@ -87,6 +96,10 @@ const MarketplacePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('Todos');
   const [hasOrders, setHasOrders] = useState(false);
+
+  // Detección de ciudad via GPS
+  const { city, state, lat: userLat, lng: userLng, isLoading: gpsLoading, error: gpsError, retry: retryGps } = useCityDetection();
+  const hasGps = userLat !== null && userLng !== null;
 
   // Verificar si hay pedidos en localStorage
   useEffect(() => {
@@ -104,7 +117,7 @@ const MarketplacePage = () => {
       try {
         const { data, error } = await supabase
           .from('restaurant_profiles')
-          .select('id, name, description, logo_url, banner_url, address, phone, categories, is_active')
+          .select('id, name, description, logo_url, banner_url, address, phone, categories, is_active, latitude, longitude')
           .eq('is_active', true)
           .order('name', { ascending: true });
 
@@ -124,6 +137,27 @@ const MarketplacePage = () => {
   const filteredRestaurants = useMemo(() => {
     let filtered = restaurants;
 
+    // Calcular distancia para cada restaurante
+    if (hasGps) {
+      filtered = filtered.map(r => {
+        if (r.latitude && r.longitude) {
+          const dist = haversineDistance(userLat, userLng, r.latitude, r.longitude);
+          return { ...r, distance: dist };
+        }
+        return { ...r, distance: null };
+      });
+
+      // Filtrar por radio máximo (solo los que tienen coordenadas)
+      filtered = filtered.filter(r => r.distance === null || r.distance <= MAX_DISTANCE_KM);
+
+      // Ordenar por distancia (más cercanos primero, sin coords al final)
+      filtered.sort((a, b) => {
+        if (a.distance === null) return 1;
+        if (b.distance === null) return -1;
+        return a.distance - b.distance;
+      });
+    }
+
     // Filtro por búsqueda
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
@@ -142,7 +176,7 @@ const MarketplacePage = () => {
     }
 
     return filtered;
-  }, [restaurants, searchQuery, activeCategory]);
+  }, [restaurants, searchQuery, activeCategory, hasGps, userLat, userLng]);
 
   return (
     <div className="min-h-screen text-white relative overflow-x-hidden">
@@ -161,7 +195,41 @@ const MarketplacePage = () => {
             </span>
           </div>
 
-          <div className="hidden lg:flex items-center gap-2">
+          {/* City indicator — mobile */}
+          <div className="flex items-center gap-1.5 lg:hidden">
+            {gpsLoading ? (
+              <Loader2 size={14} className="animate-spin text-slate-500" />
+            ) : city ? (
+              <button onClick={retryGps} className="flex items-center gap-1 text-xs text-slate-400 hover:text-orange-400 transition-colors px-2 py-1 rounded-lg bg-white/5 border border-white/5">
+                <MapPin size={12} className="text-orange-400" />
+                <span className="max-w-[120px] truncate">{city}</span>
+              </button>
+            ) : gpsError ? (
+              <button onClick={retryGps} className="flex items-center gap-1 text-xs text-slate-500 hover:text-orange-400 transition-colors px-2 py-1 rounded-lg bg-white/5 border border-white/5">
+                <MapPin size={12} />
+                <span>Activar GPS</span>
+              </button>
+            ) : null}
+          </div>
+
+          <div className="hidden lg:flex items-center gap-3">
+            {/* City indicator — PC */}
+            {gpsLoading ? (
+              <div className="flex items-center gap-1.5 text-sm text-slate-500">
+                <Loader2 size={14} className="animate-spin" />
+                <span>Detectando...</span>
+              </div>
+            ) : city ? (
+              <button onClick={retryGps} className="flex items-center gap-1.5 text-sm text-slate-300 hover:text-orange-400 transition-colors px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:border-orange-500/20">
+                <MapPin size={14} className="text-orange-400" />
+                {city}{state ? `, ${state}` : ''}
+              </button>
+            ) : gpsError ? (
+              <button onClick={retryGps} className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-orange-400 transition-colors px-3 py-1.5 rounded-lg bg-white/5 border border-white/10">
+                <MapPin size={14} />
+                Activar GPS
+              </button>
+            ) : null}
             {hasOrders && (
               <button
                 onClick={() => navigate('/pedidos')}
@@ -285,6 +353,7 @@ const MarketplacePage = () => {
                   <RestaurantCard
                     key={restaurant.id}
                     restaurant={restaurant}
+                    distance={restaurant.distance}
                     onClick={() => navigate(`/menu/${restaurant.id}`)}
                   />
                 ))}
