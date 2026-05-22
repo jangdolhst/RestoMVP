@@ -81,3 +81,10 @@ El siguiente paso crÃ­tico es la **IntegraciÃ³n de Pagos y Suscripciones con
   - **Navegación renombrada**: "Órdenes" → "Menú", "Pagos" → "Órdenes".
   - **Archivos**: `WhatsAppConfirmationModal.jsx` (nuevo), `POSContext.jsx`, `TicketSidebar.jsx`, `PagosPage.jsx`, `OrderTrackingPage.jsx`, `MainLayout.jsx`.
   - **DB**: Columna `confirmation_code CHAR(4)` + status CHECK actualizado con `pendiente_confirmacion` y `cancelado`.
+- **Mobile Bottom Navigation + Perfil (21/05/2026)**:
+  - **Bottom Nav**: `MobileBottomNav.jsx` — barra inferior glassmorphism con 5 tabs (Inicio, Pedidos, Mapa, Perfil, Negocios). Solo visible en mobile (`lg:hidden`). Se oculta en `/menu/:tenantId` y rutas admin.
+  - **Perfil**: `UserProfilePage.jsx` — guarda nombre y teléfono en `localStorage` key `resto_user_profile`. Sin registro.
+  - **Auto-fill**: `POSContext.jsx` lee el perfil de localStorage y pre-rellena `clientName` y `phone` al entrar a un menú de restaurante.
+  - **Ajustes mobile**: MarketplacePage oculta botones header en mobile, OrderTrackingPage/MapPage con `pb-28` para no tapar bottom nav, footer oculto en mobile.
+  - **Safe-area**: `viewport-fit=cover` en index.html + `.pb-safe` en CSS para iPhone.
+  - **Notificador global**: `PendingOrderNotifier.jsx` en MainLayout reproduce sonido en TODAS las páginas. Evento `orders-updated` detiene sonido inmediatamente al confirmar/rechazar.
