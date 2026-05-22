@@ -19,8 +19,15 @@ const TicketSidebar = ({ isClientMode = false, isOpen = false, onClose }) => {
     isOnline,
     setIsOnline,
     removeFromCart, 
-    placeOrder 
+    placeOrder,
+    tableCount,
+    orders
   } = usePOS();
+
+  // Calcular mesas ocupadas (órdenes activas que tienen mesa asignada)
+  const occupiedTables = (orders || []).filter(o => 
+    o.tableName && ['pendiente_cocina', 'pendiente_confirmacion'].includes(o.status)
+  ).map(o => o.tableName);
 
   const [toastMsg, setToastMsg] = useState(null);
   const [isSending, setIsSending] = useState(false);
@@ -40,7 +47,7 @@ const TicketSidebar = ({ isClientMode = false, isOpen = false, onClose }) => {
       if (!phone.trim()) return showToast('Por favor ingresa tu número de celular.');
       if (!isPhoneValid) return showToast('El número de celular no es válido. Verifica que esté completo.');
     } else {
-      if (!clientName.trim() && !tableName.trim()) return showToast('Ingresa un nombre de cliente o mesa.');
+      if (!clientName.trim()) return showToast('Ingresa un nombre de cliente.');
       if (isOnline && !phone.trim()) return showToast('Ingresa el celular del cliente para el pedido en línea.');
       if (isOnline && phone.trim() && !isPhoneValid) return showToast('El número de celular no es válido. Verifica que esté completo.');
     }
@@ -197,16 +204,25 @@ const TicketSidebar = ({ isClientMode = false, isOpen = false, onClose }) => {
             </div>
           ) : (
             <>
-              {!isOnline && (
+              {!isOnline && tableCount > 0 && (
                 <div className="flex items-center gap-3">
                   <label className="text-sm text-slate-300 w-16">Mesa:</label>
-                  <input 
-                    type="text" 
+                  <select
                     value={tableName}
                     onChange={(e) => setTableName(e.target.value)}
-                    className="glass-input flex-1 py-1.5" 
-                    placeholder="Ej. Mesa 4"
-                  />
+                    className="glass-input flex-1 py-1.5 cursor-pointer"
+                  >
+                    <option value="">Para llevar (sin mesa)</option>
+                    {Array.from({ length: tableCount }, (_, i) => {
+                      const mesa = `Mesa ${i + 1}`;
+                      const isOccupied = occupiedTables.includes(mesa);
+                      return (
+                        <option key={i} value={mesa} disabled={isOccupied}>
+                          {mesa}{isOccupied ? ' (ocupada)' : ''}
+                        </option>
+                      );
+                    })}
+                  </select>
                 </div>
               )}
               

@@ -34,6 +34,7 @@ const SettingsPage = () => {
     is_active: false,
     latitude: null,
     longitude: null,
+    table_count: 0,
   });
 
   // Cargar perfil existente
@@ -45,7 +46,7 @@ const SettingsPage = () => {
       try {
         const { data, error } = await supabase
           .from('restaurant_profiles')
-          .select('name, description, logo_url, banner_url, address, phone, categories, is_active, latitude, longitude')
+          .select('name, description, logo_url, banner_url, address, phone, categories, is_active, latitude, longitude, table_count')
           .eq('id', user.id)
           .maybeSingle();
 
@@ -63,6 +64,7 @@ const SettingsPage = () => {
             is_active: data.is_active || false,
             latitude: data.latitude || null,
             longitude: data.longitude || null,
+            table_count: data.table_count || 0,
           });
         }
       } catch (err) {
@@ -269,6 +271,7 @@ const SettingsPage = () => {
           is_active: profile.is_active,
           latitude: profile.latitude,
           longitude: profile.longitude,
+          table_count: profile.table_count,
           updated_at: new Date().toISOString(),
         }, { onConflict: 'id' });
 
@@ -506,6 +509,24 @@ const SettingsPage = () => {
               onChange={(e164) => handleChange('phone', e164)}
               placeholder="Teléfono del negocio"
             />
+          </div>
+
+          {/* Cantidad de Mesas */}
+          <div>
+            <label className="text-sm text-slate-300 font-medium mb-1 block">
+              Cantidad de Mesas
+            </label>
+            <p className="text-xs text-slate-500 mb-2">Configura cuántas mesas tiene tu local. Aparecerán en el POS como lista desplegable.</p>
+            <input
+              type="number"
+              min="0"
+              max="50"
+              value={profile.table_count}
+              onChange={(e) => handleChange('table_count', Math.max(0, Math.min(50, parseInt(e.target.value) || 0)))}
+              className="glass-input w-32 py-2 text-center text-lg font-bold"
+              placeholder="0"
+            />
+            <p className="text-xs text-slate-500 mt-1">{profile.table_count === 0 ? 'Sin mesas (solo pedidos para llevar)' : `${profile.table_count} mesa${profile.table_count > 1 ? 's' : ''} disponible${profile.table_count > 1 ? 's' : ''}`}</p>
           </div>
         </div>
 

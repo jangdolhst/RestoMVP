@@ -38,6 +38,7 @@ export const POSProvider = ({ children }) => {
   const [phone, setPhone] = useState('');
   const [isOnline, setIsOnline] = useState(false);
   const [currentCategoryId, setCurrentCategoryId] = useState(null);
+  const [tableCount, setTableCount] = useState(0);
 
   // Auto-fill desde perfil guardado (solo en modo cliente)
   useEffect(() => {
@@ -72,6 +73,12 @@ export const POSProvider = ({ children }) => {
         supabase.from('products').select('id, tenant_id, category_id, name, price, ingredients, image_url, created_at').eq('tenant_id', currentTenantId).order('created_at', { ascending: true }),
         supabase.from('extras').select('id, tenant_id, name, price, created_at').eq('tenant_id', currentTenantId).order('created_at', { ascending: true }),
       ];
+
+      // Cargar table_count del perfil del restaurante (para dueño)
+      if (!isClientMenu) {
+        supabase.from('restaurant_profiles').select('table_count').eq('id', currentTenantId).maybeSingle()
+          .then(({ data }) => { if (data?.table_count != null) setTableCount(data.table_count); });
+      }
 
       // Solo el dueño necesita las órdenes (RLS bloquea al anon de todas formas)
       if (!isClientMenu) {
@@ -420,6 +427,7 @@ export const POSProvider = ({ children }) => {
     visibleItems,
     orders,
     isLoading,
+    tableCount,
     addToCart,
     removeFromCart,
     clearCart,
