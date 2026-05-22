@@ -390,3 +390,8 @@
 .mini-map-container .leaflet-container {
   border-radius: 0.75rem;
 }
+
+/* Safe area inset para iPhone notch/home indicator */
+.pb-safe {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}

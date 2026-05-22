@@ -274,7 +274,7 @@ const MapPage = () => {
 
       {/* Info si no hay restaurantes */}
       {restaurants.length === 0 && (
-        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-[500] bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-2xl px-6 py-4 text-center max-w-sm">
+        <div className="absolute bottom-28 lg:bottom-20 left-1/2 -translate-x-1/2 z-[500] bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-2xl px-6 py-4 text-center max-w-sm">
           <MapPin className="mx-auto text-slate-500 mb-2" size={28} />
           <p className="text-sm text-slate-300 font-medium">No hay restaurantes con ubicación</p>
           <p className="text-xs text-slate-500 mt-1">
@@ -285,7 +285,7 @@ const MapPage = () => {
 
       {/* Loading GPS indicator */}
       {gpsStatus === 'loading' && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[500] bg-blue-500/10 backdrop-blur-xl border border-blue-500/20 rounded-xl px-4 py-2.5 text-center flex items-center gap-2">
+        <div className="absolute bottom-24 lg:bottom-6 left-1/2 -translate-x-1/2 z-[500] bg-blue-500/10 backdrop-blur-xl border border-blue-500/20 rounded-xl px-4 py-2.5 text-center flex items-center gap-2">
           <Loader2 size={14} className="animate-spin text-blue-400" />
           <p className="text-xs text-blue-400">Obteniendo tu ubicación GPS...</p>
         </div>
@@ -293,7 +293,7 @@ const MapPage = () => {
 
       {/* GPS denegado o error */}
       {(gpsStatus === 'denied' || gpsStatus === 'error') && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[500] bg-amber-500/10 backdrop-blur-xl border border-amber-500/20 rounded-2xl px-5 py-3 text-center max-w-sm w-[90vw]">
+        <div className="absolute bottom-24 lg:bottom-6 left-1/2 -translate-x-1/2 z-[500] bg-amber-500/10 backdrop-blur-xl border border-amber-500/20 rounded-2xl px-5 py-3 text-center max-w-sm w-[90vw]">
           <p className="text-xs text-amber-400 mb-2">
             {gpsError || '📍 Activa tu GPS para ver los restaurantes más cercanos a ti.'}
           </p>

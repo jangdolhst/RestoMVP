@@ -39,6 +39,18 @@ export const POSProvider = ({ children }) => {
   const [isOnline, setIsOnline] = useState(false);
   const [currentCategoryId, setCurrentCategoryId] = useState(null);
 
+  // Auto-fill desde perfil guardado (solo en modo cliente)
+  useEffect(() => {
+    if (!isClientMenu) return;
+    try {
+      const profile = JSON.parse(localStorage.getItem('resto_user_profile') || '{}');
+      if (profile.name && !clientName) setClientName(profile.name);
+      if (profile.phone && !phone) setPhone(profile.phone);
+    } catch {
+      // silenciar
+    }
+  }, [isClientMenu]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // --- Cargar datos iniciales ---
   useEffect(() => {
     const fetchData = async () => {

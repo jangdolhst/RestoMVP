@@ -161,7 +161,7 @@ const MarketplacePage = () => {
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="hidden lg:flex items-center gap-2">
             {hasOrders && (
               <button
                 onClick={() => navigate('/pedidos')}
@@ -260,7 +260,7 @@ const MarketplacePage = () => {
       </section>
 
       {/* Restaurant Grid */}
-      <section className="relative z-10 px-4 sm:px-6 pb-20">
+      <section className="relative z-10 px-4 sm:px-6 pb-28 lg:pb-20">
         <div className="max-w-5xl mx-auto">
           {isLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -316,8 +316,8 @@ const MarketplacePage = () => {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="relative z-10 border-t border-white/5 py-6 px-4 text-center">
+      {/* Footer — oculto en mobile (bottom nav lo reemplaza) */}
+      <footer className="relative z-10 border-t border-white/5 py-6 px-4 text-center hidden lg:block">
         <p className="text-xs text-slate-600">
           © {new Date().getFullYear()} RestoMVP — Conectando restaurantes con sus clientes.
         </p>

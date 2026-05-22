@@ -195,7 +195,7 @@ const OrderTrackingPage = () => {
       </header>
 
       {/* Content */}
-      <main className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+      <main className="max-w-2xl mx-auto px-4 py-6 pb-28 lg:pb-6 space-y-4">
         {displayOrders.length === 0 ? (
           /* Estado vacío */
           <div className="text-center py-20 animate-fade-in">
