@@ -10,10 +10,10 @@
  *   - onClick: function — handler opcional de clic
  */
 const SIZES = {
-  sm: { icon: 'h-8', text: 'h-4', gap: 'gap-2' },
-  md: { icon: 'h-10', text: 'h-5', gap: 'gap-2.5' },
-  lg: { icon: 'h-14', text: 'h-6', gap: 'gap-3' },
-  xl: { icon: 'h-20', text: 'h-8', gap: 'gap-4' },
+  sm: { icon: 'h-8', text: 'h-3.5', gap: 'gap-1' },
+  md: { icon: 'h-10', text: 'h-4', gap: 'gap-1.5' },
+  lg: { icon: 'h-14', text: 'h-5', gap: 'gap-1.5' },
+  xl: { icon: 'h-20', text: 'h-7', gap: 'gap-2' },
 };
 
 const Logo = ({ size = 'md', showText = true, iconOnly = false, className = '', onClick }) => {
@@ -31,7 +31,7 @@ const Logo = ({ size = 'md', showText = true, iconOnly = false, className = '', 
         <img
           src="/assets/jamm-free-text.png"
           alt="JAMM FREE"
-          className={`${s.text} w-auto object-contain brightness-0 invert`}
+          className={`${s.text} w-auto object-contain`}
           draggable={false}
         />
       )}

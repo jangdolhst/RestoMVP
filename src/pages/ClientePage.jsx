@@ -65,7 +65,7 @@ const ClientePage = () => {
               {restaurantInfo.name}
             </span>
           ) : (
-            <img src="/assets/jamm-free-text.png" alt="JAMM FREE" className="h-4 w-auto object-contain brightness-0 invert" />
+            <img src="/assets/jamm-free-text.png" alt="JAMM FREE" className="h-4 w-auto object-contain" />
           )}
         </div>
 
