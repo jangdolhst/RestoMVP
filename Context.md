@@ -88,3 +88,9 @@ El siguiente paso crÃ­tico es la **IntegraciÃ³n de Pagos y Suscripciones con
   - **Ajustes mobile**: MarketplacePage oculta botones header en mobile, OrderTrackingPage/MapPage con `pb-28` para no tapar bottom nav, footer oculto en mobile.
   - **Safe-area**: `viewport-fit=cover` en index.html + `.pb-safe` en CSS para iPhone.
   - **Notificador global**: `PendingOrderNotifier.jsx` en MainLayout reproduce sonido en TODAS las páginas. Evento `orders-updated` detiene sonido inmediatamente al confirmar/rechazar.
+- **Geofiltrado por Ciudad (21/05/2026)**:
+  - **Hook**: `useCityDetection.js` — GPS + Nominatim reverse geocoding. Cache en localStorage key `resto_user_location` (1 hora).
+  - **Filtrado**: Radio de 15km usando `haversineDistance()`. Restaurantes fuera del radio NO aparecen.
+  - **Distancia**: Badge naranja en cada RestaurantCard con distancia en km/m. Restaurantes ordenados por cercanía.
+  - **Header**: Muestra `📍 Mexicali` (mobile esquina superior derecha) y `📍 Mexicali, B.C.` (PC junto a nav).
+  - **GPS denegado**: Muestra todos los restaurantes sin filtro + botón "Activar GPS".
