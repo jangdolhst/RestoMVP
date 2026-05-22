@@ -65,29 +65,29 @@ const PagosPage = () => {
     return () => clearInterval(intervalRef.current);
   }, [fetchPendingOrders]);
 
-  // Confirmar orden → pasa a pendiente_cocina
   const handleConfirmOrder = async (orderId) => {
+    // Actualizar UI y sonido inmediatamente
+    setPendingOrders((prev) => prev.filter((o) => o.id !== orderId));
+    window.dispatchEvent(new Event('orders-updated'));
     try {
       await supabase
         .from('orders')
         .update({ status: 'pendiente_cocina' })
         .eq('id', orderId);
-      setPendingOrders((prev) => prev.filter((o) => o.id !== orderId));
-      // También actualizar en el contexto POS si existe
       updateOrderStatus(orderId, 'pendiente_cocina');
     } catch (err) {
       console.error('Error confirmando orden:', err.message);
     }
   };
 
-  // Rechazar orden → cancelado
   const handleRejectOrder = async (orderId) => {
+    setPendingOrders((prev) => prev.filter((o) => o.id !== orderId));
+    window.dispatchEvent(new Event('orders-updated'));
     try {
       await supabase
         .from('orders')
         .update({ status: 'cancelado' })
         .eq('id', orderId);
-      setPendingOrders((prev) => prev.filter((o) => o.id !== orderId));
       updateOrderStatus(orderId, 'cancelado');
     } catch (err) {
       console.error('Error rechazando orden:', err.message);

@@ -8,9 +8,8 @@ import { useAuth } from '../../context/AuthContext';
  * PendingOrderNotifier — Componente global que:
  * 1. Hace polling cada 10s de órdenes pendiente_confirmacion
  * 2. Reproduce sonido cada 2s mientras haya pendientes
- * 3. Muestra un badge flotante con cuenta de pendientes (si no estás en /pagos)
- *
- * Se monta en MainLayout para estar activo en TODAS las páginas del dashboard.
+ * 3. Muestra badge flotante con cuenta de pendientes
+ * 4. Escucha evento 'orders-updated' para reaccionar inmediatamente
  */
 const PendingOrderNotifier = () => {
   const { user } = useAuth();
@@ -46,35 +45,24 @@ const PendingOrderNotifier = () => {
     }
   }, []);
 
+  // Detener sonido inmediatamente
+  const stopSound = useCallback(() => {
+    clearInterval(soundIntervalRef.current);
+    soundIntervalRef.current = null;
+  }, []);
+
   // Polling de pendientes
   const fetchPendingCount = useCallback(async () => {
     if (!user?.id) return;
     try {
-      const { data, error } = await supabase
+      const { count, error } = await supabase
         .from('orders')
-        .select('id, created_at')
+        .select('id', { count: 'exact', head: true })
         .eq('tenant_id', user.id)
         .eq('status', 'pendiente_confirmacion');
 
       if (error) throw error;
-
-      const now = new Date();
-      let count = 0;
-
-      for (const order of (data || [])) {
-        const minutesElapsed = (now - new Date(order.created_at)) / 60000;
-        if (minutesElapsed > 15) {
-          // Auto-cancelar silenciosamente
-          await supabase
-            .from('orders')
-            .update({ status: 'cancelado' })
-            .eq('id', order.id);
-        } else {
-          count++;
-        }
-      }
-
-      setPendingCount(count);
+      setPendingCount(count || 0);
     } catch {
       // Silenciar errores de polling
     }
@@ -87,16 +75,30 @@ const PendingOrderNotifier = () => {
     return () => clearInterval(pollIntervalRef.current);
   }, [fetchPendingCount]);
 
+  // Escuchar evento custom 'orders-updated' para refrescar inmediatamente
+  useEffect(() => {
+    const handleOrdersUpdated = () => {
+      // Parar sonido inmediatamente y refrescar
+      stopSound();
+      setPendingCount(0);
+      // Re-fetch para obtener el count real
+      setTimeout(fetchPendingCount, 300);
+    };
+
+    window.addEventListener('orders-updated', handleOrdersUpdated);
+    return () => window.removeEventListener('orders-updated', handleOrdersUpdated);
+  }, [fetchPendingCount, stopSound]);
+
   // Sonido continuo cada 2s mientras haya pendientes
   useEffect(() => {
     if (pendingCount > 0) {
       playNotificationSound();
       soundIntervalRef.current = setInterval(playNotificationSound, 2000);
     } else {
-      clearInterval(soundIntervalRef.current);
+      stopSound();
     }
-    return () => clearInterval(soundIntervalRef.current);
-  }, [pendingCount, playNotificationSound]);
+    return () => stopSound();
+  }, [pendingCount, playNotificationSound, stopSound]);
 
   // No mostrar badge si ya estamos en /pagos (ahí se ve la sección completa)
   const isOnOrdersPage = location.pathname === '/pagos';
