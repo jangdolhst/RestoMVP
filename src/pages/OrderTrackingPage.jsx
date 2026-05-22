@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Clock, ChefHat, CheckCircle2, Package, RefreshCw, Trash2, History, MessageCircle, XCircle, Navigation2 } from 'lucide-react';
+import { ArrowLeft, Clock, UtensilsCrossed, CheckCircle2, Package, RefreshCw, Trash2, History, MessageCircle, XCircle, Navigation2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 const STATUS_CONFIG = {
@@ -13,7 +13,7 @@ const STATUS_CONFIG = {
   },
   pendiente_cocina: {
     label: 'En Cocina',
-    icon: ChefHat,
+    icon: UtensilsCrossed,
     color: 'text-amber-400',
     bg: 'bg-amber-500/10 border-amber-500/20',
     pulse: true,

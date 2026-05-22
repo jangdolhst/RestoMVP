@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { usePOS } from '../context/POSContext';
-import { ChefHat, Check } from 'lucide-react';
+import { UtensilsCrossed, Check } from 'lucide-react';
 
 const OrderCard = ({ order, updateOrderStatus }) => {
   const [minutes, setMinutes] = useState(0);
@@ -109,7 +109,7 @@ const CocinaPage = () => {
     <div className="flex-1 p-6 overflow-y-auto h-[calc(100vh-100px)]">
       <div className="flex items-center gap-3 mb-6">
         <div className="p-3 bg-orange-500/20 rounded-xl">
-          <ChefHat className="text-orange-400" size={28} />
+          <UtensilsCrossed className="text-orange-400" size={28} />
         </div>
         <h1 className="text-3xl font-bold text-white tracking-tight">KDS (Cocina)</h1>
       </div>

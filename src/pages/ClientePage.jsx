@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChefHat, ShoppingBag, ArrowLeft } from 'lucide-react';
+import { ShoppingBag, ArrowLeft } from 'lucide-react';
 import POSGrid from '../components/pos/POSGrid';
 import TicketSidebar from '../components/pos/TicketSidebar';
 import { usePOS } from '../context/POSContext';
@@ -58,13 +58,13 @@ const ClientePage = () => {
               className="w-8 h-8 rounded-lg object-cover border border-white/10"
             />
           ) : (
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
-              <ChefHat className="text-white" size={18} />
+            <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center">
+              <img src="/assets/jamm-free-logo.png" alt="Jamm Free" className="w-full h-full object-contain" />
             </div>
           )}
           <span className="text-lg sm:text-xl font-bold text-white tracking-tight truncate max-w-[200px]">
             {restaurantInfo?.name || (
-              <>Resto<span className="text-orange-400">MVP</span></>
+              <>Jamm<span className="text-orange-400"> Free</span></>
             )}
           </span>
         </div>

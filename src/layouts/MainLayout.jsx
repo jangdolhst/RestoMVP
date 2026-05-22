@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { ChefHat, ClipboardList, LayoutGrid, LogOut, QrCode, X, Copy, Check, Store } from 'lucide-react';
+import { ClipboardList, LayoutGrid, LogOut, QrCode, X, Copy, Check, Store } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { QRCodeSVG } from 'qrcode.react';
 import PendingOrderNotifier from '../components/ui/PendingOrderNotifier';
+import Logo from '../components/ui/Logo';
 
 const MainLayout = () => {
   const { user, logout } = useAuth();
@@ -23,12 +24,7 @@ const MainLayout = () => {
       {/* Navegación Superior Glassmorphism */}
       <header className="sticky top-0 z-50 p-4">
         <nav className="glass-panel mx-auto max-w-7xl flex items-center justify-between px-6 py-3">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-orange-500/20 border border-orange-500/30 flex items-center justify-center text-orange-500">
-              <ChefHat size={24} />
-            </div>
-            <span className="font-bold text-xl tracking-tight text-white">Resto<span className="text-orange-500">MVP</span></span>
-          </div>
+          <Logo size="sm" showText={true} />
 
           <div className="flex items-center gap-2 sm:gap-4">
             <NavLink

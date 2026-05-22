@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { ChefHat, Mail, Lock, LogIn, UserPlus, AlertCircle } from 'lucide-react';
+import { Mail, Lock, LogIn, UserPlus, AlertCircle } from 'lucide-react';
+import Logo from '../components/ui/Logo';
 
 const LoginPage = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -46,13 +47,9 @@ const LoginPage = () => {
       <div className="glass-panel w-full max-w-md p-8 relative z-10 border-t-2 border-t-orange-500/50">
         
         <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center mb-4 shadow-lg shadow-orange-500/20">
-            <ChefHat size={32} className="text-white" />
-          </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Resto<span className="text-orange-500">MVP</span></h1>
-          <p className="text-slate-400 text-sm mt-1">
-            {isLogin ? 'Bienvenido de nuevo a tu restaurante' : 'Crea tu propio restaurante'}
-          </p>
+          <Logo size="lg" showText={false} className="justify-center mb-4" />
+          <h1 className="text-2xl font-bold text-white tracking-tight">Jamm<span className="text-orange-500"> Free</span></h1>
+          <p className="text-slate-500 text-xs tracking-widest uppercase font-medium mt-0.5">Easy Collection</p>
         </div>
 
         {/* Tabs */}

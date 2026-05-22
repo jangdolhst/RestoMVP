@@ -44,7 +44,7 @@ const BillingPage = () => {
             {isTrialExpired ? 'Prueba Finalizada' : 'Suscripción Inactiva'}
           </h2>
           <p className="text-gray-400 text-center mb-8">
-            Para continuar utilizando Resto-MVP y acceder a tu panel de control, por favor activa tu suscripción.
+            Para continuar utilizando Jamm Free y acceder a tu panel de control, por favor activa tu suscripción.
           </p>
 
           <div className="bg-black/20 rounded-2xl p-6 border border-white/5 mb-8">

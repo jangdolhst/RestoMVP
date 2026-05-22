@@ -1,4 +1,4 @@
-# Contexto del Proyecto: Resto-MVP
+# Contexto del Proyecto: Jamm Free (antes Resto-MVP)
 
 ## Estado Actual (Fase 2 Completada)
 Hemos finalizado exitosamente la migraciÃ³n del Frontend a una arquitectura SaaS Multi-Tenant lista para producciÃ³n.
@@ -101,3 +101,24 @@ El siguiente paso crÃ­tico es la **IntegraciÃ³n de Pagos y Suscripciones con
   - **Mesas ocupadas**: Órdenes activas (`pendiente_cocina`, `pendiente_confirmacion`) marcan mesas como `(ocupada)` y las deshabilitan en el dropdown.
   - **Validación**: Mesa opcional. Solo `clientName` es requerido para órdenes del POS.
   - **Archivos**: `SettingsPage.jsx`, `POSContext.jsx`, `TicketSidebar.jsx`.
+- **Rebranding Completo: RestoMVP → Jamm Free (22/05/2026)**:
+  - **Nombre nuevo**: "Jamm Free" — Jamm de "Jamming" (flujo, ritmo) y Free de "Libre" (libertad de elegir y recoger).
+  - **Slogan**: "Easy Collection" (Recogida fácil).
+  - **Logotipo**: Isotipo entrelazado "JF" con flamas de vapor/calor en degradado coral-ámbar-gris pizarra. Generado por IA, retocado por el usuario en PNG transparente sin fondo.
+  - **Asset guardado**: `public/assets/jamm-free-logo.png` — imagen PNG transparente de alta fidelidad.
+  - **Componente nuevo**: `src/components/ui/Logo.jsx` — componente React reutilizable que carga la imagen del logo con soporte para 3 tamaños (`sm`, `md`, `lg`) y texto opcional "Jamm Free / Easy Collection".
+  - **Archivos modificados (rebranding textual + visual)**:
+    - `index.html` — título "Jamm Free | Easy Collection", meta description SEO, favicon apuntando a `jamm-free-logo.png`, theme-color `#0B0F19`.
+    - `src/layouts/MainLayout.jsx` — header admin usa `<Logo />` en lugar de ChefHat + "RestoMVP".
+    - `src/pages/MarketplacePage.jsx` — header marketplace usa `<Logo />`, footer "© Jamm Free".
+    - `src/pages/LoginPage.jsx` — pantalla login muestra logo grande + "Jamm Free / Easy Collection".
+    - `src/pages/LandingPage.jsx` — navbar usa `<Logo />`, texto hero "Jamm Free es un sistema de POS...".
+    - `src/pages/BillingPage.jsx` — texto de suscripción "Jamm Free".
+    - `src/pages/ClientePage.jsx` — fallback logo/nombre usa Jamm Free en vez de RestoMVP.
+    - `src/pages/CocinaPage.jsx` — icono de sección cambiado de ChefHat a UtensilsCrossed.
+    - `src/pages/OrderTrackingPage.jsx` — status "En Cocina" usa UtensilsCrossed en vez de ChefHat.
+    - `src/components/map/RestaurantPreviewPopup.jsx` — fallback logo usa `jamm-free-logo.png`, placeholder de producto usa UtensilsCrossed.
+    - `src/components/ui/PhoneInput.jsx` — comentario actualizado a "Jamm Free".
+    - `src/hooks/useCityDetection.js` — User-Agent de Nominatim cambiado a "JammFree/1.0".
+  - **Eliminado**: Todas las importaciones de `ChefHat` de lucide-react en archivos de branding (ya no es el icono de la marca).
+  - **Verificación**: Build de producción exitoso (`npx vite build`), 0 errores. Búsqueda exhaustiva confirmó 0 referencias restantes a "RestoMVP", "Resto-MVP" o "ChefHat" en el código fuente.

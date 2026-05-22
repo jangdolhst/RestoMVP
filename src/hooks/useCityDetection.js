@@ -74,7 +74,7 @@ const useCityDetection = () => {
       try {
         const response = await fetch(
           `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=es`,
-          { headers: { 'User-Agent': 'RestoMVP/1.0' } }
+          { headers: { 'User-Agent': 'JammFree/1.0' } }
         );
         const data = await response.json();
 

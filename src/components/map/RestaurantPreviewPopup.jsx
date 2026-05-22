@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, MapPin, Store, ChefHat, ExternalLink, Loader2 } from 'lucide-react';
+import { X, MapPin, Store, UtensilsCrossed, ExternalLink, Loader2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 /**
@@ -84,7 +84,7 @@ const RestaurantPreviewPopup = ({ restaurant, onClose }) => {
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
-                <ChefHat size={24} className="text-orange-400" />
+                <img src="/assets/jamm-free-logo.png" alt="Jamm Free" className="w-6 h-6 object-contain" />
               </div>
             )}
           </div>
@@ -140,7 +140,7 @@ const RestaurantPreviewPopup = ({ restaurant, onClose }) => {
                       />
                     ) : (
                       <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center border border-white/10">
-                        <ChefHat size={16} className="text-slate-500" />
+                        <UtensilsCrossed size={16} className="text-slate-500" />
                       </div>
                     )}
                     <div className="flex-1 min-w-0">

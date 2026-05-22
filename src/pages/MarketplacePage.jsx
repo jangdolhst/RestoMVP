@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, ChefHat, MapPin, Clock, Store, Sparkles, X, Package, Map, Navigation, Loader2 } from 'lucide-react';
+import { Search, MapPin, Clock, Store, Sparkles, X, Package, Map, Navigation, Loader2 } from 'lucide-react';
+import Logo from '../components/ui/Logo';
 import { supabase } from '../lib/supabase';
 import useCityDetection, { haversineDistance } from '../hooks/useCityDetection';
 
@@ -190,14 +191,7 @@ const MarketplacePage = () => {
       {/* Header / Navbar */}
       <header className="sticky top-0 z-50 bg-black/40 backdrop-blur-xl border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-500/20">
-              <ChefHat className="text-white" size={20} />
-            </div>
-            <span className="text-xl font-bold tracking-tight text-white">
-              Resto<span className="text-orange-400">MVP</span>
-            </span>
-          </div>
+            <Logo size="sm" showText={true} onClick={() => navigate('/')} />
 
           {/* City indicator — mobile */}
           <div className="flex items-center gap-1.5 lg:hidden">
@@ -392,7 +386,7 @@ const MarketplacePage = () => {
       {/* Footer — oculto en mobile (bottom nav lo reemplaza) */}
       <footer className="relative z-10 border-t border-white/5 py-6 px-4 text-center hidden lg:block">
         <p className="text-xs text-slate-600">
-          © {new Date().getFullYear()} RestoMVP — Conectando restaurantes con sus clientes.
+          © {new Date().getFullYear()} Jamm Free — Conectando restaurantes con sus clientes.
         </p>
       </footer>
     </div>

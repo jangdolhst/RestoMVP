@@ -4,7 +4,7 @@ import 'intl-tel-input/styles';
 
 /**
  * PhoneInput — Componente reutilizable de input telefónico internacional.
- * Wrapper de intl-tel-input adaptado al diseño glassmorphism del Resto-MVP.
+ * Wrapper de intl-tel-input adaptado al diseño glassmorphism de Jamm Free.
  * 
  * Props:
  *  - value: string (E.164 o raw)

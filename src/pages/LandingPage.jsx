@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
-import { ChefHat, Smartphone, Zap, CheckCircle2 } from 'lucide-react';
+import { Smartphone, Zap, CheckCircle2 } from 'lucide-react';
+import Logo from '../components/ui/Logo';
 
 const LandingPage = () => {
   const navigate = useNavigate();
@@ -14,12 +15,7 @@ const LandingPage = () => {
         
         {/* Navbar */}
         <header className="flex justify-between items-center mb-16">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-500/30">
-              <ChefHat className="text-white" size={24} />
-            </div>
-            <span className="text-2xl font-bold tracking-tight text-white">Resto<span className="text-orange-400">MVP</span></span>
-          </div>
+            <Logo size="md" showText={true} onClick={() => navigate('/')} />
           <button onClick={() => navigate('/pos')} className="btn-secondary hidden md:block">
             Acceso Negocios
           </button>
@@ -37,7 +33,7 @@ const LandingPage = () => {
           </h1>
           
           <p className="text-lg md:text-xl text-slate-400 mb-12 max-w-2xl leading-relaxed">
-            Dile adiós al papel y lápiz. RestoMVP es un sistema de Punto de Venta (POS) y Cocina (KDS) en tiempo real, diseñado para hacer tu restaurante más rápido y eficiente.
+            Dile adiós al papel y lápiz. Jamm Free es un sistema de Punto de Venta (POS) y Cocina (KDS) en tiempo real, diseñado para hacer tu restaurante más rápido y eficiente.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto justify-center">
