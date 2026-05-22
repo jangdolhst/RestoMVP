@@ -226,7 +226,7 @@ const MarketplacePage = () => {
         </div>
 
         {/* Botón Ver en Mapa */}
-        <div className="max-w-xl mx-auto mt-4 flex justify-center">
+        <div className="max-w-xl mx-auto mt-4 hidden lg:flex justify-center">
           <button
             onClick={() => navigate('/mapa')}
             className="group inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-semibold text-sm shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 hover:scale-105 active:scale-95 transition-all duration-300"
