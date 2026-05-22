@@ -3,6 +3,7 @@ import { NavLink, Outlet } from 'react-router-dom';
 import { ChefHat, ClipboardList, LayoutGrid, LogOut, QrCode, X, Copy, Check, Store } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { QRCodeSVG } from 'qrcode.react';
+import PendingOrderNotifier from '../components/ui/PendingOrderNotifier';
 
 const MainLayout = () => {
   const { user, logout } = useAuth();
@@ -97,6 +98,9 @@ const MainLayout = () => {
       <main className="flex-1 w-full mx-auto px-4 pb-4 flex overflow-hidden">
         <Outlet />
       </main>
+
+      {/* Notificador global de pedidos pendientes */}
+      <PendingOrderNotifier />
 
       {/* Modal QR */}
       {isQrModalOpen && (

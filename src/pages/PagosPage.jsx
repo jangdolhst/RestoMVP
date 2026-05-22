@@ -16,57 +16,7 @@ const PagosPage = () => {
 
   // ─── Pedidos pendientes de confirmación ──────────────────────────
   const [pendingOrders, setPendingOrders] = useState([]);
-  const [prevPendingCount, setPrevPendingCount] = useState(0);
-  const audioRef = useRef(null);
   const intervalRef = useRef(null);
-
-  // Crear sonido de notificación usando Web Audio API
-  const playNotificationSound = useCallback(() => {
-    try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-
-      // Primer beep
-      const osc1 = ctx.createOscillator();
-      const gain1 = ctx.createGain();
-      osc1.type = 'sine';
-      osc1.frequency.setValueAtTime(880, ctx.currentTime);
-      gain1.gain.setValueAtTime(0.3, ctx.currentTime);
-      gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-      osc1.connect(gain1);
-      gain1.connect(ctx.destination);
-      osc1.start(ctx.currentTime);
-      osc1.stop(ctx.currentTime + 0.3);
-
-      // Segundo beep (más alto)
-      const osc2 = ctx.createOscillator();
-      const gain2 = ctx.createGain();
-      osc2.type = 'sine';
-      osc2.frequency.setValueAtTime(1100, ctx.currentTime + 0.35);
-      gain2.gain.setValueAtTime(0.3, ctx.currentTime + 0.35);
-      gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.65);
-      osc2.connect(gain2);
-      gain2.connect(ctx.destination);
-      osc2.start(ctx.currentTime + 0.35);
-      osc2.stop(ctx.currentTime + 0.65);
-
-      // Tercer beep (más alto aún)
-      const osc3 = ctx.createOscillator();
-      const gain3 = ctx.createGain();
-      osc3.type = 'sine';
-      osc3.frequency.setValueAtTime(1320, ctx.currentTime + 0.7);
-      gain3.gain.setValueAtTime(0.3, ctx.currentTime + 0.7);
-      gain3.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.0);
-      osc3.connect(gain3);
-      gain3.connect(ctx.destination);
-      osc3.start(ctx.currentTime + 0.7);
-      osc3.stop(ctx.currentTime + 1.0);
-
-      // Cleanup
-      setTimeout(() => ctx.close(), 2000);
-    } catch (err) {
-      console.warn('Audio notification failed:', err);
-    }
-  }, []);
 
   // Fetch pendientes de confirmación cada 10 segundos
   const fetchPendingOrders = useCallback(async () => {
@@ -102,7 +52,6 @@ const PagosPage = () => {
         }
       }
 
-      setPrevPendingCount(validOrders.length);
       setPendingOrders(validOrders);
     } catch (err) {
       console.error('Error fetching pending orders:', err.message);
@@ -115,22 +64,6 @@ const PagosPage = () => {
     intervalRef.current = setInterval(fetchPendingOrders, 10000);
     return () => clearInterval(intervalRef.current);
   }, [fetchPendingOrders]);
-
-  // Sonido continuo mientras haya pedidos pendientes (cada 2s)
-  const soundIntervalRef = useRef(null);
-
-  useEffect(() => {
-    if (pendingOrders.length > 0) {
-      // Sonar inmediatamente
-      playNotificationSound();
-      // Repetir cada 2 segundos
-      soundIntervalRef.current = setInterval(playNotificationSound, 2000);
-    } else {
-      clearInterval(soundIntervalRef.current);
-    }
-
-    return () => clearInterval(soundIntervalRef.current);
-  }, [pendingOrders.length, playNotificationSound]);
 
   // Confirmar orden → pasa a pendiente_cocina
   const handleConfirmOrder = async (orderId) => {
