@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { usePOS } from '../context/POSContext';
-import { DollarSign, Search, CheckCircle, Receipt, Calendar, Bell, XCircle, Clock, MessageCircle, Phone } from 'lucide-react';
+import { DollarSign, Search, CheckCircle, Receipt, Calendar, Bell, XCircle, Clock, Phone } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 

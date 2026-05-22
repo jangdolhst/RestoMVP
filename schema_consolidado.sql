@@ -274,13 +274,32 @@ RETURNS TABLE (
   created_at TIMESTAMPTZ,
   order_token UUID,
   restaurant_name TEXT,
+  restaurant_address TEXT,
+  restaurant_latitude NUMERIC,
+  restaurant_longitude NUMERIC,
   items JSONB
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = ''
 AS $$
+DECLARE
+  safe_tokens UUID[];
 BEGIN
+  -- Limitar y normalizar entrada para reducir superficie de abuso.
+  SELECT COALESCE(array_agg(DISTINCT tkn), '{}'::UUID[])
+  INTO safe_tokens
+  FROM (
+    SELECT tkn
+    FROM unnest(COALESCE(tokens, '{}'::UUID[])) AS tkn
+    WHERE tkn IS NOT NULL
+    LIMIT 20
+  ) limited_tokens;
+
+  IF COALESCE(array_length(safe_tokens, 1), 0) = 0 THEN
+    RETURN;
+  END IF;
+
   RETURN QUERY
   SELECT
     o.id,
@@ -291,20 +310,26 @@ BEGIN
     o.created_at,
     o.order_token,
     COALESCE(rp.name, '') AS restaurant_name,
+    COALESCE(rp.address, '') AS restaurant_address,
+    rp.latitude AS restaurant_latitude,
+    rp.longitude AS restaurant_longitude,
     COALESCE(
       (SELECT jsonb_agg(jsonb_build_object(
         'product_name', oi.product_name,
         'quantity', oi.quantity,
         'price', oi.price
       ))
-      FROM order_items oi WHERE oi.order_id = o.id),
+      FROM public.order_items oi WHERE oi.order_id = o.id),
       '[]'::jsonb
     ) AS items
-  FROM orders o
-  LEFT JOIN restaurant_profiles rp ON rp.id = o.tenant_id
-  WHERE o.order_token = ANY(tokens)
-  ORDER BY o.created_at DESC;
+  FROM public.orders o
+  LEFT JOIN public.restaurant_profiles rp ON rp.id = o.tenant_id
+  WHERE o.order_token = ANY(safe_tokens)
+    AND o.created_at >= (NOW() - INTERVAL '7 days')
+  ORDER BY o.created_at DESC
+  LIMIT 50;
 END;
 $$;
 
+REVOKE EXECUTE ON FUNCTION public.get_orders_by_tokens(UUID[]) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION get_orders_by_tokens(UUID[]) TO anon, authenticated;

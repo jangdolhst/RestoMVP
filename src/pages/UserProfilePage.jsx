@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { User, Save, Check, Trash2 } from 'lucide-react';
 import PhoneInput from '../components/ui/PhoneInput';
 

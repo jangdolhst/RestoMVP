@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { ArrowLeft, Navigation, Loader2, MapPin, LocateFixed } from 'lucide-react';
+import { ArrowLeft, Loader2, MapPin, LocateFixed } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import RestaurantPreviewPopup from '../components/map/RestaurantPreviewPopup';
 

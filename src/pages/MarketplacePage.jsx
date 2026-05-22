@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, MapPin, Clock, Store, Sparkles, X, Package, Map, Navigation, Loader2 } from 'lucide-react';
+import { Search, MapPin, Store, Sparkles, X, Package, Map, Navigation, Loader2 } from 'lucide-react';
 import Logo from '../components/ui/Logo';
 import { supabase } from '../lib/supabase';
 import useCityDetection, { haversineDistance } from '../hooks/useCityDetection';
@@ -118,7 +118,7 @@ const MarketplacePage = () => {
   }, []);
 
   // Detección de ubicación: GPS → IP fallback (Vercel Geo)
-  const { city, state, country, lat: userLat, lng: userLng, isLoading: gpsLoading, error: gpsError, source: geoSource, retry: retryGps } = useCityDetection();
+  const { city, state, lat: userLat, lng: userLng, isLoading: gpsLoading, error: gpsError, source: geoSource, retry: retryGps } = useCityDetection();
   const hasLocation = userLat !== null && userLng !== null;
   const maxDistanceKm = geoSource === 'ip' ? MAX_DISTANCE_IP_KM : MAX_DISTANCE_GPS_KM;
 

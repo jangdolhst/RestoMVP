@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 
 const CACHE_KEY = 'jf_user_location';
-const CACHE_DURATION = 60 * 60 * 1000; // 1 hora
+const GPS_CACHE_DURATION = 60 * 60 * 1000; // 1 hora
+const IP_CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
 
 /**
  * Calcula distancia entre dos puntos GPS usando fórmula de Haversine.
@@ -36,6 +37,16 @@ const fetchIpGeo = async () => {
   }
 };
 
+const getGeolocationPermissionState = async () => {
+  if (!navigator.permissions?.query) return null;
+  try {
+    const result = await navigator.permissions.query({ name: 'geolocation' });
+    return result.state; // 'granted' | 'denied' | 'prompt'
+  } catch {
+    return null;
+  }
+};
+
 /**
  * useCityDetection — Hook que detecta la ciudad del usuario.
  * 
@@ -59,27 +70,37 @@ const useCityDetection = () => {
   const [error, setError] = useState(null);
   const [source, setSource] = useState(null);
 
-  const detectCity = useCallback(async () => {
+  const detectCity = useCallback(async ({ forceRefresh = false } = {}) => {
     setIsLoading(true);
     setError(null);
 
+    const permissionState = await getGeolocationPermissionState();
+
     // --- PASO 1: Verificar cache ---
-    try {
-      const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
-      if (cached.city && cached.timestamp && Date.now() - cached.timestamp < CACHE_DURATION) {
-        setLocation({
-          city: cached.city,
-          state: cached.state,
-          country: cached.country || null,
-          lat: cached.lat,
-          lng: cached.lng,
-        });
-        setSource(cached.source || 'cache');
-        setIsLoading(false);
-        return;
+    if (!forceRefresh) {
+      try {
+        const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
+        const isGpsCache = cached.source === 'gps';
+        const isIpCache = cached.source === 'ip';
+        const cacheTtl = isIpCache ? IP_CACHE_DURATION : GPS_CACHE_DURATION;
+        const isFresh = cached.city && cached.timestamp && Date.now() - cached.timestamp < cacheTtl;
+        const shouldBypassIpCache = isIpCache && permissionState === 'granted';
+
+        if (isFresh && !shouldBypassIpCache) {
+          setLocation({
+            city: cached.city,
+            state: cached.state,
+            country: cached.country || null,
+            lat: cached.lat,
+            lng: cached.lng,
+          });
+          setSource(isGpsCache || isIpCache ? cached.source : 'cache');
+          setIsLoading(false);
+          return;
+        }
+      } catch {
+        // Cache corrupto, continuar
       }
-    } catch {
-      // Cache corrupto, continuar
     }
 
     // --- PASO 2: Intentar GPS ---
@@ -159,9 +180,7 @@ const useCityDetection = () => {
       setError(null); // Limpiar error de GPS ya que tenemos ubicación por IP
     } else {
       // Ni GPS ni IP funcionaron
-      if (!error) {
-        setError('No se pudo determinar tu ubicación');
-      }
+      setError('No se pudo determinar tu ubicación');
     }
 
     setIsLoading(false);
@@ -171,7 +190,11 @@ const useCityDetection = () => {
     detectCity();
   }, [detectCity]);
 
-  return { ...location, isLoading, error, source, retry: detectCity };
+  const retry = useCallback(() => {
+    detectCity({ forceRefresh: true });
+  }, [detectCity]);
+
+  return { ...location, isLoading, error, source, retry };
 };
 
 export default useCityDetection;

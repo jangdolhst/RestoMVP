@@ -42,6 +42,8 @@ const STATUS_CONFIG = {
 };
 
 const REFRESH_INTERVAL = 15000; // 15 segundos
+const TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 días
+const MAX_TRACKING_TOKENS = 20;
 
 const OrderTrackingPage = () => {
   const navigate = useNavigate();
@@ -54,7 +56,24 @@ const OrderTrackingPage = () => {
   const getStoredTokens = useCallback(() => {
     try {
       const stored = JSON.parse(localStorage.getItem('resto_order_tokens') || '[]');
-      return stored.map(entry => entry.token || entry);
+      const now = Date.now();
+
+      // Compatibilidad con formato viejo (string) y nuevo (objeto con token+timestamp)
+      const validEntries = stored
+        .filter((entry) => {
+          if (typeof entry === 'string') return true; // legado sin timestamp
+          if (!entry?.token) return false;
+          if (!entry?.timestamp) return true; // legado parcial: mantener por compatibilidad
+          return now - entry.timestamp <= TOKEN_TTL_MS;
+        })
+        .slice(-MAX_TRACKING_TOKENS);
+
+      // Limpieza en background del localStorage
+      localStorage.setItem('resto_order_tokens', JSON.stringify(validEntries));
+
+      // Deduplicar tokens conservando orden
+      const tokens = validEntries.map((entry) => entry.token || entry);
+      return [...new Set(tokens)].slice(-MAX_TRACKING_TOKENS);
     } catch {
       return [];
     }

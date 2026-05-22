@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Smartphone, Zap, CheckCircle2 } from 'lucide-react';
+import { Zap, CheckCircle2 } from 'lucide-react';
 import Logo from '../components/ui/Logo';
 
 const LandingPage = () => {
