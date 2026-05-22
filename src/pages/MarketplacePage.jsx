@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, MapPin, Clock, Store, Sparkles, X, Package, Map, Navigation, Loader2 } from 'lucide-react';
 import Logo from '../components/ui/Logo';
@@ -101,6 +101,20 @@ const MarketplacePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('Todos');
   const [hasOrders, setHasOrders] = useState(false);
+
+  // Ref + useEffect para scroll horizontal con rueda del mouse en categorías
+  const categoryScrollRef = useRef(null);
+  useEffect(() => {
+    const container = categoryScrollRef.current;
+    if (!container) return;
+    const onWheel = (e) => {
+      if (container.scrollWidth <= container.clientWidth) return;
+      e.preventDefault();
+      container.scrollLeft += e.deltaY;
+    };
+    container.addEventListener('wheel', onWheel, { passive: false });
+    return () => container.removeEventListener('wheel', onWheel);
+  }, []);
 
   // Detección de ciudad via GPS
   const { city, state, lat: userLat, lng: userLng, isLoading: gpsLoading, error: gpsError, retry: retryGps } = useCityDetection();
@@ -307,7 +321,10 @@ const MarketplacePage = () => {
       {/* Category Chips */}
       <section className="relative z-10 px-4 sm:px-6 pb-6">
         <div className="max-w-5xl mx-auto">
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          <div
+            ref={categoryScrollRef}
+            className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide"
+          >
             {FOOD_CATEGORIES.map(cat => (
               <button
                 key={cat}
