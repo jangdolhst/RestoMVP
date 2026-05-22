@@ -51,6 +51,11 @@ export const POSProvider = ({ children }) => {
     }
   }, [isClientMenu]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Resetear categoría al entrar/salir de una tienda
+  useEffect(() => {
+    setCurrentCategoryId(null);
+  }, [urlTenantId]);
+
   // --- Cargar datos iniciales ---
   useEffect(() => {
     const fetchData = async () => {
