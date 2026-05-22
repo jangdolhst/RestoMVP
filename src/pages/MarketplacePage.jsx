@@ -50,6 +50,16 @@ const RestaurantCard = ({ restaurant, onClick, distance }) => {
           <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
           <span className="text-xs font-medium text-white">Abierto</span>
         </div>
+
+        {/* Distance badge */}
+        {distance !== null && distance !== undefined && (
+          <div className="absolute bottom-4 right-4 px-2.5 py-1 bg-black/60 backdrop-blur-md border border-orange-500/30 rounded-full flex items-center gap-1.5">
+            <Navigation size={11} className="text-orange-400" />
+            <span className="text-xs font-semibold text-orange-400">
+              {distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Info content */}
@@ -75,12 +85,6 @@ const RestaurantCard = ({ restaurant, onClick, distance }) => {
             <span className="flex items-center gap-1.5 bg-white/5 px-2.5 py-1 rounded-lg border border-white/5">
               <Store size={14} className="text-blue-400" />
               {restaurant.categories.slice(0, 2).join(' · ')}
-            </span>
-          )}
-          {distance !== null && distance !== undefined && (
-            <span className="flex items-center gap-1.5 bg-orange-500/10 px-2.5 py-1 rounded-lg border border-orange-500/20 text-orange-400 ml-auto">
-              <Navigation size={12} />
-              {distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`}
             </span>
           )}
         </div>
