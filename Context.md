@@ -94,3 +94,10 @@ El siguiente paso crÃ­tico es la **IntegraciÃ³n de Pagos y Suscripciones con
   - **Distancia**: Badge naranja en cada RestaurantCard con distancia en km/m. Restaurantes ordenados por cercanía.
   - **Header**: Muestra `📍 Mexicali` (mobile esquina superior derecha) y `📍 Mexicali, B.C.` (PC junto a nav).
   - **GPS denegado**: Muestra todos los restaurantes sin filtro + botón "Activar GPS".
+- **Gestión de Mesas (22/05/2026)**:
+  - **DB**: Columna `table_count INTEGER DEFAULT 0` en `restaurant_profiles`.
+  - **Settings**: Input numérico (0-50) para configurar cantidad de mesas.
+  - **POS**: Dropdown reemplaza input de texto. Opciones: "Para llevar (sin mesa)" + Mesa 1..N.
+  - **Mesas ocupadas**: Órdenes activas (`pendiente_cocina`, `pendiente_confirmacion`) marcan mesas como `(ocupada)` y las deshabilitan en el dropdown.
+  - **Validación**: Mesa opcional. Solo `clientName` es requerido para órdenes del POS.
+  - **Archivos**: `SettingsPage.jsx`, `POSContext.jsx`, `TicketSidebar.jsx`.
