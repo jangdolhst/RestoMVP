@@ -123,3 +123,11 @@ El siguiente paso crÃ­tico es la **IntegraciÃ³n de Pagos y Suscripciones con
     - `index.html` → favicon usa `jamm-free-icon.png`.
   - **Eliminado**: Todas las importaciones de `ChefHat` de lucide-react en archivos de branding.
   - **Verificación**: Build de producción exitoso, 0 errores.
+- **IP Geolocation Fallback (22/05/2026)**:
+  - **Problema**: Usuarios sin GPS activado veían restaurantes de otros países.
+  - **Solución**: Detección de ubicación en cascada: Cache → GPS → IP (Vercel Geo Headers).
+  - **Edge Function**: `api/geo.js` — lee headers automáticos de Vercel (`x-vercel-ip-country`, `x-vercel-ip-city`, `x-vercel-ip-latitude`, `x-vercel-ip-longitude`). Gratis, sin límites, sin API key.
+  - **Hook actualizado**: `useCityDetection.js` — ahora retorna `country`, `source` ('gps'|'ip'|'cache'). Cuando GPS falla, llama a `/api/geo` como fallback.
+  - **Radios de filtrado**: GPS = 15km (preciso), IP = 50km (menos preciso).
+  - **Cache key renombrada**: `resto_user_location` → `jf_user_location`.
+  - **Archivos**: `api/geo.js` [NEW], `useCityDetection.js`, `MarketplacePage.jsx`.

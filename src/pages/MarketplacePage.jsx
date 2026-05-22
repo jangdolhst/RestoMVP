@@ -5,7 +5,8 @@ import Logo from '../components/ui/Logo';
 import { supabase } from '../lib/supabase';
 import useCityDetection, { haversineDistance } from '../hooks/useCityDetection';
 
-const MAX_DISTANCE_KM = 15;
+const MAX_DISTANCE_GPS_KM = 15;  // Radio para GPS (preciso)
+const MAX_DISTANCE_IP_KM = 50;   // Radio para IP geo (menos preciso)
 
 const FOOD_CATEGORIES = [
   'Todos', 'Pizza', 'Hamburguesas', 'Sushi', 'Tacos', 'Mariscos',
@@ -116,9 +117,10 @@ const MarketplacePage = () => {
     return () => container.removeEventListener('wheel', onWheel);
   }, []);
 
-  // Detección de ciudad via GPS
-  const { city, state, lat: userLat, lng: userLng, isLoading: gpsLoading, error: gpsError, retry: retryGps } = useCityDetection();
-  const hasGps = userLat !== null && userLng !== null;
+  // Detección de ubicación: GPS → IP fallback (Vercel Geo)
+  const { city, state, country, lat: userLat, lng: userLng, isLoading: gpsLoading, error: gpsError, source: geoSource, retry: retryGps } = useCityDetection();
+  const hasLocation = userLat !== null && userLng !== null;
+  const maxDistanceKm = geoSource === 'ip' ? MAX_DISTANCE_IP_KM : MAX_DISTANCE_GPS_KM;
 
   // Verificar si hay pedidos en localStorage
   useEffect(() => {
@@ -157,7 +159,7 @@ const MarketplacePage = () => {
     let filtered = restaurants;
 
     // Calcular distancia para cada restaurante
-    if (hasGps) {
+    if (hasLocation) {
       filtered = filtered.map(r => {
         if (r.latitude && r.longitude) {
           const dist = haversineDistance(userLat, userLng, r.latitude, r.longitude);
@@ -166,8 +168,8 @@ const MarketplacePage = () => {
         return { ...r, distance: null };
       });
 
-      // Filtrar por radio máximo (solo los que tienen coordenadas)
-      filtered = filtered.filter(r => r.distance === null || r.distance <= MAX_DISTANCE_KM);
+      // Filtrar por radio máximo (GPS=15km, IP=50km)
+      filtered = filtered.filter(r => r.distance === null || r.distance <= maxDistanceKm);
 
       // Ordenar por distancia (más cercanos primero, sin coords al final)
       filtered.sort((a, b) => {
@@ -195,7 +197,7 @@ const MarketplacePage = () => {
     }
 
     return filtered;
-  }, [restaurants, searchQuery, activeCategory, hasGps, userLat, userLng]);
+  }, [restaurants, searchQuery, activeCategory, hasLocation, userLat, userLng, maxDistanceKm]);
 
   return (
     <div className="min-h-screen text-white relative overflow-x-hidden">
