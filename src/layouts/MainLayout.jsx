@@ -24,7 +24,7 @@ const MainLayout = () => {
       {/* Navegación Superior Glassmorphism */}
       <header className="sticky top-0 z-50 p-4">
         <nav className="glass-panel mx-auto max-w-7xl flex items-center justify-between px-6 py-3">
-          <Logo size="sm" showText={true} />
+          <Logo size="md" showText={true} />
 
           <div className="flex items-center gap-2 sm:gap-4">
             <NavLink

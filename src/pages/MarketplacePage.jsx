@@ -191,7 +191,7 @@ const MarketplacePage = () => {
       {/* Header / Navbar */}
       <header className="sticky top-0 z-50 bg-black/40 backdrop-blur-xl border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-            <Logo size="sm" showText={true} onClick={() => navigate('/')} />
+            <Logo size="md" showText={true} onClick={() => navigate('/')} />
 
           {/* City indicator — mobile */}
           <div className="flex items-center gap-1.5 lg:hidden">

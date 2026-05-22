@@ -1,48 +1,57 @@
 /**
  * Logo — Componente reutilizable de la marca "Jamm Free".
- * Carga la imagen PNG transparente del logotipo original
- * con soporte para 3 tamaños predefinidos.
+ * Usa assets separados: isotipo (icono JF) + tipografía (JAMM FREE).
  *
  * Props:
- *   - size: 'sm' | 'md' | 'lg' (default: 'md')
- *   - showText: boolean (default: true) — muestra el nombre "Jamm Free" al lado
+ *   - size: 'sm' | 'md' | 'lg' | 'xl' (default: 'md')
+ *   - showText: boolean (default: true) — muestra la tipografía al lado del isotipo
+ *   - iconOnly: boolean (default: false) — muestra solo el isotipo sin texto
  *   - className: string — clases CSS adicionales para el contenedor
  *   - onClick: function — handler opcional de clic
  */
 const SIZES = {
-  sm: { img: 'w-8 h-8', text: 'text-lg', sub: 'text-[9px]' },
-  md: { img: 'w-10 h-10', text: 'text-xl', sub: 'text-[10px]' },
-  lg: { img: 'w-16 h-16', text: 'text-3xl', sub: 'text-xs' },
+  sm: { icon: 'h-8', text: 'h-4', gap: 'gap-2' },
+  md: { icon: 'h-10', text: 'h-5', gap: 'gap-2.5' },
+  lg: { icon: 'h-14', text: 'h-6', gap: 'gap-3' },
+  xl: { icon: 'h-20', text: 'h-8', gap: 'gap-4' },
 };
 
-const Logo = ({ size = 'md', showText = true, className = '', onClick }) => {
+const Logo = ({ size = 'md', showText = true, iconOnly = false, className = '', onClick }) => {
   const s = SIZES[size] || SIZES.md;
 
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex items-center gap-2 select-none focus:outline-none ${className}`}
-      aria-label="Jamm Free"
-    >
+  const content = (
+    <div className={`flex items-center ${s.gap} select-none ${className}`}>
       <img
-        src="/assets/jamm-free-logo.png"
-        alt="Jamm Free logo"
-        className={`${s.img} object-contain drop-shadow-lg`}
+        src="/assets/jamm-free-icon.png"
+        alt="Jamm Free"
+        className={`${s.icon} w-auto object-contain drop-shadow-lg`}
         draggable={false}
       />
-      {showText && (
-        <div className="flex flex-col leading-none">
-          <span className={`font-extrabold tracking-tight text-white ${s.text}`}>
-            Jamm<span className="text-orange-400"> Free</span>
-          </span>
-          <span className={`font-medium tracking-widest uppercase text-slate-400 ${s.sub}`}>
-            Easy Collection
-          </span>
-        </div>
+      {showText && !iconOnly && (
+        <img
+          src="/assets/jamm-free-text.png"
+          alt="JAMM FREE"
+          className={`${s.text} w-auto object-contain brightness-0 invert`}
+          draggable={false}
+        />
       )}
-    </button>
+    </div>
   );
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="focus:outline-none"
+        aria-label="Jamm Free"
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return content;
 };
 
 export default Logo;

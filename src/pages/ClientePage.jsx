@@ -55,18 +55,18 @@ const ClientePage = () => {
             <img
               src={restaurantInfo.logo_url}
               alt={restaurantInfo.name || 'Restaurante'}
-              className="w-8 h-8 rounded-lg object-cover border border-white/10"
+              className="w-9 h-9 rounded-lg object-cover border border-white/10"
             />
           ) : (
-            <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center">
-              <img src="/assets/jamm-free-logo.png" alt="Jamm Free" className="w-full h-full object-contain" />
-            </div>
+            <img src="/assets/jamm-free-icon.png" alt="Jamm Free" className="h-9 w-auto object-contain" />
           )}
-          <span className="text-lg sm:text-xl font-bold text-white tracking-tight truncate max-w-[200px]">
-            {restaurantInfo?.name || (
-              <>Jamm<span className="text-orange-400"> Free</span></>
-            )}
-          </span>
+          {restaurantInfo?.name ? (
+            <span className="text-lg sm:text-xl font-bold text-white tracking-tight truncate max-w-[200px]">
+              {restaurantInfo.name}
+            </span>
+          ) : (
+            <img src="/assets/jamm-free-text.png" alt="JAMM FREE" className="h-4 w-auto object-contain brightness-0 invert" />
+          )}
         </div>
 
         {/* Spacer para centrar el nombre */}

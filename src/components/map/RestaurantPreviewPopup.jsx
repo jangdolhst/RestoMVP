@@ -84,7 +84,7 @@ const RestaurantPreviewPopup = ({ restaurant, onClose }) => {
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
-                <img src="/assets/jamm-free-logo.png" alt="Jamm Free" className="w-6 h-6 object-contain" />
+                <img src="/assets/jamm-free-icon.png" alt="Jamm Free" className="w-8 h-8 object-contain" />
               </div>
             )}
           </div>

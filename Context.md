@@ -104,21 +104,22 @@ El siguiente paso crÃ­tico es la **IntegraciÃ³n de Pagos y Suscripciones con
 - **Rebranding Completo: RestoMVP → Jamm Free (22/05/2026)**:
   - **Nombre nuevo**: "Jamm Free" — Jamm de "Jamming" (flujo, ritmo) y Free de "Libre" (libertad de elegir y recoger).
   - **Slogan**: "Easy Collection" (Recogida fácil).
-  - **Logotipo**: Isotipo entrelazado "JF" con flamas de vapor/calor en degradado coral-ámbar-gris pizarra. Generado por IA, retocado por el usuario en PNG transparente sin fondo.
-  - **Asset guardado**: `public/assets/jamm-free-logo.png` — imagen PNG transparente de alta fidelidad.
-  - **Componente nuevo**: `src/components/ui/Logo.jsx` — componente React reutilizable que carga la imagen del logo con soporte para 3 tamaños (`sm`, `md`, `lg`) y texto opcional "Jamm Free / Easy Collection".
-  - **Archivos modificados (rebranding textual + visual)**:
-    - `index.html` — título "Jamm Free | Easy Collection", meta description SEO, favicon apuntando a `jamm-free-logo.png`, theme-color `#0B0F19`.
-    - `src/layouts/MainLayout.jsx` — header admin usa `<Logo />` en lugar de ChefHat + "RestoMVP".
-    - `src/pages/MarketplacePage.jsx` — header marketplace usa `<Logo />`, footer "© Jamm Free".
-    - `src/pages/LoginPage.jsx` — pantalla login muestra logo grande + "Jamm Free / Easy Collection".
-    - `src/pages/LandingPage.jsx` — navbar usa `<Logo />`, texto hero "Jamm Free es un sistema de POS...".
-    - `src/pages/BillingPage.jsx` — texto de suscripción "Jamm Free".
-    - `src/pages/ClientePage.jsx` — fallback logo/nombre usa Jamm Free en vez de RestoMVP.
-    - `src/pages/CocinaPage.jsx` — icono de sección cambiado de ChefHat a UtensilsCrossed.
-    - `src/pages/OrderTrackingPage.jsx` — status "En Cocina" usa UtensilsCrossed en vez de ChefHat.
-    - `src/components/map/RestaurantPreviewPopup.jsx` — fallback logo usa `jamm-free-logo.png`, placeholder de producto usa UtensilsCrossed.
-    - `src/components/ui/PhoneInput.jsx` — comentario actualizado a "Jamm Free".
-    - `src/hooks/useCityDetection.js` — User-Agent de Nominatim cambiado a "JammFree/1.0".
-  - **Eliminado**: Todas las importaciones de `ChefHat` de lucide-react en archivos de branding (ya no es el icono de la marca).
-  - **Verificación**: Build de producción exitoso (`npx vite build`), 0 errores. Búsqueda exhaustiva confirmó 0 referencias restantes a "RestoMVP", "Resto-MVP" o "ChefHat" en el código fuente.
+  - **Logotipo**: Isotipo entrelazado "JF" con flamas de vapor/calor en degradado coral-ámbar-gris pizarra.
+  - **Assets separados (profesional)**:
+    - `public/assets/jamm-free-icon.png` — isotipo solo (símbolo JF flamas) para favicon, iconos y marcadores.
+    - `public/assets/jamm-free-text.png` — tipografía "JAMM FREE" para uso junto al isotipo.
+    - `public/assets/jamm-free-logo.png` — logo completo (isotipo + tipografía + slogan) como referencia.
+  - **Componente `Logo.jsx`**: Usa assets separados: isotipo (`jamm-free-icon.png`) + tipografía (`jamm-free-text.png`). 
+    - Soporta 4 tamaños: `sm` (h-8), `md` (h-10), `lg` (h-14), `xl` (h-20).
+    - Props: `size`, `showText`, `iconOnly`, `className`, `onClick`.
+    - Tipografía usa filtro CSS `brightness-0 invert` para invertir a blanco sobre fondo oscuro.
+  - **Tamaños por vista**:
+    - `MainLayout.jsx` → `md` (panel admin header).
+    - `MarketplacePage.jsx` → `md` (marketplace header).
+    - `LandingPage.jsx` → `lg` (landing navbar — más grande para impacto).
+    - `LoginPage.jsx` → `xl` (pantalla de login — máximo impacto).
+    - `ClientePage.jsx` → isotipo `h-9` directo + tipografía `h-4` (header restaurante).
+    - `RestaurantPreviewPopup.jsx` → isotipo `w-8 h-8` (popup del mapa).
+    - `index.html` → favicon usa `jamm-free-icon.png`.
+  - **Eliminado**: Todas las importaciones de `ChefHat` de lucide-react en archivos de branding.
+  - **Verificación**: Build de producción exitoso, 0 errores.

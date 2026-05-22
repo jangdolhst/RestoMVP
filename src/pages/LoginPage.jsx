@@ -47,9 +47,8 @@ const LoginPage = () => {
       <div className="glass-panel w-full max-w-md p-8 relative z-10 border-t-2 border-t-orange-500/50">
         
         <div className="flex flex-col items-center mb-8">
-          <Logo size="lg" showText={false} className="justify-center mb-4" />
-          <h1 className="text-2xl font-bold text-white tracking-tight">Jamm<span className="text-orange-500"> Free</span></h1>
-          <p className="text-slate-500 text-xs tracking-widest uppercase font-medium mt-0.5">Easy Collection</p>
+          <Logo size="xl" showText={true} className="justify-center" />
+          <p className="text-slate-500 text-xs tracking-widest uppercase font-medium mt-2">Easy Collection</p>
         </div>
 
         {/* Tabs */}

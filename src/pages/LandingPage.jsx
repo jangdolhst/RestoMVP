@@ -15,7 +15,7 @@ const LandingPage = () => {
         
         {/* Navbar */}
         <header className="flex justify-between items-center mb-16">
-            <Logo size="md" showText={true} onClick={() => navigate('/')} />
+            <Logo size="lg" showText={true} onClick={() => navigate('/')} />
           <button onClick={() => navigate('/pos')} className="btn-secondary hidden md:block">
             Acceso Negocios
           </button>
