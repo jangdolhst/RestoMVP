@@ -10,10 +10,10 @@
  *   - onClick: function — handler opcional de clic
  */
 const SIZES = {
-  sm: { icon: 'h-8', text: 'h-3.5', pull: '-ml-0.5' },
-  md: { icon: 'h-10', text: 'h-4', pull: '-ml-0.5' },
-  lg: { icon: 'h-14', text: 'h-5', pull: '-ml-1' },
-  xl: { icon: 'h-20', text: 'h-7', pull: '-ml-1' },
+  sm: { icon: 'h-10', text: 'h-3.5', pull: '-ml-1' },
+  md: { icon: 'h-12', text: 'h-4', pull: '-ml-1.5' },
+  lg: { icon: 'h-16', text: 'h-5', pull: '-ml-2' },
+  xl: { icon: 'h-24', text: 'h-7', pull: '-ml-2.5' },
 };
 
 const Logo = ({ size = 'md', showText = true, iconOnly = false, className = '', onClick }) => {
