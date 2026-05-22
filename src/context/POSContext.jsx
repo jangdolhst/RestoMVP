@@ -39,6 +39,8 @@ export const POSProvider = ({ children }) => {
   const [isOnline, setIsOnline] = useState(false);
   const [currentCategoryId, setCurrentCategoryId] = useState(null);
   const [tableCount, setTableCount] = useState(0);
+  const [waiters, setWaiters] = useState([]);
+  const [waiterName, setWaiterName] = useState('');
 
   // Auto-fill desde perfil guardado (solo en modo cliente)
   useEffect(() => {
@@ -76,8 +78,11 @@ export const POSProvider = ({ children }) => {
 
       // Cargar table_count del perfil del restaurante (para dueño)
       if (!isClientMenu) {
-        supabase.from('restaurant_profiles').select('table_count').eq('id', currentTenantId).maybeSingle()
-          .then(({ data }) => { if (data?.table_count != null) setTableCount(data.table_count); });
+        supabase.from('restaurant_profiles').select('table_count, waiters').eq('id', currentTenantId).maybeSingle()
+          .then(({ data }) => {
+            if (data?.table_count != null) setTableCount(data.table_count);
+            if (data?.waiters) setWaiters(data.waiters);
+          });
       }
 
       // Solo el dueño necesita las órdenes (RLS bloquea al anon de todas formas)
@@ -212,6 +217,7 @@ export const POSProvider = ({ children }) => {
       tenant_id: currentTenantId,
       client_name: clientName || 'Sin Nombre',
       table_name: finalTableName,
+      waiter_name: waiterName || null,
       phone: phone || null,
       type: orderIsOnline ? 'online' : 'local',
       total: cartTotal,
@@ -428,6 +434,9 @@ export const POSProvider = ({ children }) => {
     orders,
     isLoading,
     tableCount,
+    waiters,
+    waiterName,
+    setWaiterName,
     addToCart,
     removeFromCart,
     clearCart,

@@ -21,7 +21,10 @@ const TicketSidebar = ({ isClientMode = false, isOpen = false, onClose }) => {
     removeFromCart, 
     placeOrder,
     tableCount,
-    orders
+    orders,
+    waiters,
+    waiterName,
+    setWaiterName
   } = usePOS();
 
   // Calcular mesas ocupadas (órdenes activas que tienen mesa asignada)
@@ -204,6 +207,24 @@ const TicketSidebar = ({ isClientMode = false, isOpen = false, onClose }) => {
             </div>
           ) : (
             <>
+              {/* Mesero dropdown */}
+              {!isOnline && waiters.length > 0 && (
+                <div className="flex items-center gap-3">
+                  <label className="text-sm text-slate-300 w-16">Mesero:</label>
+                  <select
+                    value={waiterName}
+                    onChange={(e) => setWaiterName(e.target.value)}
+                    className="glass-input flex-1 py-1.5 cursor-pointer"
+                  >
+                    <option value="">Sin asignar</option>
+                    {waiters.map((w) => (
+                      <option key={w} value={w}>{w}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Mesa dropdown */}
               {!isOnline && tableCount > 0 && (
                 <div className="flex items-center gap-3">
                   <label className="text-sm text-slate-300 w-16">Mesa:</label>

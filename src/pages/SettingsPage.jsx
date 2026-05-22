@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Save, Upload, Image, Store, Loader2, CheckCircle2, AlertCircle, X, MapPin, Search } from 'lucide-react';
+import { Save, Upload, Image, Store, Loader2, CheckCircle2, AlertCircle, X, MapPin, Search, Plus, UserRound, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import PhoneInput from '../components/ui/PhoneInput';
@@ -12,6 +12,105 @@ const AVAILABLE_CATEGORIES = [
 ];
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+
+/**
+ * WaitersSection — Subcomponente para gestionar lista de meseros.
+ */
+const WaitersSection = ({ waiters = [], onChange }) => {
+  const [newName, setNewName] = useState('');
+  const [isAdding, setIsAdding] = useState(false);
+
+  const handleAdd = () => {
+    const name = newName.trim();
+    if (!name) return;
+    if (waiters.includes(name)) return;
+    onChange([...waiters, name]);
+    setNewName('');
+    setIsAdding(false);
+  };
+
+  const handleRemove = (name) => {
+    onChange(waiters.filter((w) => w !== name));
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') handleAdd();
+    if (e.key === 'Escape') { setIsAdding(false); setNewName(''); }
+  };
+
+  return (
+    <div className="glass-panel p-5 space-y-3">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-bold text-white">Meseros</h2>
+          <p className="text-xs text-slate-400">Agrega meseros para asignarlos a las órdenes en el POS.</p>
+        </div>
+        {!isAdding && (
+          <button
+            onClick={() => setIsAdding(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-orange-500/10 text-orange-400 border border-orange-500/20 hover:bg-orange-500/20 transition-all"
+          >
+            <Plus size={14} />
+            Añadir
+          </button>
+        )}
+      </div>
+
+      {/* Input para añadir */}
+      {isAdding && (
+        <div className="flex items-center gap-2 animate-fade-in">
+          <input
+            type="text"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className="glass-input flex-1 py-2"
+            placeholder="Nombre del mesero"
+            maxLength={30}
+            autoFocus
+          />
+          <button
+            onClick={handleAdd}
+            disabled={!newName.trim()}
+            className="px-3 py-2 rounded-lg text-sm font-medium bg-orange-500 text-white hover:bg-orange-400 disabled:bg-white/5 disabled:text-slate-600 transition-all"
+          >
+            Guardar
+          </button>
+          <button
+            onClick={() => { setIsAdding(false); setNewName(''); }}
+            className="p-2 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 transition-all"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
+      {/* Lista de meseros */}
+      {waiters.length > 0 ? (
+        <div className="flex flex-wrap gap-2">
+          {waiters.map((name) => (
+            <div
+              key={name}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-sm"
+            >
+              <UserRound size={14} className="text-orange-400" />
+              <span className="text-white font-medium">{name}</span>
+              <button
+                onClick={() => handleRemove(name)}
+                className="p-0.5 rounded text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                title={`Eliminar ${name}`}
+              >
+                <X size={12} />
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs text-slate-500 italic">No hay meseros agregados.</p>
+      )}
+    </div>
+  );
+};
 
 const SettingsPage = () => {
   const { user } = useAuth();
@@ -35,6 +134,7 @@ const SettingsPage = () => {
     latitude: null,
     longitude: null,
     table_count: 0,
+    waiters: [],
   });
 
   // Cargar perfil existente
@@ -46,7 +146,7 @@ const SettingsPage = () => {
       try {
         const { data, error } = await supabase
           .from('restaurant_profiles')
-          .select('name, description, logo_url, banner_url, address, phone, categories, is_active, latitude, longitude, table_count')
+          .select('name, description, logo_url, banner_url, address, phone, categories, is_active, latitude, longitude, table_count, waiters')
           .eq('id', user.id)
           .maybeSingle();
 
@@ -65,6 +165,7 @@ const SettingsPage = () => {
             latitude: data.latitude || null,
             longitude: data.longitude || null,
             table_count: data.table_count || 0,
+            waiters: data.waiters || [],
           });
         }
       } catch (err) {
@@ -272,6 +373,7 @@ const SettingsPage = () => {
           latitude: profile.latitude,
           longitude: profile.longitude,
           table_count: profile.table_count,
+          waiters: profile.waiters,
           updated_at: new Date().toISOString(),
         }, { onConflict: 'id' });
 
@@ -529,6 +631,9 @@ const SettingsPage = () => {
             <p className="text-xs text-slate-500 mt-1">{profile.table_count === 0 ? 'Sin mesas (solo pedidos para llevar)' : `${profile.table_count} mesa${profile.table_count > 1 ? 's' : ''} disponible${profile.table_count > 1 ? 's' : ''}`}</p>
           </div>
         </div>
+
+        {/* Meseros */}
+        <WaitersSection waiters={profile.waiters} onChange={(w) => handleChange('waiters', w)} />
 
         {/* Categorías */}
         <div className="glass-panel p-5 space-y-3">
