@@ -241,33 +241,33 @@
     (() => {
       'use strict';
 
+      const errorEl = document.getElementById('ticket-error');
+      const contentEl = document.getElementById('ticket-content');
+
       const showError = (msg) => {
-        document.getElementById('ticket-error').textContent = msg;
-        document.getElementById('ticket-error').style.display = 'block';
+        errorEl.textContent = msg;
+        errorEl.style.display = 'block';
+        contentEl.style.display = 'none';
       };
 
       const escapeText = (str) => {
         if (!str) return '';
         const div = document.createElement('div');
-        div.textContent = str;
+        div.textContent = String(str);
         return div.innerHTML;
       };
 
-      // Intentar recuperar los datos de la orden
+      // ─── PASO 1: Obtener los datos de la orden ──────────────────
       let order = null;
 
-      // Método 1: Leer desde la ventana padre (window.opener)
-      // El padre guardó los datos en window.__jfPrintData ANTES de abrir esta ventana
+      // Método 1: window.opener (la ventana padre guardó datos antes de abrir)
       try {
         if (window.opener && window.opener.__jfPrintData) {
           order = window.opener.__jfPrintData;
         }
-      } catch (e) {
-        // Cross-origin: el navegador puede bloquear acceso al opener
-        console.warn('No se pudo leer del opener:', e);
-      }
+      } catch (e) { /* cross-origin block */ }
 
-      // Método 2: localStorage como fallback
+      // Método 2: localStorage
       if (!order) {
         try {
           const raw = localStorage.getItem('jf_print_order');
@@ -275,137 +275,153 @@
             order = JSON.parse(raw);
             localStorage.removeItem('jf_print_order');
           }
-        } catch (e) {
-          console.warn('No se pudo leer localStorage:', e);
-        }
+        } catch (e) { /* ignore */ }
       }
 
-      // Método 3: URL query string como último recurso
+      // Método 3: URL query param — OJO: URLSearchParams.get() ya decodifica,
+      // así que NO hacer decodeURIComponent otra vez
       if (!order) {
         try {
           const urlParams = new URLSearchParams(window.location.search);
-          const encoded = urlParams.get('d');
-          if (encoded) {
-            order = JSON.parse(decodeURIComponent(encoded));
+          const rawParam = urlParams.get('d');
+          if (rawParam) {
+            order = JSON.parse(rawParam);
           }
         } catch (e) {
-          console.warn('No se pudo leer URL params:', e);
+          // Si URLSearchParams falló, intentar parseo manual del hash
+          try {
+            const match = window.location.search.match(/[?&]d=(.+)/);
+            if (match) {
+              order = JSON.parse(decodeURIComponent(match[1]));
+            }
+          } catch (e2) { /* ignore */ }
         }
       }
 
       if (!order) {
-        showError('No se encontraron datos del pedido. Intenta de nuevo desde el panel de órdenes.');
+        showError('No se encontraron datos del pedido. Cierra esta ventana e intenta de nuevo.');
         return;
       }
 
-      // ─── Rellenar el ticket ──────────────────────────────────────
+      // ─── PASO 2: Renderizar el ticket (todo en try-catch) ────────
+      try {
+        // Número de orden
+        const orderNum = order.orderNumber || order.order_number || '0';
+        document.getElementById('tk-number').textContent = '#' + orderNum;
 
-      // Número de orden
-      const orderNum = order.orderNumber || order.order_number || '0';
-      document.getElementById('tk-number').textContent = `#${orderNum}`;
+        // Tipo
+        const table = order.tableName || order.table_name || '';
+        let typeText = 'PARA LLEVAR';
+        if (order.type === 'online') typeText = 'EN LÍNEA';
+        else if (table) typeText = table.toUpperCase();
+        document.getElementById('tk-type').textContent = typeText;
 
-      // Tipo (mesa, para llevar, en línea)
-      const tableName = order.tableName || order.table_name || '';
-      let orderTypeText = 'PARA LLEVAR';
-      if (order.type === 'online') {
-        orderTypeText = 'EN LÍNEA';
-      } else if (tableName) {
-        orderTypeText = tableName.toUpperCase();
-      }
-      document.getElementById('tk-type').textContent = orderTypeText;
+        // Cliente
+        const client = order.clientName || order.client_name || 'Sin nombre';
+        document.getElementById('tk-client').textContent = client;
 
-      // Cliente
-      const clientName = order.clientName || order.client_name || 'Sin nombre';
-      document.getElementById('tk-client').textContent = clientName;
-
-      // Fecha y Hora
-      const rawDate = order.createdAt || order.created_at;
-      const dateObj = rawDate ? new Date(rawDate) : new Date();
-      
-      const dia = dateObj.getDate();
-      const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-      const mes = meses[dateObj.getMonth()];
-      const año = dateObj.getFullYear();
-      document.getElementById('tk-date').textContent = `${dia} ${mes} ${año}`;
-      
-      const horas = String(dateObj.getHours()).padStart(2, '0');
-      const minutos = String(dateObj.getMinutes()).padStart(2, '0');
-      document.getElementById('tk-time').textContent = `${horas}:${minutos}`;
-
-      // Mesero (si existe)
-      const waiterName = order.waiterName || order.waiter_name || '';
-      if (waiterName) {
-        document.getElementById('tk-waiter').textContent = waiterName;
-        document.getElementById('tk-waiter-row').style.display = 'flex';
-      }
-
-      // ─── Items ─────────────────────────────────────────────────
-      const tbody = document.getElementById('tk-items');
-      const items = order.items || [];
-
-      if (items.length === 0) {
-        const tr = document.createElement('tr');
-        tr.innerHTML = '<td colspan="3" style="text-align:center; padding:8px; color:#999;">Sin artículos</td>';
-        tbody.appendChild(tr);
-      } else {
-        items.forEach(item => {
-          const qty = item.quantity || 1;
-          const name = item.product_name || item.name || 'Artículo';
-          const unitPrice = Number(item.price) || 0;
-          
-          // Calcular costo extra de modificaciones
-          const extraCost = (item.modifications || [])
-            .filter(m => m.type === 'extra')
-            .reduce((sum, m) => sum + (Number(m.price) || 0), 0);
-          
-          const subtotal = (unitPrice + extraCost) * qty;
-
-          const tr = document.createElement('tr');
-
-          // Cantidad
-          const tdQty = document.createElement('td');
-          tdQty.className = 'col-qty';
-          tdQty.textContent = `${qty}x`;
-
-          // Nombre + mods
-          const tdName = document.createElement('td');
-          tdName.className = 'col-name';
-          let nameHTML = escapeText(name);
-          
-          if (item.modifications && item.modifications.length > 0) {
-            item.modifications.forEach(mod => {
-              const prefix = mod.type === 'extra' ? '+' : '−';
-              const priceTag = mod.type === 'extra' && mod.price > 0 ? ` ($${Number(mod.price).toFixed(2)})` : '';
-              nameHTML += `<div class="mod-line">${prefix} ${escapeText(mod.name)}${priceTag}</div>`;
-            });
+        // Fecha y Hora
+        const rawDate = order.createdAt || order.created_at;
+        let dateText = '—';
+        let timeText = '—';
+        if (rawDate) {
+          const d = new Date(rawDate);
+          if (!isNaN(d.getTime())) {
+            const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+            dateText = d.getDate() + ' ' + meses[d.getMonth()] + ' ' + d.getFullYear();
+            timeText = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
           }
-          tdName.innerHTML = nameHTML;
+        }
+        document.getElementById('tk-date').textContent = dateText;
+        document.getElementById('tk-time').textContent = timeText;
 
-          // Subtotal
-          const tdPrice = document.createElement('td');
-          tdPrice.className = 'col-price';
-          tdPrice.textContent = `$${subtotal.toFixed(2)}`;
+        // Mesero
+        const waiter = order.waiterName || order.waiter_name || '';
+        if (waiter) {
+          document.getElementById('tk-waiter').textContent = waiter;
+          document.getElementById('tk-waiter-row').style.display = 'flex';
+        }
 
-          tr.appendChild(tdQty);
-          tr.appendChild(tdName);
-          tr.appendChild(tdPrice);
+        // ─── Items ─────────────────────────────────────────────────
+        const tbody = document.getElementById('tk-items');
+        let items = order.items;
+
+        // Defensive: items podría ser string, null, undefined, o array
+        if (typeof items === 'string') {
+          try { items = JSON.parse(items); } catch(e) { items = []; }
+        }
+        if (!Array.isArray(items)) items = [];
+
+        if (items.length === 0) {
+          const tr = document.createElement('tr');
+          tr.innerHTML = '<td colspan="3" style="text-align:center;padding:8px;color:#999;">Sin artículos</td>';
           tbody.appendChild(tr);
-        });
+        } else {
+          items.forEach(item => {
+            const qty = Number(item.quantity) || 1;
+            const name = item.product_name || item.name || 'Artículo';
+            const unitPrice = Number(item.price) || 0;
+
+            // Modifications puede ser string, array, null o undefined
+            let mods = item.modifications;
+            if (typeof mods === 'string') {
+              try { mods = JSON.parse(mods); } catch(e) { mods = []; }
+            }
+            if (!Array.isArray(mods)) mods = [];
+
+            const extraCost = mods
+              .filter(m => m && m.type === 'extra')
+              .reduce((sum, m) => sum + (Number(m.price) || 0), 0);
+
+            const subtotal = (unitPrice + extraCost) * qty;
+
+            const tr = document.createElement('tr');
+
+            const tdQty = document.createElement('td');
+            tdQty.className = 'col-qty';
+            tdQty.textContent = qty + 'x';
+
+            const tdName = document.createElement('td');
+            tdName.className = 'col-name';
+            let nameHTML = escapeText(name);
+            mods.forEach(mod => {
+              if (!mod || !mod.name) return;
+              const prefix = mod.type === 'extra' ? '+' : '−';
+              const tag = (mod.type === 'extra' && Number(mod.price) > 0) ? ' ($' + Number(mod.price).toFixed(2) + ')' : '';
+              nameHTML += '<div class="mod-line">' + prefix + ' ' + escapeText(mod.name) + tag + '</div>';
+            });
+            tdName.innerHTML = nameHTML;
+
+            const tdPrice = document.createElement('td');
+            tdPrice.className = 'col-price';
+            tdPrice.textContent = '$' + subtotal.toFixed(2);
+
+            tr.appendChild(tdQty);
+            tr.appendChild(tdName);
+            tr.appendChild(tdPrice);
+            tbody.appendChild(tr);
+          });
+        }
+
+        // Total
+        const total = Number(order.total) || 0;
+        document.getElementById('tk-total').textContent = '$' + total.toFixed(2);
+
+        // Título
+        document.title = 'Ticket #' + (order.orderNumber || order.order_number || '0') + ' — ' + client;
+
+        // Mostrar contenido
+        contentEl.style.display = 'block';
+
+        // Disparar impresión
+        setTimeout(() => { window.print(); }, 400);
+
+      } catch (renderError) {
+        // Si CUALQUIER cosa falla en el renderizado, mostrar el error visible
+        showError('Error al renderizar: ' + renderError.message);
+        console.error('Ticket render error:', renderError);
+        console.error('Order data:', JSON.stringify(order, null, 2));
       }
-
-      // ─── Total ─────────────────────────────────────────────────
-      const total = Number(order.total) || 0;
-      document.getElementById('tk-total').textContent = `$${total.toFixed(2)}`;
-
-      // ─── Título de la pestaña ──────────────────────────────────
-      document.title = `Ticket #${orderNum} — ${clientName}`;
-
-      // ─── Mostrar contenido y disparar impresión ────────────────
-      document.getElementById('ticket-content').style.display = 'block';
-
-      setTimeout(() => {
-        window.print();
-      }, 400);
     })();
   </script>
 </body>
