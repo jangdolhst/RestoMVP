@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useMemo, useEffect } from 'react';
+import { createContext, useContext, useState, useMemo, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
@@ -41,6 +41,8 @@ export const POSProvider = ({ children }) => {
   const [tableCount, setTableCount] = useState(0);
   const [waiters, setWaiters] = useState([]);
   const [waiterName, setWaiterName] = useState('');
+  const lastOrderTimeRef = useRef(0);
+  const ORDER_THROTTLE_MS = 15000; // 15 segundos entre pedidos
 
   // Auto-fill desde perfil guardado (solo en modo cliente)
   useEffect(() => {
@@ -192,6 +194,12 @@ export const POSProvider = ({ children }) => {
   // Acciones de Órdenes (Supabase)
   const placeOrder = async (overrideIsOnline = null) => {
     if (cartItems.length === 0) return false;
+
+    // Throttle: prevenir spam de pedidos (mínimo 15s entre cada uno)
+    const now = Date.now();
+    if (now - lastOrderTimeRef.current < ORDER_THROTTLE_MS) {
+      return { success: false, error: 'Espera unos segundos antes de enviar otro pedido.' };
+    }
     
     const orderIsOnline = overrideIsOnline !== null ? overrideIsOnline : isOnline;
 
@@ -310,6 +318,7 @@ export const POSProvider = ({ children }) => {
       const savedItems = [...cartItems];
       const savedTotal = cartTotal;
       clearCart();
+      lastOrderTimeRef.current = Date.now();
 
       return {
         success: true,
@@ -326,7 +335,10 @@ export const POSProvider = ({ children }) => {
     }
   };
 
+  const VALID_ORDER_STATUSES = ['pendiente_confirmacion', 'pendiente_cocina', 'listo', 'pagado', 'cancelado'];
+
   const updateOrderStatus = async (orderId, newStatus) => {
+    if (!VALID_ORDER_STATUSES.includes(newStatus)) return;
     setOrders(prev => prev.map(order => 
       order.id === orderId ? { ...order, status: newStatus } : order
     ));

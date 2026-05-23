@@ -19,15 +19,12 @@ const ProtectedRoute = () => {
   }
 
   // Verificar suscripción activa o en prueba
-  if (subscriptionData) {
-    const status = subscriptionData.status;
-    // Si la suscripción ha expirado, fue cancelada o no pagada, redirigir a /billing
-    if (status !== 'active' && status !== 'trialing') {
-      return <Navigate to="/billing" replace />;
-    }
+  // Si subscriptionData es null (error de red, fila eliminada), denegar acceso
+  const subStatus = subscriptionData?.status;
+  if (subStatus !== 'active' && subStatus !== 'trialing') {
+    return <Navigate to="/billing" replace />;
   }
 
-  // Si hay usuario y su suscripción está activa (o aún no cargó por algún error), renderizar
   return <Outlet />;
 };
 

@@ -18,7 +18,7 @@ export const AuthProvider = ({ children }) => {
     }
     const { data, error } = await supabase
       .from('subscriptions')
-      .select('*')
+      .select('id, status, current_period_end')
       .eq('tenant_id', userId)
       .maybeSingle();
       

@@ -176,10 +176,10 @@ CREATE POLICY "Dueños pueden gestionar items" ON order_items
   ) WITH CHECK (
     EXISTS (SELECT 1 FROM orders WHERE orders.id = order_items.order_id AND orders.tenant_id = auth.uid())
   );
--- Clientes: Pueden insertar items (la FK garantiza que la orden exista)
+-- Clientes: Pueden insertar items si la orden existe
 CREATE POLICY "Clientes pueden insertar items" ON order_items
   FOR INSERT WITH CHECK (
-    order_id IS NOT NULL 
+    EXISTS (SELECT 1 FROM orders WHERE orders.id = order_id)
   );
 
 
@@ -249,7 +249,10 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public;
+
+REVOKE EXECUTE ON FUNCTION set_next_order_number() FROM PUBLIC, anon, authenticated;
 
 DROP TRIGGER IF EXISTS trg_set_next_order_number ON orders;
 CREATE TRIGGER trg_set_next_order_number
