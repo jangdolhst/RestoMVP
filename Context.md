@@ -143,3 +143,13 @@ El siguiente paso crÃ­tico es la **IntegraciÃ³n de Pagos y Suscripciones con
   - **Leyenda**: Barra inferior con iconos explicativos (punto naranja = con pedidos, cuadrado azul = hoy).
   - **Performance**: Consulta solo órdenes del mes visible (`gte`/`lte` en `created_at`), no todas las órdenes históricas.
   - **Archivos**: `src/components/ui/OrderCalendar.jsx` [NEW], `src/pages/PagosPage.jsx` [MODIFY — se eliminó import de Calendar de lucide].
+- **Pentest Funcional — 7 Vulnerabilidades Corregidas (22/05/2026)**:
+  - **VULN-01 (Crítica)**: `.gitignore` no protegía `.env*`. Añadidas reglas explícitas.
+  - **VULN-02 (Alta)**: RLS de `order_items` INSERT solo verificaba `NOT NULL`, no existencia de la orden. Corregida con `EXISTS(SELECT 1 FROM orders WHERE id = order_id)`. Aplicada en Supabase live.
+  - **VULN-03 (Alta)**: Función `set_next_order_number()` sin `SECURITY DEFINER`, `SET search_path` ni `REVOKE`. Corregida. Aplicada en Supabase live.
+  - **VULN-04 (Media)**: Sin rate limiting en `placeOrder()`. Añadido throttle de 15 segundos con `useRef`.
+  - **VULN-05 (Media)**: `updateOrderStatus()` no validaba status destino. Añadido guard clause con whitelist.
+  - **VULN-06 (Media)**: `ProtectedRoute` dejaba pasar si `subscriptionData` era null. Ahora null = denegado.
+  - **VULN-07 (Baja)**: `select('*')` en suscripciones exponía IDs de Stripe al frontend. Cambiado a `select('id, status, current_period_end')`.
+  - **Archivos**: `.gitignore`, `ProtectedRoute.jsx`, `AuthContext.jsx`, `POSContext.jsx`, `schema_consolidado.sql`.
+
