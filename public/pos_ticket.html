@@ -256,9 +256,15 @@
       // Intentar recuperar los datos de la orden
       let order = null;
 
-      // Método 1: Datos inyectados por la ventana padre (window.opener)
-      if (window.__printOrder) {
-        order = window.__printOrder;
+      // Método 1: Leer desde la ventana padre (window.opener)
+      // El padre guardó los datos en window.__jfPrintData ANTES de abrir esta ventana
+      try {
+        if (window.opener && window.opener.__jfPrintData) {
+          order = window.opener.__jfPrintData;
+        }
+      } catch (e) {
+        // Cross-origin: el navegador puede bloquear acceso al opener
+        console.warn('No se pudo leer del opener:', e);
       }
 
       // Método 2: localStorage como fallback
@@ -267,10 +273,23 @@
           const raw = localStorage.getItem('jf_print_order');
           if (raw) {
             order = JSON.parse(raw);
-            localStorage.removeItem('jf_print_order'); // Limpiar tras usar
+            localStorage.removeItem('jf_print_order');
           }
         } catch (e) {
-          console.error('Error leyendo localStorage:', e);
+          console.warn('No se pudo leer localStorage:', e);
+        }
+      }
+
+      // Método 3: URL query string como último recurso
+      if (!order) {
+        try {
+          const urlParams = new URLSearchParams(window.location.search);
+          const encoded = urlParams.get('d');
+          if (encoded) {
+            order = JSON.parse(decodeURIComponent(encoded));
+          }
+        } catch (e) {
+          console.warn('No se pudo leer URL params:', e);
         }
       }
 
