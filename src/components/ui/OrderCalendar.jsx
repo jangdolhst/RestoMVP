@@ -51,22 +51,39 @@ const OrderCalendar = ({ value, onChange, tenantId }) => {
       const lastDay = new Date(viewYear, viewMonth + 1, 0).getDate();
       const endOfMonth = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}T23:59:59`;
 
-      const { data, error } = await supabase
-        .from('orders')
-        .select('created_at')
-        .eq('tenant_id', tenantId)
-        .gte('created_at', startOfMonth)
-        .lte('created_at', endOfMonth)
-        .not('status', 'eq', 'cancelado');
-
-      if (error) throw error;
-
       const daysSet = new Set();
-      (data || []).forEach(order => {
-        const d = new Date(order.created_at);
-        const dayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        daysSet.add(dayStr);
-      });
+      const pageSize = 1000;
+      let page = 0;
+      let hasMore = true;
+
+      while (hasMore) {
+        const from = page * pageSize;
+        const to = from + pageSize - 1;
+
+        const { data, error } = await supabase
+          .from('orders')
+          .select('created_at')
+          .eq('tenant_id', tenantId)
+          .gte('created_at', startOfMonth)
+          .lte('created_at', endOfMonth)
+          .not('status', 'eq', 'cancelado')
+          .order('created_at', { ascending: true })
+          .range(from, to);
+
+        if (error) throw error;
+
+        (data || []).forEach(order => {
+          const d = new Date(order.created_at);
+          const dayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+          daysSet.add(dayStr);
+        });
+
+        hasMore = (data || []).length === pageSize;
+        page += 1;
+
+        // Prevent infinite loops if the backend misreports pagination boundaries.
+        if (page > 50) hasMore = false;
+      }
 
       setActiveDays(daysSet);
     } catch (err) {

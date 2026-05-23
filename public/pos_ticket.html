@@ -8,7 +8,7 @@
       margin: 0;
       size: 80mm auto;
     }
-    
+
     * {
       box-sizing: border-box;
       margin: 0;
@@ -30,32 +30,30 @@
       body { padding: 0 2mm; }
     }
 
-    .text-center { text-align: center; }
-    .text-right { text-align: right; }
-    .bold { font-weight: bold; }
-
     .divider {
       border: none;
       border-top: 1px dashed #000;
       margin: 6px 0;
     }
+
     .divider-double {
       border: none;
       border-top: 2px solid #000;
       margin: 6px 0;
     }
 
-    /* Header */
     .header {
       text-align: center;
       margin-bottom: 4px;
     }
+
     .biz-name {
       font-size: 18px;
       font-weight: 900;
       letter-spacing: 1px;
       margin-bottom: 1px;
     }
+
     .biz-subtitle {
       font-size: 10px;
       letter-spacing: 2px;
@@ -63,7 +61,6 @@
       color: #444;
     }
 
-    /* Order Info */
     .order-badge {
       text-align: center;
       font-size: 22px;
@@ -71,6 +68,7 @@
       letter-spacing: 2px;
       margin: 6px 0 2px;
     }
+
     .order-type {
       text-align: center;
       font-size: 13px;
@@ -85,26 +83,30 @@
       font-size: 11px;
       line-height: 1.6;
     }
+
     .info-label { color: #555; }
     .info-value { font-weight: bold; }
 
-    /* Items Table */
     .items-table {
       width: 100%;
       border-collapse: collapse;
       font-size: 11px;
     }
+
     .items-table th {
       text-align: left;
       padding-bottom: 3px;
       font-size: 10px;
       border-bottom: 1px solid #000;
     }
+
     .items-table th:last-child { text-align: right; }
+
     .items-table td {
       padding: 3px 0;
       vertical-align: top;
     }
+
     .col-qty { width: 12%; }
     .col-name { width: 58%; }
     .col-price { width: 30%; text-align: right; }
@@ -115,7 +117,6 @@
       color: #333;
     }
 
-    /* Totals */
     .total-line {
       display: flex;
       justify-content: space-between;
@@ -131,6 +132,7 @@
       color: #555;
       line-height: 1.5;
     }
+
     .footer-brand {
       font-size: 8px;
       color: #999;
@@ -138,7 +140,6 @@
       letter-spacing: 1px;
     }
 
-    /* Print button */
     .btn-print {
       display: block;
       width: 100%;
@@ -153,6 +154,7 @@
       margin-bottom: 10px;
       border-radius: 6px;
     }
+
     .btn-print:hover { background: #333; }
 
     .error-msg {
@@ -167,13 +169,11 @@
   </style>
 </head>
 <body>
-
-  <button class="btn-print no-print" onclick="window.print()">🖨️ Imprimir Ticket</button>
+  <button id="ticket-print-btn" class="btn-print no-print" type="button">Imprimir Ticket</button>
 
   <div id="ticket-error" class="error-msg" style="display:none;"></div>
 
   <div id="ticket-content">
-    <!-- Header -->
     <div class="header">
       <div class="biz-name" id="tk-biz">JAMM FREE</div>
       <div class="biz-subtitle">Recibo de pedido</div>
@@ -181,38 +181,35 @@
 
     <hr class="divider-double">
 
-    <!-- Order Number + Type -->
     <div class="order-badge" id="tk-number">#001</div>
     <div class="order-type" id="tk-type">PARA LLEVAR</div>
 
     <hr class="divider">
 
-    <!-- Info -->
     <div class="info-line">
       <span class="info-label">Cliente:</span>
-      <span class="info-value" id="tk-client">—</span>
+      <span class="info-value" id="tk-client">-</span>
     </div>
     <div class="info-line">
       <span class="info-label">Fecha:</span>
-      <span class="info-value" id="tk-date">—</span>
+      <span class="info-value" id="tk-date">-</span>
     </div>
     <div class="info-line">
       <span class="info-label">Hora:</span>
-      <span class="info-value" id="tk-time">—</span>
+      <span class="info-value" id="tk-time">-</span>
     </div>
     <div id="tk-waiter-row" class="info-line" style="display:none;">
       <span class="info-label">Mesero:</span>
-      <span class="info-value" id="tk-waiter">—</span>
+      <span class="info-value" id="tk-waiter">-</span>
     </div>
 
     <hr class="divider-double">
 
-    <!-- Items -->
     <table class="items-table">
       <thead>
         <tr>
           <th class="col-qty">Cant</th>
-          <th class="col-name">Artículo</th>
+          <th class="col-name">Articulo</th>
           <th class="col-price">Subtotal</th>
         </tr>
       </thead>
@@ -221,7 +218,6 @@
 
     <hr class="divider-double">
 
-    <!-- Total -->
     <div class="total-line">
       <span>TOTAL</span>
       <span id="tk-total">$0.00</span>
@@ -229,200 +225,13 @@
 
     <hr class="divider">
 
-    <!-- Footer -->
     <div class="footer">
-      ¡Gracias por tu preferencia!<br>
+      Gracias por tu preferencia<br>
       Te esperamos pronto
     </div>
     <div class="footer-brand">JAMM FREE</div>
   </div>
 
-  <script>
-    (() => {
-      'use strict';
-
-      const errorEl = document.getElementById('ticket-error');
-      const contentEl = document.getElementById('ticket-content');
-
-      const showError = (msg) => {
-        errorEl.textContent = msg;
-        errorEl.style.display = 'block';
-        contentEl.style.display = 'none';
-      };
-
-      const escapeText = (str) => {
-        if (!str) return '';
-        const div = document.createElement('div');
-        div.textContent = String(str);
-        return div.innerHTML;
-      };
-
-      // ─── PASO 1: Obtener los datos de la orden ──────────────────
-      let order = null;
-
-      // Método 1: window.opener (la ventana padre guardó datos antes de abrir)
-      try {
-        if (window.opener && window.opener.__jfPrintData) {
-          order = window.opener.__jfPrintData;
-        }
-      } catch (e) { /* cross-origin block */ }
-
-      // Método 2: localStorage
-      if (!order) {
-        try {
-          const raw = localStorage.getItem('jf_print_order');
-          if (raw) {
-            order = JSON.parse(raw);
-            localStorage.removeItem('jf_print_order');
-          }
-        } catch (e) { /* ignore */ }
-      }
-
-      // Método 3: URL query param — OJO: URLSearchParams.get() ya decodifica,
-      // así que NO hacer decodeURIComponent otra vez
-      if (!order) {
-        try {
-          const urlParams = new URLSearchParams(window.location.search);
-          const rawParam = urlParams.get('d');
-          if (rawParam) {
-            order = JSON.parse(rawParam);
-          }
-        } catch (e) {
-          // Si URLSearchParams falló, intentar parseo manual del hash
-          try {
-            const match = window.location.search.match(/[?&]d=(.+)/);
-            if (match) {
-              order = JSON.parse(decodeURIComponent(match[1]));
-            }
-          } catch (e2) { /* ignore */ }
-        }
-      }
-
-      if (!order) {
-        showError('No se encontraron datos del pedido. Cierra esta ventana e intenta de nuevo.');
-        return;
-      }
-
-      // ─── PASO 2: Renderizar el ticket (todo en try-catch) ────────
-      try {
-        // Número de orden
-        const orderNum = order.orderNumber || order.order_number || '0';
-        document.getElementById('tk-number').textContent = '#' + orderNum;
-
-        // Tipo
-        const table = order.tableName || order.table_name || '';
-        let typeText = 'PARA LLEVAR';
-        if (order.type === 'online') typeText = 'EN LÍNEA';
-        else if (table) typeText = table.toUpperCase();
-        document.getElementById('tk-type').textContent = typeText;
-
-        // Cliente
-        const client = order.clientName || order.client_name || 'Sin nombre';
-        document.getElementById('tk-client').textContent = client;
-
-        // Fecha y Hora
-        const rawDate = order.createdAt || order.created_at;
-        let dateText = '—';
-        let timeText = '—';
-        if (rawDate) {
-          const d = new Date(rawDate);
-          if (!isNaN(d.getTime())) {
-            const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-            dateText = d.getDate() + ' ' + meses[d.getMonth()] + ' ' + d.getFullYear();
-            timeText = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
-          }
-        }
-        document.getElementById('tk-date').textContent = dateText;
-        document.getElementById('tk-time').textContent = timeText;
-
-        // Mesero
-        const waiter = order.waiterName || order.waiter_name || '';
-        if (waiter) {
-          document.getElementById('tk-waiter').textContent = waiter;
-          document.getElementById('tk-waiter-row').style.display = 'flex';
-        }
-
-        // ─── Items ─────────────────────────────────────────────────
-        const tbody = document.getElementById('tk-items');
-        let items = order.items;
-
-        // Defensive: items podría ser string, null, undefined, o array
-        if (typeof items === 'string') {
-          try { items = JSON.parse(items); } catch(e) { items = []; }
-        }
-        if (!Array.isArray(items)) items = [];
-
-        if (items.length === 0) {
-          const tr = document.createElement('tr');
-          tr.innerHTML = '<td colspan="3" style="text-align:center;padding:8px;color:#999;">Sin artículos</td>';
-          tbody.appendChild(tr);
-        } else {
-          items.forEach(item => {
-            const qty = Number(item.quantity) || 1;
-            const name = item.product_name || item.name || 'Artículo';
-            const unitPrice = Number(item.price) || 0;
-
-            // Modifications puede ser string, array, null o undefined
-            let mods = item.modifications;
-            if (typeof mods === 'string') {
-              try { mods = JSON.parse(mods); } catch(e) { mods = []; }
-            }
-            if (!Array.isArray(mods)) mods = [];
-
-            const extraCost = mods
-              .filter(m => m && m.type === 'extra')
-              .reduce((sum, m) => sum + (Number(m.price) || 0), 0);
-
-            const subtotal = (unitPrice + extraCost) * qty;
-
-            const tr = document.createElement('tr');
-
-            const tdQty = document.createElement('td');
-            tdQty.className = 'col-qty';
-            tdQty.textContent = qty + 'x';
-
-            const tdName = document.createElement('td');
-            tdName.className = 'col-name';
-            let nameHTML = escapeText(name);
-            mods.forEach(mod => {
-              if (!mod || !mod.name) return;
-              const prefix = mod.type === 'extra' ? '+' : '−';
-              const tag = (mod.type === 'extra' && Number(mod.price) > 0) ? ' ($' + Number(mod.price).toFixed(2) + ')' : '';
-              nameHTML += '<div class="mod-line">' + prefix + ' ' + escapeText(mod.name) + tag + '</div>';
-            });
-            tdName.innerHTML = nameHTML;
-
-            const tdPrice = document.createElement('td');
-            tdPrice.className = 'col-price';
-            tdPrice.textContent = '$' + subtotal.toFixed(2);
-
-            tr.appendChild(tdQty);
-            tr.appendChild(tdName);
-            tr.appendChild(tdPrice);
-            tbody.appendChild(tr);
-          });
-        }
-
-        // Total
-        const total = Number(order.total) || 0;
-        document.getElementById('tk-total').textContent = '$' + total.toFixed(2);
-
-        // Título
-        document.title = 'Ticket #' + (order.orderNumber || order.order_number || '0') + ' — ' + client;
-
-        // Mostrar contenido
-        contentEl.style.display = 'block';
-
-        // Disparar impresión
-        setTimeout(() => { window.print(); }, 400);
-
-      } catch (renderError) {
-        // Si CUALQUIER cosa falla en el renderizado, mostrar el error visible
-        showError('Error al renderizar: ' + renderError.message);
-        console.error('Ticket render error:', renderError);
-        console.error('Order data:', JSON.stringify(order, null, 2));
-      }
-    })();
-  </script>
+  <script src="/pos_ticket.js"></script>
 </body>
 </html>

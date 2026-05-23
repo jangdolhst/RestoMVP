@@ -281,9 +281,6 @@ const PagosPage = () => {
                     onClick={() => {
                       // Método 1: Guardar en la ventana actual (para window.opener)
                       window.__jfPrintData = order;
-                      // Método 2: localStorage fallback
-                      try { localStorage.setItem('jf_print_order', JSON.stringify(order)); } catch(e) { /* ignore */ }
-                      // Método 3: URL query param como último recurso (datos compactos)
                       const compactOrder = {
                         orderNumber: order.orderNumber, clientName: order.clientName,
                         tableName: order.tableName, type: order.type, total: order.total,
@@ -293,8 +290,22 @@ const PagosPage = () => {
                           price: i.price, modifications: i.modifications
                         }))
                       };
-                      const encoded = encodeURIComponent(JSON.stringify(compactOrder));
-                      window.open(`/pos_ticket.html?d=${encoded}`, '_blank', 'width=420,height=650');
+                      const ticketId = crypto.randomUUID
+                        ? crypto.randomUUID()
+                        : `tk_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+                      const storageKey = `jf_print_order_${ticketId}`;
+                      try {
+                        localStorage.setItem(storageKey, JSON.stringify(compactOrder));
+                      } catch { void 0; }
+                      const popup = window.open(
+                        `/pos_ticket.html?ticket=${encodeURIComponent(ticketId)}`,
+                        '_blank',
+                        'width=420,height=650'
+                      );
+                      try {
+                        window.__jfPrintData = compactOrder;
+                        if (popup) popup.__jfPrintData = compactOrder;
+                      } catch { void 0; }
                     }}
                     className="w-full flex justify-center items-center gap-2 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white border border-slate-600 transition-colors font-medium text-sm"
                   >
