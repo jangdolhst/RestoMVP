@@ -79,7 +79,8 @@ const TicketSidebar = ({ isClientMode = false, isOpen = false, onClose }) => {
         if (onClose) onClose();
       }
     } else {
-      showToast('Error al enviar la orden. Intenta de nuevo.');
+      const errorMsg = result?.error || 'Error al enviar la orden. Intenta de nuevo.';
+      showToast(errorMsg);
     }
   };
 
