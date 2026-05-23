@@ -131,3 +131,15 @@ El siguiente paso crÃ­tico es la **IntegraciÃ³n de Pagos y Suscripciones con
   - **Radios de filtrado**: GPS = 15km (preciso), IP = 50km (menos preciso).
   - **Cache key renombrada**: `resto_user_location` → `jf_user_location`.
   - **Archivos**: `api/geo.js` [NEW], `useCityDetection.js`, `MarketplacePage.jsx`.
+- **Impresión Nativa de Tickets Térmicos (22/05/2026)**:
+  - **Flujo**: Al hacer click en "🖨️ Imprimir Ticket" en el historial de órdenes (`PagosPage.jsx`), se guarda la orden en `localStorage` (key `print_order`) y se abre `/pos_ticket.html` en una ventana emergente (`width=400,height=600`).
+  - **Plantilla**: `pos_ticket.html` puro HTML/JS en `/public`, cero dependencias, carga instantánea síncrona.
+  - **CSS Térmico**: Reglas `@page { size: 80mm auto; margin: 0; }` y `width: 80mm` inyectadas para evitar que los dueños de los restaurantes tengan que ajustar los márgenes de impresión en el diálogo de Google Chrome/Windows.
+  - **Automatización**: Ejecuta `window.print()` automáticamente tras 300ms de renderizar.
+- **Calendario Visual de Órdenes (22/05/2026)**:
+  - **Problema**: El `<input type="date">` nativo no mostraba qué días tuvieron pedidos, haciendo difícil navegar el historial.
+  - **Solución**: Componente `OrderCalendar.jsx` — calendario dropdown con glassmorphism que consulta Supabase para mostrar indicadores visuales.
+  - **Indicadores**: Punto naranja en días con pedidos, anillo azul pulsante en "hoy", fondo naranja sólido en el día seleccionado, días sin órdenes en gris tenue.
+  - **Leyenda**: Barra inferior con iconos explicativos (punto naranja = con pedidos, cuadrado azul = hoy).
+  - **Performance**: Consulta solo órdenes del mes visible (`gte`/`lte` en `created_at`), no todas las órdenes históricas.
+  - **Archivos**: `src/components/ui/OrderCalendar.jsx` [NEW], `src/pages/PagosPage.jsx` [MODIFY — se eliminó import de Calendar de lucide].

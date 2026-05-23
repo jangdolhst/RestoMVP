@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Ticket de Pedido</title>
+  <style>
+    /* Estilos para Pantalla (Previsualización) y para Impresora Térmica 80mm */
+    @page {
+      margin: 0;
+      size: 80mm auto;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      font-size: 12px;
+      color: #000;
+      background: #fff;
+      width: 80mm;
+      padding: 5mm;
+      margin: 0 auto;
+    }
+
+    .ticket-wrapper {
+      width: 100%;
+    }
+
+    /* Ocultar botones y advertencias en impresión */
+    @media print {
+      .no-print {
+        display: none !important;
+      }
+      body {
+        padding: 0; /* Algunos navegadores añaden paddings extra, en impresión no queremos */
+      }
+    }
+
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+    .text-left { text-align: left; }
+    .font-bold { font-weight: bold; }
+    .uppercase { text-transform: uppercase; }
+    
+    .divider {
+      border-top: 1px dashed #000;
+      margin: 5px 0;
+    }
+    .divider-solid {
+      border-top: 1px solid #000;
+      margin: 5px 0;
+    }
+
+    .header-logo {
+      font-size: 20px;
+      font-weight: 900;
+      margin-bottom: 2px;
+      letter-spacing: 1px;
+    }
+    .header-subtitle {
+      font-size: 11px;
+      margin-bottom: 10px;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 3px;
+      font-size: 11px;
+    }
+
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 5px;
+      font-size: 11px;
+    }
+    .items-table th {
+      border-bottom: 1px solid #000;
+      padding-bottom: 3px;
+      font-weight: bold;
+    }
+    .items-table td {
+      padding: 3px 0;
+      vertical-align: top;
+    }
+    .td-qty { width: 15%; text-align: left; }
+    .td-item { width: 60%; text-align: left; }
+    .td-price { width: 25%; text-align: right; }
+
+    .modifications {
+      font-size: 10px;
+      font-style: italic;
+      padding-left: 5px;
+    }
+
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      font-weight: bold;
+      margin-top: 5px;
+    }
+
+    .footer {
+      margin-top: 15px;
+      font-size: 10px;
+    }
+
+    .btn-print {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      background: #000;
+      color: #fff;
+      text-align: center;
+      border: none;
+      font-size: 14px;
+      cursor: pointer;
+      margin-bottom: 15px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Botón manual en caso de que la impresión automática falle -->
+  <button class="btn-print no-print" onclick="window.print()">🖨️ Imprimir Ticket</button>
+
+  <div class="ticket-wrapper">
+    <div class="text-center">
+      <div class="header-logo">JAMM FREE</div>
+      <div class="header-subtitle">Recibo de Pedido</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="info-row font-bold uppercase" style="font-size: 14px;">
+      <span id="tk-order-type">Mesa / LLevar</span>
+      <span id="tk-order-number">#000</span>
+    </div>
+    
+    <div class="info-row">
+      <span>Cliente:</span>
+      <span id="tk-client" class="font-bold">Cliente</span>
+    </div>
+    <div class="info-row">
+      <span>Fecha:</span>
+      <span id="tk-date">DD/MM/YYYY HH:MM</span>
+    </div>
+
+    <div class="divider-solid"></div>
+
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th class="td-qty">Cant</th>
+          <th class="td-item">Articulo</th>
+          <th class="td-price">Sub</th>
+        </tr>
+      </thead>
+      <tbody id="tk-items">
+        <!-- Renderizado dinámico de items -->
+      </tbody>
+    </table>
+
+    <div class="divider-solid"></div>
+
+    <div class="total-row">
+      <span>TOTAL:</span>
+      <span id="tk-total">$0.00</span>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="text-center footer">
+      <p class="font-bold">¡Gracias por tu preferencia!</p>
+      <p style="margin-top: 5px;">Powered by Jamm Free</p>
+    </div>
+  </div>
+
+  <script>
+    // Recuperar datos pasados a través del localStorage para rapidez síncrona
+    document.addEventListener('DOMContentLoaded', () => {
+      const orderDataStr = localStorage.getItem('print_order');
+      if (!orderDataStr) {
+        document.getElementById('tk-client').textContent = 'Error: No hay orden cargada';
+        return;
+      }
+
+      try {
+        const order = JSON.parse(orderDataStr);
+
+        // Cabecera
+        document.getElementById('tk-order-number').textContent = `#${order.orderNumber || order.order_number || '000'}`;
+        document.getElementById('tk-order-type').textContent = order.type === 'online' ? 'EN LÍNEA' : (order.tableName || 'Para Llevar');
+        document.getElementById('tk-client').textContent = order.clientName || order.client_name || 'N/A';
+        
+        // Formatear Fecha
+        const dateObj = order.createdAt || order.created_at ? new Date(order.createdAt || order.created_at) : new Date();
+        document.getElementById('tk-date').textContent = dateObj.toLocaleDateString() + ' ' + dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+        // Items
+        const tbody = document.getElementById('tk-items');
+        tbody.innerHTML = '';
+        if (order.items && order.items.length > 0) {
+          order.items.forEach(item => {
+            const tr = document.createElement('tr');
+            
+            // Cantidad
+            const tdQty = document.createElement('td');
+            tdQty.className = 'td-qty';
+            tdQty.textContent = item.quantity + 'x';
+            
+            // Nombre y modificaciones
+            const tdItem = document.createElement('td');
+            tdItem.className = 'td-item';
+            
+            let itemNameHTML = `<div>${item.product_name || item.name}</div>`;
+            
+            // Mods (extras / sin ingredientes)
+            if (item.modifications && item.modifications.length > 0) {
+              item.modifications.forEach(mod => {
+                const prefix = mod.type === 'extra' ? '+' : '-';
+                itemNameHTML += `<div class="modifications">${prefix} ${mod.name}</div>`;
+              });
+            }
+            tdItem.innerHTML = itemNameHTML;
+
+            // Precio
+            const tdPrice = document.createElement('td');
+            tdPrice.className = 'td-price';
+            const itemSubtotal = (item.price || 0) * item.quantity;
+            tdPrice.textContent = `$${itemSubtotal.toFixed(2)}`;
+
+            tr.appendChild(tdQty);
+            tr.appendChild(tdItem);
+            tr.appendChild(tdPrice);
+            tbody.appendChild(tr);
+          });
+        }
+
+        // Total
+        const total = order.total || 0;
+        document.getElementById('tk-total').textContent = `$${Number(total).toFixed(2)}`;
+
+        // Imprimir y cerrar después de una ligera demora para asegurar render
+        setTimeout(() => {
+          window.print();
+          // Espera un momento antes de cerrar, así el usuario no pierde la ventana 
+          // (algunos navegadores bloquean el close si el print no se completó)
+          setTimeout(() => {
+            // window.close(); // Comentado opcionalmente para que el dueño vea el ticket tras imprimir
+          }, 500);
+        }, 300);
+
+      } catch(e) {
+        console.error('Error parseando orden:', e);
+        document.getElementById('tk-client').textContent = 'Error procesando datos';
+      }
+    });
+  </script>
+</body>
+</html>

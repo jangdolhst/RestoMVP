@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { usePOS } from '../context/POSContext';
-import { DollarSign, Search, CheckCircle, Receipt, Calendar, Bell, XCircle, Clock, Phone } from 'lucide-react';
+import { DollarSign, Search, CheckCircle, Receipt, Bell, XCircle, Clock, Phone } from 'lucide-react';
+import OrderCalendar from '../components/ui/OrderCalendar';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 
@@ -203,15 +204,11 @@ const PagosPage = () => {
         <h1 className="text-3xl font-bold text-white tracking-tight">Órdenes e Historial</h1>
         
         <div className="flex items-center gap-4 w-full md:w-auto">
-          <div className="relative">
-            <input 
-              type="date" 
-              value={filterDate}
-              onChange={(e) => setFilterDate(e.target.value)}
-              className="glass-input pl-10 cursor-pointer"
-            />
-            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-          </div>
+          <OrderCalendar
+            value={filterDate}
+            onChange={setFilterDate}
+            tenantId={user?.id}
+          />
 
           <div className="relative flex-1 md:w-64">
             <input 
@@ -279,19 +276,29 @@ const PagosPage = () => {
                   </ul>
                 </div>
 
-                <div className="mt-auto">
+                <div className="mt-auto flex flex-col gap-2">
+                  <button 
+                    onClick={() => {
+                      localStorage.setItem('print_order', JSON.stringify(order));
+                      window.open('/pos_ticket.html', '_blank', 'width=400,height=600');
+                    }}
+                    className="w-full flex justify-center items-center gap-2 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white border border-slate-600 transition-colors font-medium text-sm"
+                  >
+                    🖨️ Imprimir Ticket
+                  </button>
+
                   {isPagado ? (
-                    <button disabled className="w-full flex justify-center items-center gap-2 py-3 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 cursor-not-allowed font-medium">
+                    <button disabled className="w-full flex justify-center items-center gap-2 py-2.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 cursor-not-allowed font-medium">
                       <CheckCircle size={20} />
                       Orden Pagada
                     </button>
                   ) : (
                     <button 
                       onClick={() => updateOrderStatus(order.id, 'pagado')}
-                      className="btn-success w-full flex justify-center items-center gap-2 py-3"
+                      className="btn-success w-full flex justify-center items-center gap-2 py-2.5"
                     >
                       <CheckCircle size={20} />
-                      Marcar como Pagado
+                      Marcar Pagado
                     </button>
                   )}
                 </div>
