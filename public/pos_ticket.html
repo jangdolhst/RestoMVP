@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>Ticket de Pedido</title>
   <style>
-    /* Estilos para Pantalla (Previsualización) y para Impresora Térmica 80mm */
     @page {
       margin: 0;
       size: 80mm auto;
@@ -17,252 +16,378 @@
     }
 
     body {
-      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      font-family: 'Courier New', Courier, monospace;
       font-size: 12px;
       color: #000;
       background: #fff;
       width: 80mm;
-      padding: 5mm;
+      padding: 3mm 4mm;
       margin: 0 auto;
     }
 
-    .ticket-wrapper {
-      width: 100%;
-    }
-
-    /* Ocultar botones y advertencias en impresión */
     @media print {
-      .no-print {
-        display: none !important;
-      }
-      body {
-        padding: 0; /* Algunos navegadores añaden paddings extra, en impresión no queremos */
-      }
+      .no-print { display: none !important; }
+      body { padding: 0 2mm; }
     }
 
     .text-center { text-align: center; }
     .text-right { text-align: right; }
-    .text-left { text-align: left; }
-    .font-bold { font-weight: bold; }
-    .uppercase { text-transform: uppercase; }
-    
+    .bold { font-weight: bold; }
+
     .divider {
+      border: none;
       border-top: 1px dashed #000;
-      margin: 5px 0;
+      margin: 6px 0;
     }
-    .divider-solid {
-      border-top: 1px solid #000;
-      margin: 5px 0;
+    .divider-double {
+      border: none;
+      border-top: 2px solid #000;
+      margin: 6px 0;
     }
 
-    .header-logo {
-      font-size: 20px;
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 4px;
+    }
+    .biz-name {
+      font-size: 18px;
       font-weight: 900;
-      margin-bottom: 2px;
       letter-spacing: 1px;
+      margin-bottom: 1px;
     }
-    .header-subtitle {
-      font-size: 11px;
-      margin-bottom: 10px;
+    .biz-subtitle {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #444;
     }
 
-    .info-row {
+    /* Order Info */
+    .order-badge {
+      text-align: center;
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      margin: 6px 0 2px;
+    }
+    .order-type {
+      text-align: center;
+      font-size: 13px;
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .info-line {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 3px;
       font-size: 11px;
+      line-height: 1.6;
     }
+    .info-label { color: #555; }
+    .info-value { font-weight: bold; }
 
+    /* Items Table */
     .items-table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 5px;
       font-size: 11px;
     }
     .items-table th {
-      border-bottom: 1px solid #000;
+      text-align: left;
       padding-bottom: 3px;
-      font-weight: bold;
+      font-size: 10px;
+      border-bottom: 1px solid #000;
     }
+    .items-table th:last-child { text-align: right; }
     .items-table td {
       padding: 3px 0;
       vertical-align: top;
     }
-    .td-qty { width: 15%; text-align: left; }
-    .td-item { width: 60%; text-align: left; }
-    .td-price { width: 25%; text-align: right; }
+    .col-qty { width: 12%; }
+    .col-name { width: 58%; }
+    .col-price { width: 30%; text-align: right; }
 
-    .modifications {
-      font-size: 10px;
-      font-style: italic;
-      padding-left: 5px;
+    .mod-line {
+      font-size: 9px;
+      padding-left: 4px;
+      color: #333;
     }
 
-    .total-row {
+    /* Totals */
+    .total-line {
       display: flex;
       justify-content: space-between;
-      font-size: 14px;
-      font-weight: bold;
-      margin-top: 5px;
+      font-size: 16px;
+      font-weight: 900;
+      margin-top: 4px;
     }
 
     .footer {
-      margin-top: 15px;
+      text-align: center;
       font-size: 10px;
+      margin-top: 10px;
+      color: #555;
+      line-height: 1.5;
+    }
+    .footer-brand {
+      font-size: 8px;
+      color: #999;
+      margin-top: 6px;
+      letter-spacing: 1px;
     }
 
+    /* Print button */
     .btn-print {
       display: block;
       width: 100%;
-      padding: 10px;
-      background: #000;
+      padding: 12px;
+      background: #111;
       color: #fff;
       text-align: center;
       border: none;
       font-size: 14px;
+      font-weight: bold;
       cursor: pointer;
-      margin-bottom: 15px;
-      border-radius: 4px;
+      margin-bottom: 10px;
+      border-radius: 6px;
     }
+    .btn-print:hover { background: #333; }
+
+    .error-msg {
+      text-align: center;
+      padding: 20px;
+      color: #c00;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    #ticket-content { display: none; }
   </style>
 </head>
 <body>
 
-  <!-- Botón manual en caso de que la impresión automática falle -->
   <button class="btn-print no-print" onclick="window.print()">🖨️ Imprimir Ticket</button>
 
-  <div class="ticket-wrapper">
-    <div class="text-center">
-      <div class="header-logo">JAMM FREE</div>
-      <div class="header-subtitle">Recibo de Pedido</div>
+  <div id="ticket-error" class="error-msg" style="display:none;"></div>
+
+  <div id="ticket-content">
+    <!-- Header -->
+    <div class="header">
+      <div class="biz-name" id="tk-biz">JAMM FREE</div>
+      <div class="biz-subtitle">Recibo de pedido</div>
     </div>
 
-    <div class="divider"></div>
+    <hr class="divider-double">
 
-    <div class="info-row font-bold uppercase" style="font-size: 14px;">
-      <span id="tk-order-type">Mesa / LLevar</span>
-      <span id="tk-order-number">#000</span>
+    <!-- Order Number + Type -->
+    <div class="order-badge" id="tk-number">#001</div>
+    <div class="order-type" id="tk-type">PARA LLEVAR</div>
+
+    <hr class="divider">
+
+    <!-- Info -->
+    <div class="info-line">
+      <span class="info-label">Cliente:</span>
+      <span class="info-value" id="tk-client">—</span>
     </div>
-    
-    <div class="info-row">
-      <span>Cliente:</span>
-      <span id="tk-client" class="font-bold">Cliente</span>
+    <div class="info-line">
+      <span class="info-label">Fecha:</span>
+      <span class="info-value" id="tk-date">—</span>
     </div>
-    <div class="info-row">
-      <span>Fecha:</span>
-      <span id="tk-date">DD/MM/YYYY HH:MM</span>
+    <div class="info-line">
+      <span class="info-label">Hora:</span>
+      <span class="info-value" id="tk-time">—</span>
+    </div>
+    <div id="tk-waiter-row" class="info-line" style="display:none;">
+      <span class="info-label">Mesero:</span>
+      <span class="info-value" id="tk-waiter">—</span>
     </div>
 
-    <div class="divider-solid"></div>
+    <hr class="divider-double">
 
+    <!-- Items -->
     <table class="items-table">
       <thead>
         <tr>
-          <th class="td-qty">Cant</th>
-          <th class="td-item">Articulo</th>
-          <th class="td-price">Sub</th>
+          <th class="col-qty">Cant</th>
+          <th class="col-name">Artículo</th>
+          <th class="col-price">Subtotal</th>
         </tr>
       </thead>
-      <tbody id="tk-items">
-        <!-- Renderizado dinámico de items -->
-      </tbody>
+      <tbody id="tk-items"></tbody>
     </table>
 
-    <div class="divider-solid"></div>
+    <hr class="divider-double">
 
-    <div class="total-row">
-      <span>TOTAL:</span>
+    <!-- Total -->
+    <div class="total-line">
+      <span>TOTAL</span>
       <span id="tk-total">$0.00</span>
     </div>
 
-    <div class="divider"></div>
+    <hr class="divider">
 
-    <div class="text-center footer">
-      <p class="font-bold">¡Gracias por tu preferencia!</p>
-      <p style="margin-top: 5px;">Powered by Jamm Free</p>
+    <!-- Footer -->
+    <div class="footer">
+      ¡Gracias por tu preferencia!<br>
+      Te esperamos pronto
     </div>
+    <div class="footer-brand">JAMM FREE</div>
   </div>
 
   <script>
-    // Recuperar datos pasados a través del localStorage para rapidez síncrona
-    document.addEventListener('DOMContentLoaded', () => {
-      const orderDataStr = localStorage.getItem('print_order');
-      if (!orderDataStr) {
-        document.getElementById('tk-client').textContent = 'Error: No hay orden cargada';
+    (() => {
+      'use strict';
+
+      const showError = (msg) => {
+        document.getElementById('ticket-error').textContent = msg;
+        document.getElementById('ticket-error').style.display = 'block';
+      };
+
+      const escapeText = (str) => {
+        if (!str) return '';
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+      };
+
+      // Intentar recuperar los datos de la orden
+      let order = null;
+
+      // Método 1: Datos inyectados por la ventana padre (window.opener)
+      if (window.__printOrder) {
+        order = window.__printOrder;
+      }
+
+      // Método 2: localStorage como fallback
+      if (!order) {
+        try {
+          const raw = localStorage.getItem('jf_print_order');
+          if (raw) {
+            order = JSON.parse(raw);
+            localStorage.removeItem('jf_print_order'); // Limpiar tras usar
+          }
+        } catch (e) {
+          console.error('Error leyendo localStorage:', e);
+        }
+      }
+
+      if (!order) {
+        showError('No se encontraron datos del pedido. Intenta de nuevo desde el panel de órdenes.');
         return;
       }
 
-      try {
-        const order = JSON.parse(orderDataStr);
+      // ─── Rellenar el ticket ──────────────────────────────────────
 
-        // Cabecera
-        document.getElementById('tk-order-number').textContent = `#${order.orderNumber || order.order_number || '000'}`;
-        document.getElementById('tk-order-type').textContent = order.type === 'online' ? 'EN LÍNEA' : (order.tableName || 'Para Llevar');
-        document.getElementById('tk-client').textContent = order.clientName || order.client_name || 'N/A';
-        
-        // Formatear Fecha
-        const dateObj = order.createdAt || order.created_at ? new Date(order.createdAt || order.created_at) : new Date();
-        document.getElementById('tk-date').textContent = dateObj.toLocaleDateString() + ' ' + dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+      // Número de orden
+      const orderNum = order.orderNumber || order.order_number || '0';
+      document.getElementById('tk-number').textContent = `#${orderNum}`;
 
-        // Items
-        const tbody = document.getElementById('tk-items');
-        tbody.innerHTML = '';
-        if (order.items && order.items.length > 0) {
-          order.items.forEach(item => {
-            const tr = document.createElement('tr');
-            
-            // Cantidad
-            const tdQty = document.createElement('td');
-            tdQty.className = 'td-qty';
-            tdQty.textContent = item.quantity + 'x';
-            
-            // Nombre y modificaciones
-            const tdItem = document.createElement('td');
-            tdItem.className = 'td-item';
-            
-            let itemNameHTML = `<div>${item.product_name || item.name}</div>`;
-            
-            // Mods (extras / sin ingredientes)
-            if (item.modifications && item.modifications.length > 0) {
-              item.modifications.forEach(mod => {
-                const prefix = mod.type === 'extra' ? '+' : '-';
-                itemNameHTML += `<div class="modifications">${prefix} ${mod.name}</div>`;
-              });
-            }
-            tdItem.innerHTML = itemNameHTML;
-
-            // Precio
-            const tdPrice = document.createElement('td');
-            tdPrice.className = 'td-price';
-            const itemSubtotal = (item.price || 0) * item.quantity;
-            tdPrice.textContent = `$${itemSubtotal.toFixed(2)}`;
-
-            tr.appendChild(tdQty);
-            tr.appendChild(tdItem);
-            tr.appendChild(tdPrice);
-            tbody.appendChild(tr);
-          });
-        }
-
-        // Total
-        const total = order.total || 0;
-        document.getElementById('tk-total').textContent = `$${Number(total).toFixed(2)}`;
-
-        // Imprimir y cerrar después de una ligera demora para asegurar render
-        setTimeout(() => {
-          window.print();
-          // Espera un momento antes de cerrar, así el usuario no pierde la ventana 
-          // (algunos navegadores bloquean el close si el print no se completó)
-          setTimeout(() => {
-            // window.close(); // Comentado opcionalmente para que el dueño vea el ticket tras imprimir
-          }, 500);
-        }, 300);
-
-      } catch(e) {
-        console.error('Error parseando orden:', e);
-        document.getElementById('tk-client').textContent = 'Error procesando datos';
+      // Tipo (mesa, para llevar, en línea)
+      const tableName = order.tableName || order.table_name || '';
+      let orderTypeText = 'PARA LLEVAR';
+      if (order.type === 'online') {
+        orderTypeText = 'EN LÍNEA';
+      } else if (tableName) {
+        orderTypeText = tableName.toUpperCase();
       }
-    });
+      document.getElementById('tk-type').textContent = orderTypeText;
+
+      // Cliente
+      const clientName = order.clientName || order.client_name || 'Sin nombre';
+      document.getElementById('tk-client').textContent = clientName;
+
+      // Fecha y Hora
+      const rawDate = order.createdAt || order.created_at;
+      const dateObj = rawDate ? new Date(rawDate) : new Date();
+      
+      const dia = dateObj.getDate();
+      const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+      const mes = meses[dateObj.getMonth()];
+      const año = dateObj.getFullYear();
+      document.getElementById('tk-date').textContent = `${dia} ${mes} ${año}`;
+      
+      const horas = String(dateObj.getHours()).padStart(2, '0');
+      const minutos = String(dateObj.getMinutes()).padStart(2, '0');
+      document.getElementById('tk-time').textContent = `${horas}:${minutos}`;
+
+      // Mesero (si existe)
+      const waiterName = order.waiterName || order.waiter_name || '';
+      if (waiterName) {
+        document.getElementById('tk-waiter').textContent = waiterName;
+        document.getElementById('tk-waiter-row').style.display = 'flex';
+      }
+
+      // ─── Items ─────────────────────────────────────────────────
+      const tbody = document.getElementById('tk-items');
+      const items = order.items || [];
+
+      if (items.length === 0) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = '<td colspan="3" style="text-align:center; padding:8px; color:#999;">Sin artículos</td>';
+        tbody.appendChild(tr);
+      } else {
+        items.forEach(item => {
+          const qty = item.quantity || 1;
+          const name = item.product_name || item.name || 'Artículo';
+          const unitPrice = Number(item.price) || 0;
+          
+          // Calcular costo extra de modificaciones
+          const extraCost = (item.modifications || [])
+            .filter(m => m.type === 'extra')
+            .reduce((sum, m) => sum + (Number(m.price) || 0), 0);
+          
+          const subtotal = (unitPrice + extraCost) * qty;
+
+          const tr = document.createElement('tr');
+
+          // Cantidad
+          const tdQty = document.createElement('td');
+          tdQty.className = 'col-qty';
+          tdQty.textContent = `${qty}x`;
+
+          // Nombre + mods
+          const tdName = document.createElement('td');
+          tdName.className = 'col-name';
+          let nameHTML = escapeText(name);
+          
+          if (item.modifications && item.modifications.length > 0) {
+            item.modifications.forEach(mod => {
+              const prefix = mod.type === 'extra' ? '+' : '−';
+              const priceTag = mod.type === 'extra' && mod.price > 0 ? ` ($${Number(mod.price).toFixed(2)})` : '';
+              nameHTML += `<div class="mod-line">${prefix} ${escapeText(mod.name)}${priceTag}</div>`;
+            });
+          }
+          tdName.innerHTML = nameHTML;
+
+          // Subtotal
+          const tdPrice = document.createElement('td');
+          tdPrice.className = 'col-price';
+          tdPrice.textContent = `$${subtotal.toFixed(2)}`;
+
+          tr.appendChild(tdQty);
+          tr.appendChild(tdName);
+          tr.appendChild(tdPrice);
+          tbody.appendChild(tr);
+        });
+      }
+
+      // ─── Total ─────────────────────────────────────────────────
+      const total = Number(order.total) || 0;
+      document.getElementById('tk-total').textContent = `$${total.toFixed(2)}`;
+
+      // ─── Título de la pestaña ──────────────────────────────────
+      document.title = `Ticket #${orderNum} — ${clientName}`;
+
+      // ─── Mostrar contenido y disparar impresión ────────────────
+      document.getElementById('ticket-content').style.display = 'block';
+
+      setTimeout(() => {
+        window.print();
+      }, 400);
+    })();
   </script>
 </body>
 </html>

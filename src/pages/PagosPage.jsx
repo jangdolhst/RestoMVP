@@ -279,8 +279,12 @@ const PagosPage = () => {
                 <div className="mt-auto flex flex-col gap-2">
                   <button 
                     onClick={() => {
-                      localStorage.setItem('print_order', JSON.stringify(order));
-                      window.open('/pos_ticket.html', '_blank', 'width=400,height=600');
+                      const orderData = JSON.stringify(order);
+                      localStorage.setItem('jf_print_order', orderData);
+                      const printWindow = window.open('/pos_ticket.html', '_blank', 'width=420,height=650');
+                      if (printWindow) {
+                        printWindow.__printOrder = order;
+                      }
                     }}
                     className="w-full flex justify-center items-center gap-2 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white border border-slate-600 transition-colors font-medium text-sm"
                   >
