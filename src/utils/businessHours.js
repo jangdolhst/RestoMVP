@@ -10,10 +10,21 @@ export const isRestaurantOpen = (businessHours) => {
   // Cierre manual activado → cerrado
   if (businessHours.is_manually_closed) return false;
 
+  const now = new Date();
+  
+  // Verificación de días (Lunes a Domingo)
+  if (businessHours.days) {
+    const daysMap = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const currentDayName = daysMap[now.getDay()];
+    // Si el día existe en la configuración y está explícitamente en false, está cerrado
+    if (businessHours.days[currentDayName] === false) {
+      return false;
+    }
+  }
+
   const { open, close } = businessHours;
   if (!open || !close) return false;
 
-  const now = new Date();
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
   const [openH, openM] = open.split(':').map(Number);

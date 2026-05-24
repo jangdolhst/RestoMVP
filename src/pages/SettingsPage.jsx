@@ -5,6 +5,16 @@ import { useAuth } from '../context/AuthContext';
 import PhoneInput from '../components/ui/PhoneInput';
 import AddressMapPreview from '../components/ui/AddressMapPreview';
 
+const WEEK_DAYS = [
+  { id: 'monday', label: 'L' },
+  { id: 'tuesday', label: 'M' },
+  { id: 'wednesday', label: 'M' },
+  { id: 'thursday', label: 'J' },
+  { id: 'friday', label: 'V' },
+  { id: 'saturday', label: 'S' },
+  { id: 'sunday', label: 'D' }
+];
+
 const AVAILABLE_CATEGORIES = [
   'Pizza', 'Hamburguesas', 'Sushi', 'Tacos', 'Mariscos',
   'Italiana', 'China', 'Postres', 'Café', 'Saludable',
@@ -749,6 +759,38 @@ const SettingsPage = () => {
                 onChange={(e) => handleChange('business_hours', { ...profile.business_hours, close: e.target.value })}
                 className="glass-input w-full py-2.5 text-center text-lg font-bold"
               />
+            </div>
+          </div>
+
+          {/* Selector de Días Hábiles */}
+          <div className="mt-4">
+            <label className="text-sm text-slate-300 font-medium mb-2 block">
+              Días Abiertos
+            </label>
+            <div className="flex items-center gap-1.5 sm:gap-2 justify-between bg-black/20 p-2 rounded-xl border border-white/5">
+              {WEEK_DAYS.map((day) => {
+                const currentDays = profile.business_hours?.days || {
+                  monday: true, tuesday: true, wednesday: true, thursday: true, friday: true, saturday: true, sunday: true
+                };
+                const isActive = currentDays[day.id] !== false; // true por defecto
+                
+                return (
+                  <button
+                    key={day.id}
+                    onClick={() => {
+                      const newDays = { ...currentDays, [day.id]: !isActive };
+                      handleChange('business_hours', { ...profile.business_hours, days: newDays });
+                    }}
+                    className={`flex-1 aspect-square max-w-[40px] rounded-lg flex items-center justify-center font-bold text-sm sm:text-base transition-all duration-300 ${
+                      isActive 
+                        ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' 
+                        : 'bg-white/5 text-slate-500 hover:bg-white/10 hover:text-slate-300'
+                    }`}
+                  >
+                    {day.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
 

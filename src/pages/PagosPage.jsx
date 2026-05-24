@@ -280,7 +280,6 @@ const PagosPage = () => {
                   <button 
                     onClick={() => {
                       // Método 1: Guardar en la ventana actual (para window.opener)
-                      window.__jfPrintData = order;
                       const compactOrder = {
                         orderNumber: order.orderNumber, clientName: order.clientName,
                         tableName: order.tableName, type: order.type, total: order.total,
