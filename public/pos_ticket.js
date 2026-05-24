@@ -100,8 +100,10 @@
       return { dateText: '-', timeText: '-' };
     }
 
-    const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-    const dateText = `${date.getDate()} ${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    const dateText = `${day}/${month}/${year}`;
     const timeText = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
     return { dateText, timeText };
   };
@@ -159,10 +161,83 @@
     }
   };
 
+  /**
+   * Renderizar encabezado del negocio (logo, nombre, RFC, dirección, teléfono).
+   */
+  const renderBusinessHeader = (profile) => {
+    if (!profile) return;
+
+    // Logo
+    if (profile.logo_url) {
+      const logoEl = document.getElementById('tk-logo');
+      logoEl.src = profile.logo_url;
+      logoEl.style.display = 'block';
+    }
+
+    // Nombre del negocio
+    if (profile.name) {
+      document.getElementById('tk-biz').textContent = profile.name.toUpperCase();
+    }
+
+    // Número Fiscal (RFC/NIT/RUC)
+    if (profile.fiscal_number) {
+      const fiscalEl = document.getElementById('tk-fiscal');
+      fiscalEl.textContent = `RFC: ${profile.fiscal_number}`;
+      fiscalEl.style.display = 'block';
+    }
+
+    // Dirección
+    if (profile.address) {
+      const addressEl = document.getElementById('tk-address');
+      addressEl.textContent = profile.address;
+      addressEl.style.display = 'block';
+    }
+
+    // Teléfono del negocio
+    if (profile.phone) {
+      const phoneEl = document.getElementById('tk-phone-biz');
+      phoneEl.textContent = `Tel: ${profile.phone}`;
+      phoneEl.style.display = 'block';
+    }
+  };
+
+  /**
+   * Renderizar desglose de impuestos (cálculo inverso: precio ya incluye impuesto).
+   */
+  const renderTaxBreakdown = (total, profile) => {
+    if (!profile || !profile.tax_included || !profile.tax_rate || profile.tax_rate <= 0) {
+      return;
+    }
+
+    const rate = Number(profile.tax_rate) / 100;
+    const subtotal = total / (1 + rate);
+    const tax = total - subtotal;
+
+    // Mostrar Subtotal
+    const subtotalRow = document.getElementById('tk-subtotal-row');
+    document.getElementById('tk-subtotal').textContent = `$${subtotal.toFixed(2)}`;
+    subtotalRow.style.display = 'flex';
+
+    // Mostrar Impuesto
+    const taxRow = document.getElementById('tk-tax-row');
+    document.getElementById('tk-tax-label').textContent = `Impuesto (${profile.tax_rate}%)`;
+    document.getElementById('tk-tax-amount').textContent = `$${tax.toFixed(2)}`;
+    taxRow.style.display = 'flex';
+
+    // Nota legal
+    document.getElementById('tk-tax-note').style.display = 'block';
+  };
+
   const renderTicket = (order) => {
+    // Renderizar datos del negocio
+    renderBusinessHeader(order.restaurantProfile);
+
     const orderNum = order.orderNumber || order.order_number || '0';
     const tableName = order.tableName || order.table_name || '';
     const clientName = order.clientName || order.client_name || 'Sin nombre';
+
+    // Folio formateado: TKT-000045
+    const folioText = `TKT-${String(orderNum).padStart(6, '0')}`;
 
     let typeText = 'PARA LLEVAR';
     if (order.type === 'online') {
@@ -173,6 +248,7 @@
 
     document.getElementById('tk-number').textContent = `#${orderNum}`;
     document.getElementById('tk-type').textContent = typeText;
+    document.getElementById('tk-folio').textContent = folioText;
     document.getElementById('tk-client').textContent = clientName;
 
     const { dateText, timeText } = formatDateParts(order.createdAt || order.created_at);
@@ -192,6 +268,9 @@
     const total = Number(order.total) || 0;
     document.getElementById('tk-total').textContent = `$${total.toFixed(2)}`;
 
+    // Desglose de impuestos
+    renderTaxBreakdown(total, order.restaurantProfile);
+
     document.title = `Ticket #${orderNum} - ${clientName}`;
     contentEl.style.display = 'block';
 
@@ -210,7 +289,6 @@
     renderTicket(order);
   } catch (error) {
     showError(`Error al renderizar: ${error?.message || 'desconocido'}`);
-    // Leave a detailed trace for debugging in browser console only.
     console.error('Ticket render error:', error);
   }
 })();

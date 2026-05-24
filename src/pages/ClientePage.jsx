@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ShoppingBag, ArrowLeft } from 'lucide-react';
+import { ShoppingBag, ArrowLeft, Clock } from 'lucide-react';
 import POSGrid from '../components/pos/POSGrid';
 import TicketSidebar from '../components/pos/TicketSidebar';
 import { usePOS } from '../context/POSContext';
 import { supabase } from '../lib/supabase';
+import { isRestaurantOpen } from '../utils/businessHours';
 
 const ClientePage = () => {
   const { tenantId } = useParams();
@@ -20,7 +21,7 @@ const ClientePage = () => {
       try {
         const { data } = await supabase
           .from('restaurant_profiles')
-          .select('name, logo_url')
+          .select('name, logo_url, business_hours')
           .eq('id', tenantId)
           .maybeSingle();
 
@@ -34,6 +35,8 @@ const ClientePage = () => {
 
     fetchRestaurantInfo();
   }, [tenantId]);
+
+  const isOpen = isRestaurantOpen(restaurantInfo?.business_hours);
 
   return (
     <div className="flex flex-col h-screen text-white overflow-hidden relative">
@@ -73,23 +76,33 @@ const ClientePage = () => {
         <div className="w-10" />
       </header>
 
+      {/* Banner Cerrado */}
+      {!isOpen && restaurantInfo && (
+        <div className="bg-red-500/10 border-b border-red-500/20 px-4 py-3 flex items-center justify-center gap-2 relative z-10 shrink-0">
+          <Clock size={16} className="text-red-400" />
+          <span className="text-sm font-medium text-red-400">Este negocio está cerrado en este momento.</span>
+        </div>
+      )}
+
       {/* Main Content Area */}
       <div className="flex flex-1 overflow-hidden lg:pr-4 lg:pb-4 lg:pt-4">
         {/* Left Side: Menu Grid */}
         <div className="flex-1 flex flex-col h-full overflow-hidden relative lg:rounded-xl pb-20 lg:pb-0">
           <div className="absolute inset-0 bg-gradient-to-br from-slate-900/50 to-slate-800/20 backdrop-blur-3xl -z-10"></div>
-          <POSGrid isClientMode={true} />
+          <POSGrid isClientMode={true} isOpen={isOpen} />
         </div>
 
         {/* Right Side: Ticket/Cart */}
         <TicketSidebar 
           isClientMode={true} 
           isOpen={isCartOpen} 
+          isStoreOpen={isOpen}
           onClose={() => setIsCartOpen(false)} 
         />
       </div>
 
       {/* Barra flotante para móviles (lg:hidden) */}
+      {isOpen && (
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-slate-900/90 backdrop-blur-xl border-t border-white/10 lg:hidden z-30">
         <button 
           onClick={() => setIsCartOpen(true)}
@@ -102,6 +115,7 @@ const ClientePage = () => {
           <span className="font-bold text-xl">${cartTotal}</span>
         </button>
       </div>
+      )}
     </div>
   );
 };

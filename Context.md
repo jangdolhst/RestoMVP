@@ -152,4 +152,14 @@ El siguiente paso crÃ­tico es la **IntegraciÃ³n de Pagos y Suscripciones con
   - **VULN-06 (Media)**: `ProtectedRoute` dejaba pasar si `subscriptionData` era null. Ahora null = denegado.
   - **VULN-07 (Baja)**: `select('*')` en suscripciones exponía IDs de Stripe al frontend. Cambiado a `select('id, status, current_period_end')`.
   - **Archivos**: `.gitignore`, `ProtectedRoute.jsx`, `AuthContext.jsx`, `POSContext.jsx`, `schema_consolidado.sql`.
+- **Tickets Profesionales, Horarios y Datos Fiscales (23/05/2026)**:
+  - **Base de Datos**: Añadidas 4 columnas a `restaurant_profiles`: `fiscal_number` (TEXT), `tax_included` (BOOLEAN), `tax_rate` (NUMERIC), `business_hours` (JSONB). Migración aplicada en Supabase live.
+  - **Settings (`/settings`)**: Nuevas secciones — "Datos Fiscales" (RFC/NIT/RUC + switch impuestos + porcentaje) y "Horario de Operación" (apertura/cierre + botón de cierre manual).
+  - **Helper `isRestaurantOpen`**: Función reutilizable en `src/utils/businessHours.js`. Compara hora actual con rango open/close. Soporta horarios que cruzan medianoche. Respeta `is_manually_closed`.
+  - **Marketplace**: Badge dinámico Abierto/Cerrado. Restaurantes cerrados se muestran opacados y no son clickeables.
+  - **ClientePage**: Banner rojo "Cerrado" + carrito oculto cuando el restaurante no está en horario.
+  - **Ticket Profesional**: Rediseño completo de `pos_ticket.html` y `pos_ticket.js`. Ahora incluye: logo del negocio, nombre, RFC/NIT (si existe), dirección, teléfono, folio formateado (TKT-000001), y desglose fiscal con cálculo inverso (subtotal + impuesto).
+  - **POSContext**: Ahora carga y expone `restaurantProfile` con los datos del perfil completo del restaurante.
+  - **PagosPage**: Pasa `restaurantProfile` al ticket de impresión.
+  - **Archivos**: `schema_consolidado.sql`, `SettingsPage.jsx`, `MarketplacePage.jsx`, `ClientePage.jsx`, `POSContext.jsx`, `PagosPage.jsx`, `pos_ticket.html`, `pos_ticket.js`, `src/utils/businessHours.js` [NEW].
 

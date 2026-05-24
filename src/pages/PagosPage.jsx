@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 
 const PagosPage = () => {
-  const { orders, updateOrderStatus } = usePOS();
+  const { orders, updateOrderStatus, restaurantProfile } = usePOS();
   const { user } = useAuth();
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -285,6 +285,7 @@ const PagosPage = () => {
                         orderNumber: order.orderNumber, clientName: order.clientName,
                         tableName: order.tableName, type: order.type, total: order.total,
                         createdAt: order.createdAt, waiterName: order.waiterName,
+                        restaurantProfile: restaurantProfile || null,
                         items: (order.items || []).map(i => ({
                           product_name: i.product_name || i.name, quantity: i.quantity,
                           price: i.price, modifications: i.modifications

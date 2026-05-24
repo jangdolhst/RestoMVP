@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Save, Upload, Image, Store, Loader2, CheckCircle2, AlertCircle, X, MapPin, Search, Plus, UserRound } from 'lucide-react';
+import { Save, Upload, Image, Store, Loader2, CheckCircle2, AlertCircle, X, MapPin, Search, Plus, UserRound, Clock, Receipt } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import PhoneInput from '../components/ui/PhoneInput';
@@ -135,6 +135,10 @@ const SettingsPage = () => {
     longitude: null,
     table_count: 0,
     waiters: [],
+    fiscal_number: '',
+    tax_included: false,
+    tax_rate: 0,
+    business_hours: { open: '09:00', close: '22:00', is_manually_closed: false },
   });
 
   // Cargar perfil existente
@@ -146,7 +150,7 @@ const SettingsPage = () => {
       try {
         const { data, error } = await supabase
           .from('restaurant_profiles')
-          .select('name, description, logo_url, banner_url, address, phone, categories, is_active, latitude, longitude, table_count, waiters')
+          .select('name, description, logo_url, banner_url, address, phone, categories, is_active, latitude, longitude, table_count, waiters, fiscal_number, tax_included, tax_rate, business_hours')
           .eq('id', user.id)
           .maybeSingle();
 
@@ -166,6 +170,10 @@ const SettingsPage = () => {
             longitude: data.longitude || null,
             table_count: data.table_count || 0,
             waiters: data.waiters || [],
+            fiscal_number: data.fiscal_number || '',
+            tax_included: data.tax_included || false,
+            tax_rate: data.tax_rate || 0,
+            business_hours: data.business_hours || { open: '09:00', close: '22:00', is_manually_closed: false },
           });
         }
       } catch (err) {
@@ -374,6 +382,10 @@ const SettingsPage = () => {
           longitude: profile.longitude,
           table_count: profile.table_count,
           waiters: profile.waiters,
+          fiscal_number: profile.fiscal_number.trim(),
+          tax_included: profile.tax_included,
+          tax_rate: profile.tax_rate,
+          business_hours: profile.business_hours,
           updated_at: new Date().toISOString(),
         }, { onConflict: 'id' });
 
@@ -634,6 +646,146 @@ const SettingsPage = () => {
 
         {/* Meseros */}
         <WaitersSection waiters={profile.waiters} onChange={(w) => handleChange('waiters', w)} />
+
+        {/* Datos Fiscales */}
+        <div className="glass-panel p-5 space-y-4">
+          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            <Receipt size={20} className="text-orange-400" />
+            Datos Fiscales
+          </h2>
+          <p className="text-xs text-slate-400">Opcional. Estos datos aparecerán impresos en tus tickets.</p>
+
+          <div>
+            <label htmlFor="settings-fiscal" className="text-sm text-slate-300 font-medium mb-1 block">
+              Número Fiscal (RFC / NIT / RUC)
+            </label>
+            <input
+              id="settings-fiscal"
+              type="text"
+              value={profile.fiscal_number}
+              onChange={(e) => handleChange('fiscal_number', e.target.value.toUpperCase())}
+              placeholder="Ej: XAXX010101000"
+              className="glass-input w-full"
+              maxLength={20}
+            />
+          </div>
+
+          <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10">
+            <div>
+              <h3 className="text-sm font-semibold text-white">Desglosar impuestos en ticket</h3>
+              <p className="text-xs text-slate-400 mt-0.5">Muestra Subtotal e Impuesto por separado (cálculo incluido en el precio).</p>
+            </div>
+            <button
+              onClick={() => handleChange('tax_included', !profile.tax_included)}
+              className={`relative w-12 h-6 rounded-full transition-colors duration-300 ${
+                profile.tax_included ? 'bg-emerald-500' : 'bg-white/10'
+              }`}
+              aria-label="Toggle impuestos"
+            >
+              <span
+                className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 ${
+                  profile.tax_included ? 'translate-x-6' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+
+          {profile.tax_included && (
+            <div className="animate-fade-in">
+              <label htmlFor="settings-tax-rate" className="text-sm text-slate-300 font-medium mb-1 block">
+                Porcentaje de impuesto (%)
+              </label>
+              <input
+                id="settings-tax-rate"
+                type="number"
+                min="0"
+                max="30"
+                step="0.5"
+                value={profile.tax_rate}
+                onChange={(e) => handleChange('tax_rate', Math.max(0, Math.min(30, parseFloat(e.target.value) || 0)))}
+                className="glass-input w-32 py-2 text-center text-lg font-bold"
+                placeholder="16"
+              />
+              <p className="text-xs text-slate-500 mt-1">
+                {profile.tax_rate > 0
+                  ? `Los precios de tu menú ya incluyen ${profile.tax_rate}% de impuesto. El ticket mostrará el desglose.`
+                  : 'Ingresa el porcentaje de impuesto de tu país (ej: México 16%, Colombia 19%).'}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Horario de Operación */}
+        <div className="glass-panel p-5 space-y-4">
+          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            <Clock size={20} className="text-orange-400" />
+            Horario de Operación
+          </h2>
+          <p className="text-xs text-slate-400">
+            Define tu horario de atención. Tu negocio solo será visible dentro de este horario.
+          </p>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="settings-open" className="text-sm text-slate-300 font-medium mb-1 block">
+                Hora de Apertura
+              </label>
+              <input
+                id="settings-open"
+                type="time"
+                value={profile.business_hours?.open || '09:00'}
+                onChange={(e) => handleChange('business_hours', { ...profile.business_hours, open: e.target.value })}
+                className="glass-input w-full py-2.5 text-center text-lg font-bold"
+              />
+            </div>
+            <div>
+              <label htmlFor="settings-close" className="text-sm text-slate-300 font-medium mb-1 block">
+                Hora de Cierre
+              </label>
+              <input
+                id="settings-close"
+                type="time"
+                value={profile.business_hours?.close || '22:00'}
+                onChange={(e) => handleChange('business_hours', { ...profile.business_hours, close: e.target.value })}
+                className="glass-input w-full py-2.5 text-center text-lg font-bold"
+              />
+            </div>
+          </div>
+
+          <p className="text-xs text-slate-500">
+            Horario actual: <span className="text-white font-medium">{profile.business_hours?.open || '09:00'}</span> a <span className="text-white font-medium">{profile.business_hours?.close || '22:00'}</span> hrs
+          </p>
+
+          {/* Botón de cierre manual */}
+          <button
+            onClick={() => handleChange('business_hours', {
+              ...profile.business_hours,
+              is_manually_closed: !profile.business_hours?.is_manually_closed,
+            })}
+            className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold border transition-all duration-300 ${
+              profile.business_hours?.is_manually_closed
+                ? 'bg-red-500/20 text-red-400 border-red-500/30 hover:bg-red-500/30'
+                : 'bg-white/5 text-slate-400 border-white/10 hover:bg-white/10'
+            }`}
+          >
+            {profile.business_hours?.is_manually_closed ? (
+              <>
+                <X size={16} />
+                Tienda Cerrada Manualmente — Click para Reabrir
+              </>
+            ) : (
+              <>
+                <Clock size={16} />
+                Pausar Servicio (Cerrar Tienda Ahora)
+              </>
+            )}
+          </button>
+          {profile.business_hours?.is_manually_closed && (
+            <p className="text-xs text-red-400/80 text-center animate-fade-in">
+              ⚠ Tu tienda aparecerá como CERRADA hasta que desactives esta opción, incluso dentro de tu horario regular.
+            </p>
+          )}
+        </div>
 
         {/* Categorías */}
         <div className="glass-panel p-5 space-y-3">

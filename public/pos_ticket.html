@@ -47,6 +47,13 @@
       margin-bottom: 4px;
     }
 
+    .biz-logo {
+      max-width: 60px;
+      max-height: 60px;
+      margin: 0 auto 4px;
+      display: none;
+    }
+
     .biz-name {
       font-size: 18px;
       font-weight: 900;
@@ -54,11 +61,20 @@
       margin-bottom: 1px;
     }
 
-    .biz-subtitle {
+    .biz-fiscal {
       font-size: 10px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: #444;
+      color: #333;
+    }
+
+    .biz-address {
+      font-size: 9px;
+      color: #555;
+      line-height: 1.4;
+    }
+
+    .biz-phone {
+      font-size: 9px;
+      color: #555;
     }
 
     .order-badge {
@@ -117,12 +133,32 @@
       color: #333;
     }
 
+    .subtotal-line {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      margin-top: 4px;
+    }
+
+    .tax-line {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+    }
+
     .total-line {
       display: flex;
       justify-content: space-between;
       font-size: 16px;
       font-weight: 900;
       margin-top: 4px;
+    }
+
+    .tax-note {
+      text-align: center;
+      font-size: 8px;
+      color: #777;
+      margin-top: 2px;
     }
 
     .footer {
@@ -175,8 +211,11 @@
 
   <div id="ticket-content">
     <div class="header">
+      <img id="tk-logo" class="biz-logo" alt="Logo" />
       <div class="biz-name" id="tk-biz">JAMM FREE</div>
-      <div class="biz-subtitle">Recibo de pedido</div>
+      <div class="biz-fiscal" id="tk-fiscal" style="display:none;"></div>
+      <div class="biz-address" id="tk-address" style="display:none;"></div>
+      <div class="biz-phone" id="tk-phone-biz" style="display:none;"></div>
     </div>
 
     <hr class="divider-double">
@@ -186,6 +225,10 @@
 
     <hr class="divider">
 
+    <div class="info-line">
+      <span class="info-label">Folio:</span>
+      <span class="info-value" id="tk-folio">-</span>
+    </div>
     <div class="info-line">
       <span class="info-label">Cliente:</span>
       <span class="info-value" id="tk-client">-</span>
@@ -218,9 +261,22 @@
 
     <hr class="divider-double">
 
+    <div id="tk-subtotal-row" class="subtotal-line" style="display:none;">
+      <span>Subtotal</span>
+      <span id="tk-subtotal">$0.00</span>
+    </div>
+    <div id="tk-tax-row" class="tax-line" style="display:none;">
+      <span id="tk-tax-label">Impuesto (16%)</span>
+      <span id="tk-tax-amount">$0.00</span>
+    </div>
+
     <div class="total-line">
       <span>TOTAL</span>
       <span id="tk-total">$0.00</span>
+    </div>
+
+    <div id="tk-tax-note" class="tax-note" style="display:none;">
+      * Impuesto incluido en el precio
     </div>
 
     <hr class="divider">
@@ -229,7 +285,7 @@
       Gracias por tu preferencia<br>
       Te esperamos pronto
     </div>
-    <div class="footer-brand">JAMM FREE</div>
+    <div class="footer-brand">Powered by JAMM FREE</div>
   </div>
 
   <script src="/pos_ticket.js"></script>

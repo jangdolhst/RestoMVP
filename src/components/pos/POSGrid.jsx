@@ -5,7 +5,7 @@ import NewItemModal from '../modals/NewItemModal';
 import ExtrasModal from '../modals/ExtrasModal';
 import { Plus, ChevronLeft } from 'lucide-react';
 
-const POSGrid = ({ isClientMode = false }) => {
+const POSGrid = ({ isClientMode = false, isOpen = true }) => {
   const { 
     visibleItems, 
     currentCategoryId, 
@@ -31,6 +31,10 @@ const POSGrid = ({ isClientMode = false }) => {
     if (item.price === undefined) {
       setCurrentCategoryId(item.id);
     } else {
+      if (isClientMode && !isOpen) {
+        alert('Lo sentimos, el negocio está cerrado en este momento.');
+        return;
+      }
       setSelectedProduct(item);
       setIsExtrasModalOpen(true);
     }

@@ -41,6 +41,7 @@ export const POSProvider = ({ children }) => {
   const [tableCount, setTableCount] = useState(0);
   const [waiters, setWaiters] = useState([]);
   const [waiterName, setWaiterName] = useState('');
+  const [restaurantProfile, setRestaurantProfile] = useState(null);
   const lastOrderTimeRef = useRef(0);
   const ORDER_THROTTLE_MS = 15000; // 15 segundos entre pedidos
 
@@ -78,12 +79,13 @@ export const POSProvider = ({ children }) => {
         supabase.from('extras').select('id, tenant_id, name, price, created_at').eq('tenant_id', currentTenantId).order('created_at', { ascending: true }),
       ];
 
-      // Cargar table_count del perfil del restaurante (para dueño)
+      // Cargar perfil del restaurante (para dueño)
       if (!isClientMenu) {
-        supabase.from('restaurant_profiles').select('table_count, waiters').eq('id', currentTenantId).maybeSingle()
+        supabase.from('restaurant_profiles').select('name, logo_url, address, phone, table_count, waiters, fiscal_number, tax_included, tax_rate').eq('id', currentTenantId).maybeSingle()
           .then(({ data }) => {
             if (data?.table_count != null) setTableCount(data.table_count);
             if (data?.waiters) setWaiters(data.waiters);
+            if (data) setRestaurantProfile(data);
           });
       }
 
@@ -460,7 +462,8 @@ export const POSProvider = ({ children }) => {
     updateExtra,
     deleteExtra,
     deleteCategory,
-    deleteProduct
+    deleteProduct,
+    restaurantProfile
   };
 
   return <POSContext.Provider value={value}>{children}</POSContext.Provider>;

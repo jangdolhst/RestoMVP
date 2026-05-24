@@ -4,6 +4,7 @@ import { Search, MapPin, Store, Sparkles, X, Package, Map, Navigation, Loader2 }
 import Logo from '../components/ui/Logo';
 import { supabase } from '../lib/supabase';
 import useCityDetection, { haversineDistance } from '../hooks/useCityDetection';
+import { isRestaurantOpen } from '../utils/businessHours';
 
 const MAX_DISTANCE_GPS_KM = 15;  // Radio para GPS (preciso)
 const MAX_DISTANCE_IP_KM = 50;   // Radio para IP geo (menos preciso)
@@ -13,13 +14,14 @@ const FOOD_CATEGORIES = [
   'Italiana', 'China', 'Postres', 'Café', 'Saludable', 'BBQ', 'Pollo'
 ];
 
-const RestaurantCard = ({ restaurant, onClick, distance }) => {
+const RestaurantCard = ({ restaurant, onClick, distance, isOpen }) => {
   const placeholderBanner = `https://ui-avatars.com/api/?name=${encodeURIComponent(restaurant.name)}&background=f97316&color=fff&size=400&font-size=0.33&bold=true&format=svg`;
 
   return (
     <button
-      onClick={onClick}
-      className="group relative overflow-hidden text-left w-full rounded-3xl transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-orange-500/20 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
+      onClick={isOpen ? onClick : undefined}
+      disabled={!isOpen}
+      className={`group relative overflow-hidden text-left w-full rounded-3xl transition-all duration-500 focus:outline-none focus:ring-2 focus:ring-orange-500/50 ${isOpen ? 'hover:-translate-y-2 hover:shadow-2xl hover:shadow-orange-500/20 cursor-pointer' : 'opacity-60 cursor-not-allowed'}`}
     >
       {/* Premium Glass Background */}
       <div className="absolute inset-0 bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl group-hover:bg-white/10 group-hover:border-white/20 transition-all duration-500" />
@@ -48,9 +50,9 @@ const RestaurantCard = ({ restaurant, onClick, distance }) => {
         )}
         
         {/* Status indicator flotante */}
-        <div className="absolute top-4 right-4 px-3 py-1 bg-black/50 backdrop-blur-md border border-white/10 rounded-full flex items-center gap-1.5">
-          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-xs font-medium text-white">Abierto</span>
+        <div className={`absolute top-4 right-4 px-3 py-1 backdrop-blur-md border rounded-full flex items-center gap-1.5 ${isOpen ? 'bg-black/50 border-white/10' : 'bg-red-950/60 border-red-500/20'}`}>
+          <div className={`w-2 h-2 rounded-full ${isOpen ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
+          <span className="text-xs font-medium text-white">{isOpen ? 'Abierto' : 'Cerrado'}</span>
         </div>
 
         {/* Distance badge */}
@@ -138,7 +140,7 @@ const MarketplacePage = () => {
       try {
         const { data, error } = await supabase
           .from('restaurant_profiles')
-          .select('id, name, description, logo_url, banner_url, address, phone, categories, is_active, latitude, longitude')
+          .select('id, name, description, logo_url, banner_url, address, phone, categories, is_active, latitude, longitude, business_hours')
           .eq('is_active', true)
           .order('name', { ascending: true });
 
@@ -371,6 +373,7 @@ const MarketplacePage = () => {
                     key={restaurant.id}
                     restaurant={restaurant}
                     distance={restaurant.distance}
+                    isOpen={isRestaurantOpen(restaurant.business_hours)}
                     onClick={() => navigate(`/menu/${restaurant.id}`)}
                   />
                 ))}

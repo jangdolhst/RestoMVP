@@ -57,6 +57,10 @@ CREATE TABLE restaurant_profiles (
   is_active BOOLEAN NOT NULL DEFAULT false,
   latitude NUMERIC(10, 7),
   longitude NUMERIC(10, 7),
+  fiscal_number TEXT DEFAULT '',
+  tax_included BOOLEAN DEFAULT false,
+  tax_rate NUMERIC(5, 2) DEFAULT 0,
+  business_hours JSONB DEFAULT '{"open": "09:00", "close": "22:00", "is_manually_closed": false}'::jsonb,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
