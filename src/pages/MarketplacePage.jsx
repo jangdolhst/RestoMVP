@@ -124,6 +124,23 @@ const MarketplacePage = () => {
   const hasLocation = userLat !== null && userLng !== null;
   const maxDistanceKm = geoSource === 'ip' ? MAX_DISTANCE_IP_KM : MAX_DISTANCE_GPS_KM;
 
+  const handleManualLocationOverride = () => {
+    const newCity = window.prompt("¿El GPS falló? Escribe tu ciudad manualmente (ej. Mexicali):", city || "");
+    if (newCity && newCity.trim().length > 0) {
+      const manualLocation = {
+        city: newCity.trim(),
+        state: "",
+        country: null,
+        lat: null, // Al anular lat/lng se desactiva el filtro estricto de distancia
+        lng: null,
+        source: 'manual',
+        timestamp: Date.now() + (24 * 60 * 60 * 1000) // Forzar que el caché dure 24h
+      };
+      localStorage.setItem('jf_user_location', JSON.stringify(manualLocation));
+      window.location.reload();
+    }
+  };
+
   // Verificar si hay pedidos en localStorage
   useEffect(() => {
     try {
@@ -216,7 +233,7 @@ const MarketplacePage = () => {
             {gpsLoading ? (
               <Loader2 size={14} className="animate-spin text-slate-500" />
             ) : city ? (
-              <button onClick={retryGps} className="flex items-center gap-1 text-xs text-slate-400 hover:text-orange-400 transition-colors px-2 py-1 rounded-lg bg-white/5 border border-white/5">
+              <button onClick={handleManualLocationOverride} className="flex items-center gap-1 text-xs text-slate-400 hover:text-orange-400 transition-colors px-2 py-1 rounded-lg bg-white/5 border border-white/5">
                 <MapPin size={12} className="text-orange-400" />
                 <span className="max-w-[120px] truncate">{city}</span>
               </button>
@@ -236,7 +253,7 @@ const MarketplacePage = () => {
                 <span>Detectando...</span>
               </div>
             ) : city ? (
-              <button onClick={retryGps} className="flex items-center gap-1.5 text-sm text-slate-300 hover:text-orange-400 transition-colors px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:border-orange-500/20">
+              <button onClick={handleManualLocationOverride} className="flex items-center gap-1.5 text-sm text-slate-300 hover:text-orange-400 transition-colors px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:border-orange-500/20">
                 <MapPin size={14} className="text-orange-400" />
                 {city}{state ? `, ${state}` : ''}
               </button>
