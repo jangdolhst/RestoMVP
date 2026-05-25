@@ -124,17 +124,34 @@ const MarketplacePage = () => {
   const hasLocation = userLat !== null && userLng !== null;
   const maxDistanceKm = geoSource === 'ip' ? MAX_DISTANCE_IP_KM : MAX_DISTANCE_GPS_KM;
 
-  const handleManualLocationOverride = () => {
+  const handleManualLocationOverride = async () => {
     const newCity = window.prompt("¿El GPS falló? Escribe tu ciudad manualmente (ej. Mexicali):", city || "");
     if (newCity && newCity.trim().length > 0) {
+      const cityName = newCity.trim();
+      let lat = null;
+      let lng = null;
+
+      try {
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cityName)}&format=json&limit=1`, {
+          headers: { 'User-Agent': 'JammFree/1.0' }
+        });
+        const data = await response.json();
+        if (data && data.length > 0) {
+          lat = parseFloat(data[0].lat);
+          lng = parseFloat(data[0].lon);
+        }
+      } catch (err) {
+        console.error("Error geocoding manual city:", err);
+      }
+
       const manualLocation = {
-        city: newCity.trim(),
+        city: cityName,
         state: "",
         country: null,
-        lat: null, // Al anular lat/lng se desactiva el filtro estricto de distancia
-        lng: null,
+        lat: lat, // Si Nominatim la encuentra, mantiene el filtro de radio funcionando. Si falla, será null y mostrará todo.
+        lng: lng,
         source: 'manual',
-        timestamp: Date.now() + (24 * 60 * 60 * 1000) // Forzar que el caché dure 24h
+        timestamp: Date.now() + (24 * 60 * 60 * 1000)
       };
       localStorage.setItem('jf_user_location', JSON.stringify(manualLocation));
       window.location.reload();
