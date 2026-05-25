@@ -125,7 +125,14 @@ const MarketplacePage = () => {
   const maxDistanceKm = geoSource === 'ip' ? MAX_DISTANCE_IP_KM : MAX_DISTANCE_GPS_KM;
 
   const handleManualLocationOverride = async () => {
-    const newCity = window.prompt("¿El GPS falló? Escribe tu ciudad manualmente (ej. Mexicali):", city || "");
+    const wantsRetry = window.confirm("¿Deseas volver a intentar detectar tu ubicación por GPS?\n\n(Haz clic en Cancelar para escribir tu ciudad manualmente)");
+    
+    if (wantsRetry) {
+      retryGps();
+      return;
+    }
+
+    const newCity = window.prompt("Escribe tu ciudad (ej. Mexicali):", city || "");
     if (newCity && newCity.trim().length > 0) {
       const cityName = newCity.trim();
       let lat = null;
