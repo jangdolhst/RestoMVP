@@ -21,7 +21,11 @@ const ProtectedRoute = () => {
   // Verificar suscripción activa o en prueba
   // Si subscriptionData es null (error de red, fila eliminada), denegar acceso
   const subStatus = subscriptionData?.status;
-  if (subStatus !== 'active' && subStatus !== 'trialing') {
+  const periodEnd = subscriptionData?.current_period_end ? new Date(subscriptionData.current_period_end) : new Date(0);
+  const isPeriodValid = periodEnd > new Date();
+
+  // Permitimos si el estado es explícitamente activo/prueba OR si la fecha de expiración aún no llega
+  if (subStatus !== 'active' && subStatus !== 'trialing' && !isPeriodValid) {
     return <Navigate to="/billing" replace />;
   }
 

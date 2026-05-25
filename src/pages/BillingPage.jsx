@@ -1,9 +1,11 @@
 import { useAuth } from '../context/AuthContext';
-import { CreditCard, LogOut, CheckCircle2 } from 'lucide-react';
+import { CreditCard, LogOut, CheckCircle2, RefreshCw } from 'lucide-react';
+import { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 
 const BillingPage = () => {
-  const { user, subscriptionData, logout } = useAuth();
+  const { user, subscriptionData, logout, fetchSubscription } = useAuth();
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const navigate = useNavigate();
 
   // Si no hay usuario, redirigir al login
@@ -71,6 +73,22 @@ const BillingPage = () => {
           >
             Suscribirse Ahora
           </a>
+
+          <button
+            onClick={async () => {
+              setIsRefreshing(true);
+              try {
+                await fetchSubscription(user?.id);
+              } finally {
+                setIsRefreshing(false);
+              }
+            }}
+            disabled={isRefreshing}
+            className="w-full mt-4 bg-white/5 hover:bg-white/10 text-white font-medium py-3 rounded-xl flex justify-center items-center gap-2 transition-all disabled:opacity-50"
+          >
+            <RefreshCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
+            Ya pagué / Actualizar estado
+          </button>
 
           <button
             onClick={handleLogout}

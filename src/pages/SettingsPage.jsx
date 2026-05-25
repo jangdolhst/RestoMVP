@@ -307,6 +307,33 @@ const SettingsPage = () => {
     setIsGeocoding(false);
   };
 
+  /**
+   * Obtener ubicación del dispositivo mediante GPS.
+   */
+  const handleGetDeviceLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Tu navegador no soporta geolocalización.");
+      return;
+    }
+    setIsGeocoding(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setProfile(prev => ({
+          ...prev,
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        }));
+        setIsGeocoding(false);
+      },
+      (error) => {
+        console.error("Error obteniendo ubicación:", error);
+        alert("No se pudo obtener la ubicación de tu dispositivo. Asegúrate de dar permisos de ubicación al navegador.");
+        setIsGeocoding(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  };
+
   const handleMapPositionChange = (lat, lng) => {
     setProfile(prev => ({ ...prev, latitude: lat, longitude: lng }));
     setSaveStatus(null);
@@ -607,16 +634,27 @@ const SettingsPage = () => {
                 Ubicación detectada ({profile.latitude.toFixed(4)}, {profile.longitude.toFixed(4)})
               </p>
             )}
-            {!profile.latitude && !profile.longitude && profile.address && profile.address.trim().length >= 5 && !isGeocoding && (
+            <div className="flex flex-wrap gap-3 mt-2">
+              {!profile.latitude && !profile.longitude && profile.address && profile.address.trim().length >= 5 && !isGeocoding && (
+                <button
+                  type="button"
+                  onClick={handleManualGeocode}
+                  className="text-xs text-orange-400 hover:text-orange-300 underline underline-offset-2 flex items-center gap-1 transition-colors"
+                >
+                  <Search size={12} />
+                  Buscar por dirección
+                </button>
+              )}
               <button
                 type="button"
-                onClick={handleManualGeocode}
-                className="mt-2 text-xs text-orange-400 hover:text-orange-300 underline underline-offset-2 flex items-center gap-1 transition-colors"
+                onClick={handleGetDeviceLocation}
+                disabled={isGeocoding}
+                className="text-xs text-emerald-400 hover:text-emerald-300 underline underline-offset-2 flex items-center gap-1 transition-colors disabled:opacity-50"
               >
-                <Search size={12} />
-                Buscar ubicación manualmente
+                <MapPin size={12} />
+                Usar mi ubicación GPS
               </button>
-            )}
+            </div>
             <AddressMapPreview
               latitude={profile.latitude}
               longitude={profile.longitude}
