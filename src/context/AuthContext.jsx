@@ -12,8 +12,10 @@ export const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchSubscription = async (userId) => {
+    setIsLoading(true);
     if (!userId) {
       setSubscriptionData(null);
+      setIsLoading(false);
       return;
     }
     const { data, error } = await supabase
@@ -27,6 +29,7 @@ export const AuthProvider = ({ children }) => {
     } else {
       setSubscriptionData(null);
     }
+    setIsLoading(false);
   };
 
   useEffect(() => {

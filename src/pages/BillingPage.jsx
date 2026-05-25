@@ -17,9 +17,9 @@ const BillingPage = () => {
   const periodEnd = subscriptionData?.current_period_end ? new Date(subscriptionData.current_period_end) : new Date(0);
   const isPeriodValid = periodEnd > new Date();
 
-  // Si la suscripción ya es válida o tiene días restantes, regresamos a la app
+  // Si la suscripción ya es válida o tiene días restantes, regresamos a la app (al POS)
   if (subStatus === 'active' || subStatus === 'trialing' || isPeriodValid) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/pos" replace />;
   }
 
   // Aquí pondrás el Payment Link de Stripe
