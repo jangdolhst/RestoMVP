@@ -13,6 +13,15 @@ const BillingPage = () => {
     return <Navigate to="/login" replace />;
   }
 
+  const subStatus = subscriptionData?.status;
+  const periodEnd = subscriptionData?.current_period_end ? new Date(subscriptionData.current_period_end) : new Date(0);
+  const isPeriodValid = periodEnd > new Date();
+
+  // Si la suscripción ya es válida o tiene días restantes, regresamos a la app
+  if (subStatus === 'active' || subStatus === 'trialing' || isPeriodValid) {
+    return <Navigate to="/" replace />;
+  }
+
   // Aquí pondrás el Payment Link de Stripe
   // IMPORTANTE: Se añade ?client_reference_id={user.id} para que Stripe sepa de quién es el pago y lo envíe al Webhook
   const STRIPE_PAYMENT_LINK = `https://buy.stripe.com/14AbJ10EH5EZ3Ib7cR7bW00?client_reference_id=${user?.id}`;
