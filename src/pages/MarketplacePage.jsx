@@ -124,47 +124,6 @@ const MarketplacePage = () => {
   const hasLocation = userLat !== null && userLng !== null;
   const maxDistanceKm = geoSource === 'ip' ? MAX_DISTANCE_IP_KM : MAX_DISTANCE_GPS_KM;
 
-  const handleManualLocationOverride = async () => {
-    const wantsRetry = window.confirm("¿Deseas volver a intentar detectar tu ubicación por GPS?\n\n(Haz clic en Cancelar para escribir tu ciudad manualmente)");
-    
-    if (wantsRetry) {
-      retryGps();
-      return;
-    }
-
-    const newCity = window.prompt("Escribe tu ciudad (ej. Mexicali):", city || "");
-    if (newCity && newCity.trim().length > 0) {
-      const cityName = newCity.trim();
-      let lat = null;
-      let lng = null;
-
-      try {
-        const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cityName)}&format=json&limit=1`, {
-          headers: { 'User-Agent': 'JammFree/1.0' }
-        });
-        const data = await response.json();
-        if (data && data.length > 0) {
-          lat = parseFloat(data[0].lat);
-          lng = parseFloat(data[0].lon);
-        }
-      } catch (err) {
-        console.error("Error geocoding manual city:", err);
-      }
-
-      const manualLocation = {
-        city: cityName,
-        state: "",
-        country: null,
-        lat: lat, // Si Nominatim la encuentra, mantiene el filtro de radio funcionando. Si falla, será null y mostrará todo.
-        lng: lng,
-        source: 'manual',
-        timestamp: Date.now() + (24 * 60 * 60 * 1000)
-      };
-      localStorage.setItem('jf_user_location', JSON.stringify(manualLocation));
-      window.location.reload();
-    }
-  };
-
   // Verificar si hay pedidos en localStorage
   useEffect(() => {
     try {
@@ -257,7 +216,7 @@ const MarketplacePage = () => {
             {gpsLoading ? (
               <Loader2 size={14} className="animate-spin text-slate-500" />
             ) : city ? (
-              <button onClick={handleManualLocationOverride} className="flex items-center gap-1 text-xs text-slate-400 hover:text-orange-400 transition-colors px-2 py-1 rounded-lg bg-white/5 border border-white/5">
+              <button onClick={retryGps} className="flex items-center gap-1 text-xs text-slate-400 hover:text-orange-400 transition-colors px-2 py-1 rounded-lg bg-white/5 border border-white/5" title="Reintentar GPS">
                 <MapPin size={12} className="text-orange-400" />
                 <span className="max-w-[120px] truncate">{city}</span>
               </button>
@@ -277,7 +236,7 @@ const MarketplacePage = () => {
                 <span>Detectando...</span>
               </div>
             ) : city ? (
-              <button onClick={handleManualLocationOverride} className="flex items-center gap-1.5 text-sm text-slate-300 hover:text-orange-400 transition-colors px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:border-orange-500/20">
+              <button onClick={retryGps} className="flex items-center gap-1.5 text-sm text-slate-300 hover:text-orange-400 transition-colors px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:border-orange-500/20" title="Reintentar GPS">
                 <MapPin size={14} className="text-orange-400" />
                 {city}{state ? `, ${state}` : ''}
               </button>
