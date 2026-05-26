@@ -24,11 +24,6 @@ const ProtectedRoute = () => {
   const periodEnd = subscriptionData?.current_period_end ? new Date(subscriptionData.current_period_end) : new Date(0);
   const isPeriodValid = periodEnd > new Date();
 
-  // VIP Bypass: Acceso eterno para ti como dueño del SaaS
-  if (user.email === 'segoviasoft@gmail.com') {
-    return <Outlet />;
-  }
-
   // Permitimos si el estado es explícitamente activo/prueba OR si la fecha de expiración aún no llega
   if (subStatus !== 'active' && subStatus !== 'trialing' && !isPeriodValid) {
     return <Navigate to="/billing" replace />;
