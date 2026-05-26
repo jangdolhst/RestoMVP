@@ -17,8 +17,8 @@ const BillingPage = () => {
   const periodEnd = subscriptionData?.current_period_end ? new Date(subscriptionData.current_period_end) : new Date(0);
   const isPeriodValid = periodEnd > new Date();
 
-  // Si la suscripción ya es válida o tiene días restantes, regresamos a la app (al POS)
-  if (subStatus === 'active' || subStatus === 'trialing' || isPeriodValid) {
+  // VIP Bypass: Acceso eterno para ti como dueño del SaaS
+  if (user?.email === 'segoviasoft@gmail.com' || subStatus === 'active' || subStatus === 'trialing' || isPeriodValid) {
     return <Navigate to="/pos" replace />;
   }
 
