@@ -327,7 +327,7 @@ const OrderTrackingPage = () => {
                     <button
                       onClick={() => {
                         const url = `https://www.google.com/maps/dir/?api=1&destination=${order.restaurant_latitude},${order.restaurant_longitude}`;
-                        window.open(url, '_blank');
+                        window.open(url, '_blank', 'noopener,noreferrer');
                       }}
                       className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/25 text-blue-400 hover:text-blue-300 font-medium text-sm transition-all hover:scale-[1.01] active:scale-95"
                     >

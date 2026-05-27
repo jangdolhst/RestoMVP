@@ -223,9 +223,9 @@ export const POSProvider = ({ children }) => {
     const isOnlineClientOrder = isClientMenu && orderIsOnline;
     const initialStatus = isOnlineClientOrder ? 'pendiente_confirmacion' : 'pendiente_cocina';
 
-    const newOrderData = {
-      tenant_id: currentTenantId,
-      client_name: clientName || 'Sin Nombre',
+	    const newOrderData = {
+	      tenant_id: currentTenantId,
+	      client_name: clientName || 'Sin Nombre',
       table_name: finalTableName,
       waiter_name: waiterName || null,
       phone: phone || null,
@@ -233,29 +233,79 @@ export const POSProvider = ({ children }) => {
       total: cartTotal,
       status: initialStatus,
       confirmation_code: isOnlineClientOrder ? confirmationCode : null,
-      order_token: orderToken,
-    };
+	      order_token: orderToken,
+	    };
+	
+	    try {
+	      if (isClientMenu) {
+	        const publicItems = cartItems.map(item => ({
+	          product_id: item.id,
+	          quantity: item.quantity,
+	          modifications: (item.modifications || []).map(mod => ({
+	            type: mod.type,
+	            name: mod.name,
+	          })),
+	        }));
 
-    try {
-      // INSERT sin .select() — el RLS de SELECT no aplica para anon
-      const { error: orderError } = await supabase
-        .from('orders')
-        .insert(newOrderData);
+	        const { data, error } = await supabase.rpc('create_public_order', {
+	          p_tenant_id: currentTenantId,
+	          p_client_name: clientName || 'Sin Nombre',
+	          p_phone: phone || null,
+	          p_items: publicItems,
+	        });
 
-      if (orderError) {
-        console.error('Error creando orden:', orderError);
-        return false;
-      }
+	        if (error) {
+	          console.error('Error creando orden pública:', error);
+	          return { success: false, error: 'No se pudo enviar el pedido. Intenta de nuevo.' };
+	        }
 
-      // Para insertar order_items necesitamos el order_id.
-      // Usamos el token para obtenerlo via RPC.
-      const { data: createdOrders } = await supabase
-        .rpc('get_orders_by_tokens', { tokens: [orderToken] });
+	        const createdOrder = data?.[0];
+	        if (!createdOrder) {
+	          console.error('No se pudo recuperar la orden pública creada');
+	          return { success: false, error: 'No se pudo confirmar el pedido creado.' };
+	        }
 
-      const createdOrder = createdOrders?.[0];
-      if (!createdOrder) {
-        console.error('No se pudo recuperar la orden creada');
-        return false;
+	        try {
+	          const stored = JSON.parse(localStorage.getItem('resto_order_tokens') || '[]');
+	          stored.push({
+	            token: createdOrder.order_token,
+	            timestamp: Date.now(),
+	            restaurantName: '',
+	          });
+	          localStorage.setItem('resto_order_tokens', JSON.stringify(stored.slice(-20)));
+	        } catch {
+	          // localStorage no disponible — silenciar
+	        }
+
+	        const savedItems = [...cartItems];
+	        clearCart();
+	        lastOrderTimeRef.current = Date.now();
+
+	        return {
+	          success: true,
+	          orderToken: createdOrder.order_token,
+	          confirmationCode: createdOrder.confirmation_code,
+	          orderNumber: createdOrder.order_number,
+	          restaurantPhone: createdOrder.restaurant_phone || '',
+	          items: savedItems,
+	          total: Number(createdOrder.total) || cartTotal,
+	        };
+	      }
+
+	      const { data: createdOrder, error: orderError } = await supabase
+	        .from('orders')
+	        .insert(newOrderData)
+	        .select('id, order_number, created_at')
+	        .single();
+	
+	      if (orderError) {
+	        console.error('Error creando orden:', orderError);
+	        return false;
+	      }
+
+	      if (!createdOrder) {
+	        console.error('No se pudo recuperar la orden creada');
+	        return false;
       }
 
       // Insertar items de la orden
@@ -274,41 +324,9 @@ export const POSProvider = ({ children }) => {
         return { success: false, error: 'No se pudieron guardar los productos del pedido.' };
       }
 
-      // Guardar token en localStorage para seguimiento
-      if (isClientMenu) {
-        try {
-          const stored = JSON.parse(localStorage.getItem('resto_order_tokens') || '[]');
-          stored.push({
-            token: orderToken,
-            timestamp: Date.now(),
-            restaurantName: '',
-          });
-          // Mantener solo los últimos 20 tokens (limpieza automática)
-          const trimmed = stored.slice(-20);
-          localStorage.setItem('resto_order_tokens', JSON.stringify(trimmed));
-        } catch {
-          // localStorage no disponible — silenciar
-        }
-      }
-
-      // Obtener teléfono del restaurante para WhatsApp (solo para órdenes online de cliente)
-      let restaurantPhone = '';
-      if (isOnlineClientOrder) {
-        try {
-          const { data: profile } = await supabase
-            .from('restaurant_profiles')
-            .select('phone, name')
-            .eq('id', currentTenantId)
-            .maybeSingle();
-          restaurantPhone = profile?.phone || '';
-        } catch {
-          // silenciar
-        }
-      }
-
-      // Actualización local (solo para dueño, no cliente)
-      if (!isClientMenu) {
-        const newOrderFull = { 
+	      // Actualización local (solo para dueño, no cliente)
+	      if (!isClientMenu) {
+	        const newOrderFull = { 
           ...newOrderData,
           id: createdOrder.id,
           orderNumber: createdOrder.order_number,
@@ -328,13 +346,13 @@ export const POSProvider = ({ children }) => {
 
       return {
         success: true,
-        orderToken,
-        confirmationCode: isOnlineClientOrder ? confirmationCode : null,
-        orderNumber: createdOrder.order_number,
-        restaurantPhone,
-        items: savedItems,
-        total: savedTotal,
-      };
+	        orderToken,
+	        confirmationCode: isOnlineClientOrder ? confirmationCode : null,
+	        orderNumber: createdOrder.order_number,
+	        restaurantPhone: '',
+	        items: savedItems,
+	        total: savedTotal,
+	      };
     } catch (err) {
       console.error('Error en placeOrder:', err);
       return false;

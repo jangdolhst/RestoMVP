@@ -55,7 +55,7 @@ ${itemLines}
     const message = buildWhatsAppMessage();
     const cleanPhone = restaurantPhone.replace(/[^0-9+]/g, '').replace(/^\+/, '');
     const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
-    window.open(url, '_blank');
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   return (
