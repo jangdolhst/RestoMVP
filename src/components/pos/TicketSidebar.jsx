@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { usePOS } from '../../context/POSContext';
 import { Trash2, Send, X, AlertCircle } from 'lucide-react';
 import PhoneInput from '../ui/PhoneInput';
@@ -7,6 +8,7 @@ import WhatsAppConfirmationModal from '../ui/WhatsAppConfirmationModal';
 
 const TicketSidebar = ({ isClientMode = false, isOpen = false, isStoreOpen = true, onClose }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { 
     cartItems, 
     cartTotal, 
@@ -43,16 +45,16 @@ const TicketSidebar = ({ isClientMode = false, isOpen = false, isStoreOpen = tru
   };
 
   const handleEnviar = async () => {
-    if (cartItems.length === 0) return showToast('La orden está vacía');
+    if (cartItems.length === 0) return showToast(t('pos.errors.emptyOrder'));
     
     if (isClientMode) {
-      if (!clientName.trim()) return showToast('Por favor ingresa tu nombre.');
-      if (!phone.trim()) return showToast('Por favor ingresa tu número de celular.');
-      if (!isPhoneValid) return showToast('El número de celular no es válido. Verifica que esté completo.');
+      if (!clientName.trim()) return showToast(t('pos.errors.clientName'));
+      if (!phone.trim()) return showToast(t('pos.errors.phone'));
+      if (!isPhoneValid) return showToast(t('pos.errors.invalidPhone'));
     } else {
-      if (!clientName.trim()) return showToast('Ingresa un nombre de cliente.');
-      if (isOnline && !phone.trim()) return showToast('Ingresa el celular del cliente para el pedido en línea.');
-      if (isOnline && phone.trim() && !isPhoneValid) return showToast('El número de celular no es válido. Verifica que esté completo.');
+      if (!clientName.trim()) return showToast(t('pos.errors.ownerName'));
+      if (isOnline && !phone.trim()) return showToast(t('pos.errors.onlinePhone'));
+      if (isOnline && phone.trim() && !isPhoneValid) return showToast(t('pos.errors.invalidPhone'));
     }
 
     setIsSending(true);
@@ -75,11 +77,11 @@ const TicketSidebar = ({ isClientMode = false, isOpen = false, isStoreOpen = tru
           navigate('/pedidos');
         }
       } else {
-        showToast('¡Orden enviada a la cocina!');
+        showToast(t('pos.orderSent'));
         if (onClose) onClose();
       }
     } else {
-      const errorMsg = result?.error || 'Error al enviar la orden. Intenta de nuevo.';
+      const errorMsg = result?.error || t('pos.errors.sendOrder');
       showToast(errorMsg);
     }
   };
@@ -113,7 +115,7 @@ const TicketSidebar = ({ isClientMode = false, isOpen = false, isStoreOpen = tru
         {/* Cabecera del Ticket */}
         <div className="p-4 border-b border-white/10 flex justify-between items-center">
           <h2 className="text-xl font-bold text-white tracking-tight">
-            {isClientMode ? 'Tu Pedido' : 'Ticket Actual'}
+            {isClientMode ? t('pos.yourOrder') : t('pos.ticket')}
           </h2>
           <div className="flex items-center gap-3">
             <span className="text-sm font-medium bg-orange-500/20 text-orange-400 px-3 py-1 rounded-full border border-orange-500/30">
@@ -131,8 +133,8 @@ const TicketSidebar = ({ isClientMode = false, isOpen = false, isStoreOpen = tru
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {cartItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-slate-400">
-            <p>La orden está vacía</p>
-            <p className="text-sm">Selecciona productos para comenzar</p>
+            <p>{t('pos.emptyOrder')}</p>
+            <p className="text-sm">{t('pos.selectProducts')}</p>
           </div>
         ) : (
           cartItems.map((item) => {
@@ -165,7 +167,7 @@ const TicketSidebar = ({ isClientMode = false, isOpen = false, isStoreOpen = tru
                     <button 
                       onClick={() => removeFromCart(item.cartId)}
                       className="text-slate-400 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
-                      title="Eliminar producto"
+                      title={t('pos.removeProduct')}
                     >
                     <Trash2 size={16} />
                   </button>
@@ -180,30 +182,30 @@ const TicketSidebar = ({ isClientMode = false, isOpen = false, isStoreOpen = tru
       {/* Pie del Ticket (Total, Cliente, Enviar) */}
       <div className="p-4 border-t border-white/10 bg-black/10">
         <div className="flex justify-between items-center mb-4">
-          <span className="text-lg text-slate-300">Total:</span>
+          <span className="text-lg text-slate-300">{t('common.labels.total')}:</span>
           <span className="text-2xl font-bold text-orange-400">${cartTotal.toFixed(2)}</span>
         </div>
 
         <div className="space-y-3 mb-4">
           <div className="flex items-center gap-3">
-            <label className="text-sm text-slate-300 w-16">Nombre:</label>
+            <label className="text-sm text-slate-300 w-16">{t('common.labels.name')}:</label>
             <input 
               type="text" 
               value={clientName}
               onChange={(e) => setClientName(e.target.value)}
               className="glass-input flex-1 py-1.5" 
-              placeholder="Ej. Juan Pérez"
+              placeholder={t('pos.placeholders.clientName')}
             />
           </div>
 
           {isClientMode ? (
             <div>
-              <label className="text-sm text-slate-300 mb-1 block">Celular:</label>
+              <label className="text-sm text-slate-300 mb-1 block">{t('common.labels.phone')}:</label>
               <PhoneInput
                 value={phone}
                 onChange={setPhone}
                 onValidityChange={setIsPhoneValid}
-                placeholder="Ingresa tu celular"
+                placeholder={t('pos.placeholders.clientPhone')}
               />
             </div>
           ) : (
@@ -211,13 +213,13 @@ const TicketSidebar = ({ isClientMode = false, isOpen = false, isStoreOpen = tru
               {/* Mesero dropdown */}
               {!isOnline && waiters.length > 0 && (
                 <div className="flex items-center gap-3">
-                  <label className="text-sm text-slate-300 w-16">Mesero:</label>
+                  <label className="text-sm text-slate-300 w-16">{t('common.labels.waiter')}:</label>
                   <select
                     value={waiterName}
                     onChange={(e) => setWaiterName(e.target.value)}
                     className="glass-input flex-1 py-1.5 cursor-pointer"
                   >
-                    <option value="">Sin asignar</option>
+                    <option value="">{t('common.labels.unassigned')}</option>
                     {waiters.map((w) => (
                       <option key={w} value={w}>{w}</option>
                     ))}
@@ -228,19 +230,19 @@ const TicketSidebar = ({ isClientMode = false, isOpen = false, isStoreOpen = tru
               {/* Mesa dropdown */}
               {!isOnline && tableCount > 0 && (
                 <div className="flex items-center gap-3">
-                  <label className="text-sm text-slate-300 w-16">Mesa:</label>
+                  <label className="text-sm text-slate-300 w-16">{t('common.labels.table')}:</label>
                   <select
                     value={tableName}
                     onChange={(e) => setTableName(e.target.value)}
                     className="glass-input flex-1 py-1.5 cursor-pointer"
                   >
-                    <option value="">Para llevar (sin mesa)</option>
+                    <option value="">{t('common.labels.takeout')}</option>
                     {Array.from({ length: tableCount }, (_, i) => {
                       const mesa = `Mesa ${i + 1}`;
                       const isOccupied = occupiedTables.includes(mesa);
                       return (
                         <option key={i} value={mesa} disabled={isOccupied}>
-                          {mesa}{isOccupied ? ' (ocupada)' : ''}
+                          {mesa}{isOccupied ? ` (${t('common.labels.occupied')})` : ''}
                         </option>
                       );
                     })}
@@ -257,18 +259,18 @@ const TicketSidebar = ({ isClientMode = false, isOpen = false, isStoreOpen = tru
                   className="w-4 h-4 rounded border-slate-600 text-orange-500 focus:ring-orange-500 bg-slate-800"
                 />
                 <label htmlFor="isOnline" className="text-sm text-slate-300 cursor-pointer">
-                  Pedido en Línea / Llamada
+                  {t('pos.onlineOrder')}
                 </label>
               </div>
 
               {isOnline && (
                 <div className="animate-in fade-in slide-in-from-top-2">
-                  <label className="text-sm text-slate-300 mb-1 block">Celular:</label>
+                  <label className="text-sm text-slate-300 mb-1 block">{t('common.labels.phone')}:</label>
                   <PhoneInput
                     value={phone}
                     onChange={setPhone}
                     onValidityChange={setIsPhoneValid}
-                    placeholder="Celular del cliente"
+                    placeholder={t('pos.placeholders.ownerPhone')}
                   />
                 </div>
               )}
@@ -284,17 +286,17 @@ const TicketSidebar = ({ isClientMode = false, isOpen = false, isStoreOpen = tru
           {isClientMode && !isStoreOpen ? (
             <>
               <AlertCircle size={20} />
-              Cerrado
+              {t('common.states.closed')}
             </>
           ) : isSending ? (
             <>
               <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/></svg>
-              Enviando...
+              {t('common.actions.sending')}
             </>
           ) : (
             <>
               <Send size={20} />
-              Enviar Orden
+              {t('pos.sendOrder')}
             </>
           )}
         </button>

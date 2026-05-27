@@ -2,11 +2,14 @@ import { useAuth } from '../context/AuthContext';
 import { CreditCard, LogOut, CheckCircle2, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from '../components/ui/LanguageSwitcher';
 
 const BillingPage = () => {
   const { user, subscriptionData, logout, fetchSubscription } = useAuth();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   // Si no hay usuario, redirigir al login
   if (!user) {
@@ -52,26 +55,29 @@ const BillingPage = () => {
           </div>
 
           <h2 className="text-3xl font-bold text-center mb-2">
-            {isTrialExpired ? 'Prueba Finalizada' : 'Suscripción Inactiva'}
+            {isTrialExpired ? t('billing.trialEnded') : t('billing.inactive')}
           </h2>
           <p className="text-gray-400 text-center mb-8">
-            Para continuar utilizando Jamm Free y acceder a tu panel de control, por favor activa tu suscripción.
+            {t('billing.description')}
           </p>
+          <div className="flex justify-center mb-6">
+            <LanguageSwitcher />
+          </div>
 
           <div className="bg-black/20 rounded-2xl p-6 border border-white/5 mb-8">
             <h3 className="text-xl font-semibold mb-4 flex items-center justify-between">
-              <span>Plan Pro</span>
-              <span className="text-orange-500">$250 MXN<span className="text-sm text-gray-400 font-normal">/mes</span></span>
+              <span>{t('billing.plan')}</span>
+              <span className="text-orange-500">$250 MXN<span className="text-sm text-gray-400 font-normal">{t('billing.perMonth')}</span></span>
             </h3>
             <ul className="space-y-3">
               <li className="flex items-center text-sm text-gray-300">
-                <CheckCircle2 className="text-orange-500 mr-2" size={18} /> Acceso completo al POS
+                <CheckCircle2 className="text-orange-500 mr-2" size={18} /> {t('billing.features.pos')}
               </li>
               <li className="flex items-center text-sm text-gray-300">
-                <CheckCircle2 className="text-orange-500 mr-2" size={18} /> Pantalla de Cocina en tiempo real
+                <CheckCircle2 className="text-orange-500 mr-2" size={18} /> {t('billing.features.kitchen')}
               </li>
               <li className="flex items-center text-sm text-gray-300">
-                <CheckCircle2 className="text-orange-500 mr-2" size={18} /> Menú QR digital para tus clientes
+                <CheckCircle2 className="text-orange-500 mr-2" size={18} /> {t('billing.features.qr')}
               </li>
             </ul>
           </div>
@@ -80,7 +86,7 @@ const BillingPage = () => {
             href={STRIPE_PAYMENT_LINK}
             className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 rounded-xl flex justify-center items-center gap-2 transition-all shadow-lg shadow-orange-500/20"
           >
-            Suscribirse Ahora
+            {t('billing.subscribe')}
           </a>
 
           <button
@@ -96,7 +102,7 @@ const BillingPage = () => {
             className="w-full mt-4 bg-white/5 hover:bg-white/10 text-white font-medium py-3 rounded-xl flex justify-center items-center gap-2 transition-all disabled:opacity-50"
           >
             <RefreshCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
-            Ya pagué / Actualizar estado
+            {t('billing.refreshPayment')}
           </button>
 
           <button
@@ -104,7 +110,7 @@ const BillingPage = () => {
             className="w-full mt-4 bg-transparent hover:bg-white/5 text-gray-400 font-medium py-3 rounded-xl flex justify-center items-center gap-2 transition-all"
           >
             <LogOut size={18} />
-            Cerrar Sesión
+            {t('billing.logout')}
           </button>
         </div>
       </div>

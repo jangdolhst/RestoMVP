@@ -1,4 +1,5 @@
 import { X, MessageCircle, ExternalLink, Clock } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 /**
  * WhatsAppConfirmationModal — Modal de confirmación de pedido vía WhatsApp.
@@ -24,6 +25,8 @@ const WhatsAppConfirmationModal = ({
   onClose,
   onGoToTracking,
 }) => {
+  const { t } = useTranslation();
+
   // Construir mensaje de WhatsApp
   const buildWhatsAppMessage = () => {
     const itemLines = items
@@ -39,16 +42,16 @@ const WhatsAppConfirmationModal = ({
       })
       .join('\n');
 
-    return `🍽️ *Pedido #${orderNumber}*
-📋 *Código: ${confirmationCode}*
+    return `${t('whatsapp.messageHeader', { orderNumber })}
+${t('whatsapp.messageCode', { code: confirmationCode })}
 👤 ${clientName}
 
-🛒 *Productos:*
+${t('whatsapp.messageProducts')}
 ${itemLines}
 
-💰 *Total: $${total.toFixed(2)}*
+${t('whatsapp.messageTotal', { total: total.toFixed(2) })}
 
-✅ Por favor confirma mi pedido en tu sistema.`;
+${t('whatsapp.messageConfirm')}`;
   };
 
   const handleWhatsAppClick = () => {
@@ -64,9 +67,9 @@ ${itemLines}
         {/* Header */}
         <div className="p-5 pb-3 flex items-start justify-between">
           <div>
-            <h2 className="text-xl font-bold text-white">¡Pedido Creado!</h2>
+            <h2 className="text-xl font-bold text-white">{t('whatsapp.created')}</h2>
             <p className="text-sm text-slate-400 mt-1">
-              Confirma tu pedido enviando un mensaje por WhatsApp
+              {t('whatsapp.subtitle')}
             </p>
           </div>
           <button
@@ -80,7 +83,7 @@ ${itemLines}
         {/* Código de Confirmación */}
         <div className="mx-5 p-4 rounded-xl bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 text-center">
           <p className="text-xs text-emerald-400/80 uppercase tracking-wider font-medium mb-1">
-            Tu código de confirmación
+            {t('whatsapp.codeLabel')}
           </p>
           <p className="text-4xl font-black text-emerald-400 tracking-[0.3em] font-mono">
             {confirmationCode}
@@ -118,16 +121,16 @@ ${itemLines}
               className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold text-lg shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 transition-all duration-300 hover:scale-[1.02] active:scale-95"
             >
               <MessageCircle size={22} />
-              Confirmar por WhatsApp
+              {t('whatsapp.confirm')}
               <ExternalLink size={14} className="opacity-60" />
             </button>
           ) : (
             <div className="w-full py-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center">
               <p className="text-xs text-amber-400">
-                ⚠️ El restaurante no tiene número de WhatsApp configurado.
+                {t('whatsapp.noPhone')}
               </p>
               <p className="text-xs text-slate-500 mt-1">
-                Contacta al restaurante directamente con tu código: <strong className="text-emerald-400">{confirmationCode}</strong>
+                {t('whatsapp.contactDirect')} <strong className="text-emerald-400">{confirmationCode}</strong>
               </p>
             </div>
           )}
@@ -137,15 +140,14 @@ ${itemLines}
             className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white text-sm font-medium transition-all"
           >
             <Clock size={16} />
-            Ver estado de mi pedido
+            {t('whatsapp.tracking')}
           </button>
         </div>
 
         {/* Info */}
         <div className="px-5 pb-4">
           <p className="text-[11px] text-slate-600 text-center">
-            ⏳ Tu pedido será confirmado cuando el restaurante reciba tu mensaje.
-            Se cancelará automáticamente si no se confirma en 15 minutos.
+            {t('whatsapp.info')}
           </p>
         </div>
       </div>

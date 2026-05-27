@@ -1,4 +1,5 @@
 import { useRef, useState, useCallback, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import IntlTelInput from '@intl-tel-input/react';
 import 'intl-tel-input/styles';
 
@@ -15,6 +16,7 @@ import 'intl-tel-input/styles';
  */
 const PhoneInput = ({ value, onChange, onValidityChange, placeholder = 'Ingresa tu celular', className = '' }) => {
   const ref = useRef(null);
+  const { t } = useTranslation();
   const [isValid, setIsValid] = useState(false);
   const [hasInput, setHasInput] = useState(false);
 
@@ -70,15 +72,15 @@ const PhoneInput = ({ value, onChange, onValidityChange, placeholder = 'Ingresa 
         onChangeValidity={handleChangeValidity}
         value={value}
         inputProps={{
-          placeholder,
+          placeholder: placeholder || t('pos.placeholders.clientPhone'),
           className: 'glass-input phone-field',
         }}
       />
       {hasInput && !isValid && (
-        <small className="phone-hint invalid">✗ Número incompleto o inválido</small>
+        <small className="phone-hint invalid">{t('phone.invalid')}</small>
       )}
       {hasInput && isValid && (
-        <small className="phone-hint valid">✓ Número válido</small>
+        <small className="phone-hint valid">{t('phone.valid')}</small>
       )}
     </div>
   );

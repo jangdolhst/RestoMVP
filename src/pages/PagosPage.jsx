@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { usePOS } from '../context/POSContext';
 import { DollarSign, Search, CheckCircle, Receipt, Bell, XCircle, Clock, Phone } from 'lucide-react';
 import OrderCalendar from '../components/ui/OrderCalendar';
@@ -8,6 +9,7 @@ import { useAuth } from '../context/AuthContext';
 const PagosPage = () => {
   const { orders, updateOrderStatus, restaurantProfile } = usePOS();
   const { user } = useAuth();
+  const { t } = useTranslation();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDate, setFilterDate] = useState(() => {
@@ -128,10 +130,10 @@ const PagosPage = () => {
               </span>
             </div>
             <h2 className="text-xl font-bold text-amber-400">
-              Pedidos por Confirmar
+              {t('payments.pendingConfirm')}
             </h2>
             <span className="text-xs text-slate-500 bg-slate-800 px-2 py-1 rounded-full">
-              Verifica el WhatsApp antes de confirmar
+              {t('payments.verifyWhatsApp')}
             </span>
           </div>
 
@@ -182,12 +184,12 @@ const PagosPage = () => {
                       className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-white font-bold text-sm transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-emerald-500/20"
                     >
                       <CheckCircle size={16} />
-                      Confirmar
+                      {t('common.actions.confirm')}
                     </button>
                     <button
                       onClick={() => handleRejectOrder(order.id)}
                       className="px-3 py-2.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-sm transition-all"
-                      title="Rechazar orden"
+                      title={t('payments.rejectOrder')}
                     >
                       <XCircle size={16} />
                     </button>
@@ -201,7 +203,7 @@ const PagosPage = () => {
 
       {/* ─── Sección: Historial de Órdenes ──────────────────────── */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-        <h1 className="text-3xl font-bold text-white tracking-tight">Órdenes e Historial</h1>
+        <h1 className="text-3xl font-bold text-white tracking-tight">{t('payments.title')}</h1>
         
         <div className="flex items-center gap-4 w-full md:w-auto">
           <OrderCalendar
@@ -215,7 +217,7 @@ const PagosPage = () => {
               type="text" 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Buscar cliente o mesa..." 
+              placeholder={t('payments.searchPlaceholder')}
               className="glass-input w-full pl-10"
             />
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
@@ -226,8 +228,8 @@ const PagosPage = () => {
       {filteredOrders.length === 0 ? (
         <div className="glass-panel p-10 text-center flex flex-col items-center justify-center">
           <DollarSign size={48} className="text-slate-500 mb-4" />
-          <h2 className="text-xl text-slate-300 font-medium">No hay órdenes para esta fecha/búsqueda</h2>
-          <p className="text-slate-500">Prueba cambiando el día o los términos de búsqueda.</p>
+          <h2 className="text-xl text-slate-300 font-medium">{t('payments.emptyTitle')}</h2>
+          <p className="text-slate-500">{t('payments.emptyDescription')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -249,7 +251,7 @@ const PagosPage = () => {
                     <span className={`inline-flex text-sm font-medium px-2 py-0.5 rounded ${isPagado ? 'bg-emerald-500/10 text-emerald-400' : 'bg-orange-500/10 text-orange-400'}`}>
                       {order.type === 'online' ? (
                         <span className="text-blue-400 flex items-center gap-1">
-                          EN LÍNEA
+                          {t('common.states.online')}
                         </span>
                       ) : (
                         order.tableName
@@ -258,7 +260,7 @@ const PagosPage = () => {
                   </div>
                   <div className="text-right">
                     <p className="text-2xl font-bold text-emerald-400">${order.total}</p>
-                    {isPagado && <span className="text-xs text-emerald-400 font-semibold uppercase tracking-wider block mt-1">Cobrado</span>}
+                    {isPagado && <span className="text-xs text-emerald-400 font-semibold uppercase tracking-wider block mt-1">{t('common.states.charged')}</span>}
                   </div>
                 </div>
 
@@ -309,13 +311,13 @@ const PagosPage = () => {
                     }}
                     className="w-full flex justify-center items-center gap-2 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white border border-slate-600 transition-colors font-medium text-sm"
                   >
-                    🖨️ Imprimir Ticket
+                    🖨️ {t('common.actions.printTicket')}
                   </button>
 
                   {isPagado ? (
                     <button disabled className="w-full flex justify-center items-center gap-2 py-2.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 cursor-not-allowed font-medium">
                       <CheckCircle size={20} />
-                      Orden Pagada
+                      {t('payments.orderPaid')}
                     </button>
                   ) : (
                     <button 
@@ -323,7 +325,7 @@ const PagosPage = () => {
                       className="btn-success w-full flex justify-center items-center gap-2 py-2.5"
                     >
                       <CheckCircle size={20} />
-                      Marcar Pagado
+                      {t('payments.markPaid')}
                     </button>
                   )}
                 </div>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { usePOS } from '../../context/POSContext';
 import ItemCard from './ItemCard';
 import NewItemModal from '../modals/NewItemModal';
@@ -18,6 +19,7 @@ const POSGrid = ({ isClientMode = false, isOpen = true }) => {
     deleteCategory,
     deleteProduct
   } = usePOS();
+  const { t } = useTranslation();
 
   // Estados de Modales
   const [isNewItemModalOpen, setIsNewItemModalOpen] = useState(false);
@@ -32,7 +34,7 @@ const POSGrid = ({ isClientMode = false, isOpen = true }) => {
       setCurrentCategoryId(item.id);
     } else {
       if (isClientMode && !isOpen) {
-        alert('Lo sentimos, el negocio está cerrado en este momento.');
+        alert(t('pos.errors.storeClosed'));
         return;
       }
       setSelectedProduct(item);
@@ -41,7 +43,7 @@ const POSGrid = ({ isClientMode = false, isOpen = true }) => {
   };
 
   const handleDeleteItem = (id, isCategory) => {
-    if(window.confirm('¿Estás seguro de eliminar este elemento?')) {
+    if(window.confirm(t('pos.deleteConfirm'))) {
       if (isCategory) deleteCategory(id);
       else deleteProduct(id);
     }
@@ -78,13 +80,13 @@ const POSGrid = ({ isClientMode = false, isOpen = true }) => {
             <button 
               onClick={() => setCurrentCategoryId(null)}
               className="btn-secondary p-2 flex items-center justify-center rounded-full"
-              title="Volver a Categorías"
+              title={t('pos.backCategories')}
             >
               <ChevronLeft size={20} />
             </button>
           )}
           <h2 className="text-2xl font-bold text-white tracking-tight">
-            {currentCategoryName ? currentCategoryName : 'Menú Principal'}
+            {currentCategoryName ? currentCategoryName : t('pos.currentMenu')}
           </h2>
         </div>
       </div>
@@ -113,7 +115,7 @@ const POSGrid = ({ isClientMode = false, isOpen = true }) => {
               <div className="w-12 h-12 rounded-full bg-black/20 flex items-center justify-center mb-3 group-hover:bg-orange-500/20 transition-colors">
                 <Plus size={24} />
               </div>
-              <span className="font-semibold text-lg">Nuevo +</span>
+              <span className="font-semibold text-lg">{t('pos.newItem')}</span>
             </button>
           )}
         </div>

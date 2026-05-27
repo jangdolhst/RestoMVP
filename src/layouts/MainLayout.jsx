@@ -1,13 +1,16 @@
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ClipboardList, LayoutGrid, LogOut, QrCode, X, Copy, Check, Store } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { QRCodeSVG } from 'qrcode.react';
 import PendingOrderNotifier from '../components/ui/PendingOrderNotifier';
 import Logo from '../components/ui/Logo';
+import LanguageSwitcher from '../components/ui/LanguageSwitcher';
 
 const MainLayout = () => {
   const { user, logout } = useAuth();
+  const { t } = useTranslation();
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -38,7 +41,7 @@ const MainLayout = () => {
               }
             >
               <LayoutGrid size={18} />
-              <span className="hidden sm:inline">Menú</span>
+              <span className="hidden sm:inline">{t('navigation.menu')}</span>
             </NavLink>
             <NavLink
               to="/pagos"
@@ -51,7 +54,7 @@ const MainLayout = () => {
               }
             >
               <ClipboardList size={18} />
-              <span className="hidden sm:inline">Órdenes</span>
+              <span className="hidden sm:inline">{t('navigation.payments')}</span>
             </NavLink>
             <NavLink
               to="/settings"
@@ -64,7 +67,7 @@ const MainLayout = () => {
               }
             >
               <Store size={18} />
-              <span className="hidden sm:inline">Mi Negocio</span>
+              <span className="hidden sm:inline">{t('navigation.myBusiness')}</span>
             </NavLink>
             
             <div className="w-px h-6 bg-white/10 mx-1 hidden sm:block"></div>
@@ -72,19 +75,21 @@ const MainLayout = () => {
             <button
               onClick={() => setIsQrModalOpen(true)}
               className="flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-slate-300 hover:bg-emerald-500/20 hover:text-emerald-400 transition-all duration-200"
-              title="Compartir Menú"
+              title={t('navigation.share')}
             >
               <QrCode size={18} />
-              <span className="hidden sm:inline">Compartir</span>
+              <span className="hidden sm:inline">{t('navigation.share')}</span>
             </button>
+
+            <LanguageSwitcher />
 
             <button
               onClick={logout}
               className="flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-slate-400 hover:text-red-400 hover:bg-red-400/10 transition-all duration-200"
-              title="Cerrar Sesión"
+              title={t('billing.logout')}
             >
               <LogOut size={18} />
-              <span className="hidden sm:inline">Salir</span>
+              <span className="hidden sm:inline">{t('navigation.logout')}</span>
             </button>
           </div>
         </nav>
@@ -109,8 +114,8 @@ const MainLayout = () => {
               <X size={20} />
             </button>
             
-            <h2 className="text-xl font-bold mb-1 text-white text-center">Tu Menú Digital</h2>
-            <p className="text-slate-400 text-sm mb-6 text-center">Escanea este QR para ver el menú y pedir.</p>
+            <h2 className="text-xl font-bold mb-1 text-white text-center">{t('navigation.qrTitle')}</h2>
+            <p className="text-slate-400 text-sm mb-6 text-center">{t('navigation.qrDescription')}</p>
             
             <div className="bg-white p-4 rounded-2xl flex items-center justify-center shadow-xl shadow-emerald-500/10 mx-auto w-fit mb-6">
               <QRCodeSVG 

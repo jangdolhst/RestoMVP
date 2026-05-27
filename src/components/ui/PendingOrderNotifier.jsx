@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Bell } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
@@ -15,6 +16,7 @@ const PendingOrderNotifier = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
   const [pendingCount, setPendingCount] = useState(0);
   const soundIntervalRef = useRef(null);
   const pollIntervalRef = useRef(null);
@@ -112,7 +114,7 @@ const PendingOrderNotifier = () => {
       style={{ animationDuration: '1.5s' }}
     >
       <Bell size={20} className="animate-pulse" />
-      <span>{pendingCount} pedido{pendingCount > 1 ? 's' : ''} por confirmar</span>
+      <span>{t('payments.pendingConfirm')} ({pendingCount})</span>
     </button>
   );
 };

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ShoppingBag, ArrowLeft, Clock } from 'lucide-react';
 import POSGrid from '../components/pos/POSGrid';
 import TicketSidebar from '../components/pos/TicketSidebar';
@@ -13,6 +14,7 @@ const ClientePage = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const { cartItems, cartTotal } = usePOS();
   const [restaurantInfo, setRestaurantInfo] = useState(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (!tenantId) return;
@@ -47,7 +49,7 @@ const ClientePage = () => {
         <button
           onClick={() => navigate('/')}
           className="text-slate-400 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-colors"
-          aria-label="Volver al directorio"
+          aria-label={t('client.backToDirectory')}
         >
           <ArrowLeft size={20} />
         </button>
@@ -57,7 +59,7 @@ const ClientePage = () => {
           {restaurantInfo?.logo_url ? (
             <img
               src={restaurantInfo.logo_url}
-              alt={restaurantInfo.name || 'Restaurante'}
+              alt={restaurantInfo.name || t('client.restaurantAlt')}
               className="w-9 h-9 rounded-lg object-cover border border-white/10"
             />
           ) : (
@@ -80,7 +82,7 @@ const ClientePage = () => {
       {!isOpen && restaurantInfo && (
         <div className="bg-red-500/10 border-b border-red-500/20 px-4 py-3 flex items-center justify-center gap-2 relative z-10 shrink-0">
           <Clock size={16} className="text-red-400" />
-          <span className="text-sm font-medium text-red-400">Este negocio está cerrado en este momento.</span>
+          <span className="text-sm font-medium text-red-400">{t('client.closedBanner')}</span>
         </div>
       )}
 
@@ -110,7 +112,7 @@ const ClientePage = () => {
         >
           <div className="flex items-center gap-2">
             <ShoppingBag size={20} />
-            <span className="font-medium text-lg">Ver Pedido ({cartItems.length})</span>
+            <span className="font-medium text-lg">{t('client.viewOrder', { count: cartItems.length })}</span>
           </div>
           <span className="font-bold text-xl">${cartTotal}</span>
         </button>

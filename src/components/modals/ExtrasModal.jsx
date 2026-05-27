@@ -1,9 +1,11 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Plus, Minus, Check } from 'lucide-react';
 import { usePOS } from '../../context/POSContext';
 
 const ExtrasModal = ({ product, isOpen, onClose, onConfirm, isClientMode }) => {
   const { extras } = usePOS();
+  const { t } = useTranslation();
   const [modifications, setModifications] = useState([]);
   const [manualExtraText, setManualExtraText] = useState('');
 
@@ -63,7 +65,7 @@ const ExtrasModal = ({ product, isOpen, onClose, onConfirm, isClientMode }) => {
           <X size={24} />
         </button>
 
-        <h2 className="text-2xl font-bold text-white mb-1">Personalizar</h2>
+        <h2 className="text-2xl font-bold text-white mb-1">{t('modals.customize')}</h2>
         <p className="text-slate-400 mb-6">{product.name}</p>
 
         <div className="space-y-6">
@@ -71,7 +73,7 @@ const ExtrasModal = ({ product, isOpen, onClose, onConfirm, isClientMode }) => {
           {/* Extras Recomendados */}
           {recommendedExtras.length > 0 && (
             <div>
-              <label className="block text-emerald-400 font-medium mb-2">+ Extras Recomendados</label>
+              <label className="block text-emerald-400 font-medium mb-2">{t('modals.recommendedExtras')}</label>
               <div className="flex flex-wrap gap-2">
                 {recommendedExtras.map(ex => (
                   <button 
@@ -91,7 +93,7 @@ const ExtrasModal = ({ product, isOpen, onClose, onConfirm, isClientMode }) => {
           {/* Añadir Extra Manual (Solo Cajero) */}
           {!isClientMode && (
             <div>
-              <label className="block text-emerald-400 font-medium mb-2">+ Añadir Extra Manual</label>
+              <label className="block text-emerald-400 font-medium mb-2">{t('modals.manualExtra')}</label>
               <form 
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -131,7 +133,7 @@ const ExtrasModal = ({ product, isOpen, onClose, onConfirm, isClientMode }) => {
           {/* Quitar Ingredientes */}
           {productIngredients.length > 0 && (
             <div>
-              <label className="block text-red-400 font-medium mb-2">- Quitar Ingredientes</label>
+              <label className="block text-red-400 font-medium mb-2">{t('modals.removeIngredients')}</label>
               <div className="flex flex-wrap gap-2">
                 {productIngredients.map((ing, i) => (
                   <button 
@@ -150,14 +152,14 @@ const ExtrasModal = ({ product, isOpen, onClose, onConfirm, isClientMode }) => {
           {/* Si no hay opciones de personalización */}
           {recommendedExtras.length === 0 && (!otherExtras.length || isClientMode) && productIngredients.length === 0 && (
             <div className="p-4 bg-white/5 rounded-xl text-center text-slate-400 text-sm italic">
-              No hay opciones de personalización configuradas para este producto.
+              {t('modals.noCustomization')}
             </div>
           )}
 
           {/* Lista Visual de Modificaciones Agregadas */}
           {modifications.length > 0 && (
             <div className="p-4 bg-black/20 border border-white/5 rounded-xl">
-              <h4 className="text-sm font-medium text-slate-300 mb-3">Modificaciones actuales:</h4>
+              <h4 className="text-sm font-medium text-slate-300 mb-3">{t('modals.currentModifications')}</h4>
               <div className="flex flex-wrap gap-2">
                 {modifications.map((mod, index) => (
                   <span 
@@ -168,7 +170,7 @@ const ExtrasModal = ({ product, isOpen, onClose, onConfirm, isClientMode }) => {
                         : 'bg-red-500/20 text-red-300 border-red-500/30'
                     }`}
                     onClick={() => removeModification(index)}
-                    title="Click para remover"
+                    title={t('modals.clickRemove')}
                   >
                     {mod.type === 'extra' ? '+' : '-'} {mod.name}
                     {mod.type === 'extra' && mod.price > 0 && <span className="opacity-70 ml-1">(${mod.price.toFixed(2)})</span>}
@@ -183,7 +185,7 @@ const ExtrasModal = ({ product, isOpen, onClose, onConfirm, isClientMode }) => {
         <div className="mt-8">
           <button onClick={handleConfirm} className="btn-primary w-full py-3 flex justify-center items-center gap-2">
             <Check size={20} />
-            Añadir a la Orden
+            {t('modals.addToOrder')}
           </button>
         </div>
 

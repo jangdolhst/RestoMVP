@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { X, MapPin, Store, UtensilsCrossed, ExternalLink, Loader2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
@@ -11,6 +12,7 @@ import { supabase } from '../../lib/supabase';
  */
 const RestaurantPreviewPopup = ({ restaurant, onClose }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [products, setProducts] = useState([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
 
@@ -58,7 +60,7 @@ const RestaurantPreviewPopup = ({ restaurant, onClose }) => {
         <button
           onClick={onClose}
           className="absolute top-3 right-3 z-20 p-2 rounded-full bg-black/50 backdrop-blur-md border border-white/10 text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
-          aria-label="Cerrar"
+          aria-label={t('common.actions.close')}
         >
           <X size={18} />
         </button>
@@ -67,7 +69,7 @@ const RestaurantPreviewPopup = ({ restaurant, onClose }) => {
         <div className="relative h-36 overflow-hidden">
           <img
             src={restaurant.banner_url || placeholderBanner}
-            alt={`Banner de ${restaurant.name}`}
+            alt={t('marketplace.card.bannerAlt', { name: restaurant.name })}
             className="w-full h-full object-cover"
             loading="lazy"
             onError={(e) => { e.target.src = placeholderBanner; }}
@@ -118,7 +120,7 @@ const RestaurantPreviewPopup = ({ restaurant, onClose }) => {
           {/* Productos destacados */}
           <div>
             <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-              Productos destacados
+              {t('map.featuredProducts')}
             </h4>
             {isLoadingProducts ? (
               <div className="flex items-center justify-center py-4">
@@ -153,7 +155,7 @@ const RestaurantPreviewPopup = ({ restaurant, onClose }) => {
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-slate-500 text-center py-3">Sin productos disponibles aún.</p>
+              <p className="text-xs text-slate-500 text-center py-3">{t('map.noProducts')}</p>
             )}
           </div>
 
@@ -163,7 +165,7 @@ const RestaurantPreviewPopup = ({ restaurant, onClose }) => {
             className="btn-primary w-full py-3.5 flex items-center justify-center gap-2 text-base font-semibold rounded-xl"
           >
             <ExternalLink size={18} />
-            Ver Local
+            {t('map.viewPlace')}
           </button>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { User, Save, Check, Trash2 } from 'lucide-react';
 import PhoneInput from '../components/ui/PhoneInput';
 
@@ -13,6 +14,7 @@ const UserProfilePage = () => {
   const [phone, setPhone] = useState('');
   const [saved, setSaved] = useState(false);
   const [hasProfile, setHasProfile] = useState(false);
+  const { t } = useTranslation();
 
   // Cargar perfil guardado
   useEffect(() => {
@@ -58,9 +60,9 @@ const UserProfilePage = () => {
           <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-orange-500/20 to-amber-500/20 border-2 border-orange-500/30 flex items-center justify-center mb-4">
             <User size={36} className="text-orange-400" />
           </div>
-          <h1 className="text-2xl font-bold">Mi Perfil</h1>
+          <h1 className="text-2xl font-bold">{t('profile.title')}</h1>
           <p className="text-sm text-slate-400 mt-1">
-            Guarda tus datos para ordenar más rápido
+            {t('profile.subtitle')}
           </p>
         </div>
 
@@ -69,13 +71,13 @@ const UserProfilePage = () => {
           {/* Nombre */}
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-1.5">
-              Nombre
+              {t('common.labels.name')}
             </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="¿Cómo te llamas?"
+              placeholder={t('profile.namePlaceholder')}
               className="glass-input w-full text-lg"
               maxLength={50}
             />
@@ -84,7 +86,7 @@ const UserProfilePage = () => {
           {/* Teléfono */}
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-1.5">
-              Número de celular
+              {t('profile.phoneLabel')}
             </label>
             <PhoneInput
               value={phone}
@@ -107,12 +109,12 @@ const UserProfilePage = () => {
             {saved ? (
               <>
                 <Check size={22} />
-                ¡Perfil guardado!
+                {t('profile.saved')}
               </>
             ) : (
               <>
                 <Save size={20} />
-                Guardar perfil
+                {t('profile.save')}
               </>
             )}
           </button>
@@ -124,7 +126,7 @@ const UserProfilePage = () => {
               className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm text-slate-500 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all"
             >
               <Trash2 size={14} />
-              Borrar mis datos
+              {t('profile.clear')}
             </button>
           )}
         </div>
@@ -132,8 +134,7 @@ const UserProfilePage = () => {
         {/* Info */}
         <div className="mt-6 glass-panel p-4 border-l-4 border-l-blue-500/50">
           <p className="text-xs text-slate-400 leading-relaxed">
-            💡 <strong className="text-slate-300">¿Para qué sirve?</strong> — Tus datos se guardan solo en este dispositivo.
-            Cada vez que hagas un pedido, tu nombre y número se rellenarán automáticamente. No creamos ninguna cuenta.
+            💡 <strong className="text-slate-300">{t('profile.infoTitle')}</strong> — {t('profile.infoBody')}
           </p>
         </div>
       </div>

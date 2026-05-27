@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Save, Upload, Image, Store, Loader2, CheckCircle2, AlertCircle, X, MapPin, Search, Plus, UserRound, Clock, Receipt } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
@@ -27,6 +28,7 @@ const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
  * WaitersSection — Subcomponente para gestionar lista de meseros.
  */
 const WaitersSection = ({ waiters = [], onChange }) => {
+  const { t } = useTranslation();
   const [newName, setNewName] = useState('');
   const [isAdding, setIsAdding] = useState(false);
 
@@ -52,8 +54,8 @@ const WaitersSection = ({ waiters = [], onChange }) => {
     <div className="glass-panel p-5 space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-bold text-white">Meseros</h2>
-          <p className="text-xs text-slate-400">Agrega meseros para asignarlos a las órdenes en el POS.</p>
+          <h2 className="text-lg font-bold text-white">{t('settings.waiters')}</h2>
+          <p className="text-xs text-slate-400">{t('settings.waitersHelp')}</p>
         </div>
         {!isAdding && (
           <button
@@ -61,7 +63,7 @@ const WaitersSection = ({ waiters = [], onChange }) => {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-orange-500/10 text-orange-400 border border-orange-500/20 hover:bg-orange-500/20 transition-all"
           >
             <Plus size={14} />
-            Añadir
+            {t('settings.add')}
           </button>
         )}
       </div>
@@ -75,7 +77,7 @@ const WaitersSection = ({ waiters = [], onChange }) => {
             onChange={(e) => setNewName(e.target.value)}
             onKeyDown={handleKeyDown}
             className="glass-input flex-1 py-2"
-            placeholder="Nombre del mesero"
+            placeholder={t('settings.waiterName')}
             maxLength={30}
             autoFocus
           />
@@ -84,7 +86,7 @@ const WaitersSection = ({ waiters = [], onChange }) => {
             disabled={!newName.trim()}
             className="px-3 py-2 rounded-lg text-sm font-medium bg-orange-500 text-white hover:bg-orange-400 disabled:bg-white/5 disabled:text-slate-600 transition-all"
           >
-            Guardar
+            {t('common.actions.save')}
           </button>
           <button
             onClick={() => { setIsAdding(false); setNewName(''); }}
@@ -116,7 +118,7 @@ const WaitersSection = ({ waiters = [], onChange }) => {
           ))}
         </div>
       ) : (
-        <p className="text-xs text-slate-500 italic">No hay meseros agregados.</p>
+        <p className="text-xs text-slate-500 italic">{t('settings.noWaiters')}</p>
       )}
     </div>
   );
@@ -124,6 +126,7 @@ const WaitersSection = ({ waiters = [], onChange }) => {
 
 const SettingsPage = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null); // 'success' | 'error' | null
@@ -194,7 +197,7 @@ const SettingsPage = () => {
     };
 
     fetchProfile();
-  }, [user?.id]);
+  }, [user?.id, t]);
 
   const handleChange = (field, value) => {
     setProfile(prev => ({ ...prev, [field]: value }));
@@ -302,7 +305,7 @@ const SettingsPage = () => {
         longitude: result.lng,
       }));
     } else {
-      alert('No se pudo encontrar la ubicación. Intenta con una dirección más específica (ej: incluye ciudad y país).');
+      alert(t('settings.locationNotFound'));
     }
     setIsGeocoding(false);
   };
@@ -312,7 +315,7 @@ const SettingsPage = () => {
    */
   const handleGetDeviceLocation = () => {
     if (!navigator.geolocation) {
-      alert("Tu navegador no soporta geolocalización.");
+      alert(t('settings.gpsUnsupported'));
       return;
     }
     setIsGeocoding(true);
@@ -327,7 +330,7 @@ const SettingsPage = () => {
       },
       (error) => {
         console.error("Error obteniendo ubicación:", error);
-        alert("No se pudo obtener la ubicación de tu dispositivo. Asegúrate de dar permisos de ubicación al navegador.");
+        alert(t('settings.gpsError'));
         setIsGeocoding(false);
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
@@ -354,13 +357,13 @@ const SettingsPage = () => {
     if (!user?.id || !file) return;
 
     if (file.size > MAX_FILE_SIZE) {
-      alert('La imagen no debe superar los 2MB.');
+      alert(t('settings.imageSize'));
       return;
     }
 
     const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
     if (!validTypes.includes(file.type)) {
-      alert('Solo se permiten imágenes JPG, PNG o WebP.');
+      alert(t('settings.imageType'));
       return;
     }
 
@@ -385,17 +388,17 @@ const SettingsPage = () => {
       setSaveStatus(null);
     } catch (err) {
       console.error(`Error subiendo ${type}:`, err.message);
-      alert(`Error al subir la imagen: ${err.message}`);
+      alert(t('settings.uploadError', { message: err.message }));
     } finally {
       setUploadingField(null);
     }
-  }, [user?.id]);
+  }, [user?.id, t]);
 
   const handleSave = async () => {
     if (!user?.id) return;
 
     if (!profile.name.trim()) {
-      alert('El nombre del negocio es obligatorio.');
+      alert(t('settings.nameRequired'));
       return;
     }
 
@@ -453,10 +456,10 @@ const SettingsPage = () => {
           <div>
             <h1 className="text-2xl font-bold text-white flex items-center gap-2">
               <Store size={24} className="text-orange-400" />
-              Mi Negocio
+              {t('navigation.myBusiness')}
             </h1>
             <p className="text-sm text-slate-400 mt-1">
-              Configura tu perfil para aparecer en el directorio de restaurantes.
+              {t('settings.subtitle')}
             </p>
           </div>
         </div>
@@ -464,11 +467,11 @@ const SettingsPage = () => {
         {/* Toggle Visibilidad */}
         <div className="glass-panel p-4 flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-semibold text-white">Visible en el Directorio</h3>
+            <h3 className="text-sm font-semibold text-white">{t('settings.directoryVisible')}</h3>
             <p className="text-xs text-slate-400 mt-0.5">
               {profile.is_active
-                ? 'Tu negocio aparece en el marketplace para los clientes.'
-                : 'Tu negocio no es visible para los clientes aún.'}
+                ? t('settings.directoryVisibleOn')
+                : t('settings.hidden')}
             </p>
           </div>
           <button
@@ -490,12 +493,12 @@ const SettingsPage = () => {
         <div className="glass-panel p-5 space-y-5">
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
             <Image size={20} className="text-orange-400" />
-            Imágenes
+            {t('settings.images')}
           </h2>
 
           {/* Banner */}
           <div>
-            <label className="text-sm text-slate-300 font-medium mb-2 block">Portada / Banner</label>
+            <label className="text-sm text-slate-300 font-medium mb-2 block">{t('settings.banner')}</label>
             <div className="relative group rounded-xl overflow-hidden border border-white/10 h-40 bg-white/5">
               {profile.banner_url ? (
                 <img
@@ -506,7 +509,7 @@ const SettingsPage = () => {
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center text-slate-500">
                   <Upload size={24} className="mb-1" />
-                  <span className="text-xs">Sube una imagen de portada</span>
+                  <span className="text-xs">{t('settings.uploadBanner')}</span>
                 </div>
               )}
               <label className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
@@ -514,7 +517,7 @@ const SettingsPage = () => {
                   <Loader2 className="animate-spin text-white" size={24} />
                 ) : (
                   <span className="text-white text-sm font-medium flex items-center gap-1">
-                    <Upload size={16} /> Cambiar
+                    <Upload size={16} /> {t('modals.change')}
                   </span>
                 )}
                 <input
@@ -533,7 +536,7 @@ const SettingsPage = () => {
 
           {/* Logo */}
           <div>
-            <label className="text-sm text-slate-300 font-medium mb-2 block">Logo</label>
+            <label className="text-sm text-slate-300 font-medium mb-2 block">{t('settings.logo')}</label>
             <div className="flex items-center gap-4">
               <div className="relative group w-20 h-20 rounded-xl overflow-hidden border border-white/10 bg-white/5 shrink-0">
                 {profile.logo_url ? (
@@ -565,18 +568,18 @@ const SettingsPage = () => {
                   />
                 </label>
               </div>
-              <p className="text-xs text-slate-500">JPG, PNG o WebP. Máx 2MB.</p>
+              <p className="text-xs text-slate-500">{t('settings.imageHelp')}</p>
             </div>
           </div>
         </div>
 
         {/* Información */}
         <div className="glass-panel p-5 space-y-4">
-          <h2 className="text-lg font-bold text-white">Información del Negocio</h2>
+          <h2 className="text-lg font-bold text-white">{t('settings.info')}</h2>
 
           <div>
             <label htmlFor="settings-name" className="text-sm text-slate-300 font-medium mb-1 block">
-              Nombre del Negocio <span className="text-red-400">*</span>
+              {t('settings.businessName')} <span className="text-red-400">*</span>
             </label>
             <input
               id="settings-name"
@@ -584,7 +587,7 @@ const SettingsPage = () => {
               type="text"
               value={profile.name}
               onChange={(e) => handleChange('name', e.target.value)}
-              placeholder="Ej: Taquería El Fogón"
+              placeholder={t('settings.businessNamePlaceholder')}
               className="glass-input w-full"
               maxLength={80}
             />
@@ -592,14 +595,14 @@ const SettingsPage = () => {
 
           <div>
             <label htmlFor="settings-description" className="text-sm text-slate-300 font-medium mb-1 block">
-              Descripción
+              {t('settings.description')}
             </label>
             <textarea
               id="settings-description"
               name="description"
               value={profile.description}
               onChange={(e) => handleChange('description', e.target.value)}
-              placeholder="Cuéntale a tus clientes qué hace especial tu negocio..."
+              placeholder={t('settings.descriptionPlaceholder')}
               className="glass-input w-full resize-none h-20"
               maxLength={250}
             />
@@ -609,7 +612,7 @@ const SettingsPage = () => {
           <div>
             <label htmlFor="settings-address" className="text-sm text-slate-300 font-medium mb-1 block">
               <MapPin size={14} className="inline mr-1 text-orange-400" />
-              Dirección
+              {t('settings.address')}
             </label>
             <div className="relative">
               <input
@@ -618,7 +621,7 @@ const SettingsPage = () => {
                 type="text"
                 value={profile.address}
                 onChange={(e) => handleAddressChange(e.target.value)}
-                placeholder="Ej: Av. Reforma 123, Col. Centro, Ciudad de México"
+                placeholder={t('settings.addressPlaceholder')}
                 className="glass-input w-full pr-10"
                 maxLength={200}
               />
@@ -631,7 +634,7 @@ const SettingsPage = () => {
             {profile.latitude && profile.longitude && (
               <p className="text-xs text-emerald-400/80 mt-1 flex items-center gap-1">
                 <CheckCircle2 size={12} />
-                Ubicación detectada ({profile.latitude.toFixed(4)}, {profile.longitude.toFixed(4)})
+                {t('settings.detectLocation', { lat: profile.latitude.toFixed(4), lng: profile.longitude.toFixed(4) })}
               </p>
             )}
             <div className="flex flex-wrap gap-3 mt-2">
@@ -642,7 +645,7 @@ const SettingsPage = () => {
                   className="text-xs text-orange-400 hover:text-orange-300 underline underline-offset-2 flex items-center gap-1 transition-colors"
                 >
                   <Search size={12} />
-                  Buscar por dirección
+                  {t('settings.searchAddress')}
                 </button>
               )}
               <button
@@ -652,7 +655,7 @@ const SettingsPage = () => {
                 className="text-xs text-emerald-400 hover:text-emerald-300 underline underline-offset-2 flex items-center gap-1 transition-colors disabled:opacity-50"
               >
                 <MapPin size={12} />
-                Usar mi ubicación GPS
+                {t('settings.useGps')}
               </button>
             </div>
             <AddressMapPreview
@@ -664,21 +667,21 @@ const SettingsPage = () => {
 
           <div>
             <label className="text-sm text-slate-300 font-medium mb-1 block">
-              Teléfono de Contacto
+              {t('settings.contactPhone')}
             </label>
             <PhoneInput
               value={profile.phone}
               onChange={(e164) => handleChange('phone', e164)}
-              placeholder="Teléfono del negocio"
+              placeholder={t('settings.contactPhonePlaceholder')}
             />
           </div>
 
           {/* Cantidad de Mesas */}
           <div>
             <label className="text-sm text-slate-300 font-medium mb-1 block">
-              Cantidad de Mesas
+              {t('settings.tableCount')}
             </label>
-            <p className="text-xs text-slate-500 mb-2">Configura cuántas mesas tiene tu local. Aparecerán en el POS como lista desplegable.</p>
+            <p className="text-xs text-slate-500 mb-2">{t('settings.tableHelp')}</p>
             <input
               type="number"
               min="0"
@@ -688,7 +691,11 @@ const SettingsPage = () => {
               className="glass-input w-32 py-2 text-center text-lg font-bold"
               placeholder="0"
             />
-            <p className="text-xs text-slate-500 mt-1">{profile.table_count === 0 ? 'Sin mesas (solo pedidos para llevar)' : `${profile.table_count} mesa${profile.table_count > 1 ? 's' : ''} disponible${profile.table_count > 1 ? 's' : ''}`}</p>
+            <p className="text-xs text-slate-500 mt-1">
+              {profile.table_count === 0
+                ? t('settings.noTables')
+                : t('settings.tableAvailable', { count: profile.table_count })}
+            </p>
           </div>
         </div>
 
@@ -699,13 +706,13 @@ const SettingsPage = () => {
         <div className="glass-panel p-5 space-y-4">
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
             <Receipt size={20} className="text-orange-400" />
-            Datos Fiscales
+            {t('settings.fiscalData')}
           </h2>
-          <p className="text-xs text-slate-400">Opcional. Estos datos aparecerán impresos en tus tickets.</p>
+          <p className="text-xs text-slate-400">{t('settings.fiscalHelp')}</p>
 
           <div>
             <label htmlFor="settings-fiscal" className="text-sm text-slate-300 font-medium mb-1 block">
-              Número Fiscal (RFC / NIT / RUC)
+              {t('settings.fiscalNumber')}
             </label>
             <input
               id="settings-fiscal"
@@ -720,8 +727,8 @@ const SettingsPage = () => {
 
           <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10">
             <div>
-              <h3 className="text-sm font-semibold text-white">Desglosar impuestos en ticket</h3>
-              <p className="text-xs text-slate-400 mt-0.5">Muestra Subtotal e Impuesto por separado (cálculo incluido en el precio).</p>
+              <h3 className="text-sm font-semibold text-white">{t('settings.taxBreakdown')}</h3>
+              <p className="text-xs text-slate-400 mt-0.5">{t('settings.taxHelp')}</p>
             </div>
             <button
               onClick={() => handleChange('tax_included', !profile.tax_included)}
@@ -741,7 +748,7 @@ const SettingsPage = () => {
           {profile.tax_included && (
             <div className="animate-fade-in">
               <label htmlFor="settings-tax-rate" className="text-sm text-slate-300 font-medium mb-1 block">
-                Porcentaje de impuesto (%)
+                {t('settings.taxPercent')}
               </label>
               <input
                 id="settings-tax-rate"
@@ -756,8 +763,8 @@ const SettingsPage = () => {
               />
               <p className="text-xs text-slate-500 mt-1">
                 {profile.tax_rate > 0
-                  ? `Los precios de tu menú ya incluyen ${profile.tax_rate}% de impuesto. El ticket mostrará el desglose.`
-                  : 'Ingresa el porcentaje de impuesto de tu país (ej: México 16%, Colombia 19%).'}
+                  ? t('settings.taxIncluded', { rate: profile.tax_rate })
+                  : t('settings.taxPrompt')}
               </p>
             </div>
           )}
@@ -767,16 +774,16 @@ const SettingsPage = () => {
         <div className="glass-panel p-5 space-y-4">
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
             <Clock size={20} className="text-orange-400" />
-            Horario de Operación
+            {t('settings.businessHours')}
           </h2>
           <p className="text-xs text-slate-400">
-            Define tu horario de atención. Tu negocio solo será visible dentro de este horario.
+            {t('settings.businessHoursHelp')}
           </p>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label htmlFor="settings-open" className="text-sm text-slate-300 font-medium mb-1 block">
-                Hora de Apertura
+                {t('settings.openTime')}
               </label>
               <input
                 id="settings-open"
@@ -788,7 +795,7 @@ const SettingsPage = () => {
             </div>
             <div>
               <label htmlFor="settings-close" className="text-sm text-slate-300 font-medium mb-1 block">
-                Hora de Cierre
+                {t('settings.closeTime')}
               </label>
               <input
                 id="settings-close"
@@ -803,7 +810,7 @@ const SettingsPage = () => {
           {/* Selector de Días Hábiles */}
           <div className="mt-4">
             <label className="text-sm text-slate-300 font-medium mb-2 block">
-              Días Abiertos
+              {t('settings.openDays')}
             </label>
             <div className="flex items-center gap-1.5 sm:gap-2 justify-between bg-black/20 p-2 rounded-xl border border-white/5">
               {WEEK_DAYS.map((day) => {
@@ -833,7 +840,7 @@ const SettingsPage = () => {
           </div>
 
           <p className="text-xs text-slate-500">
-            Horario actual: <span className="text-white font-medium">{profile.business_hours?.open || '09:00'}</span> a <span className="text-white font-medium">{profile.business_hours?.close || '22:00'}</span> hrs
+            {t('settings.currentHours')} <span className="text-white font-medium">{profile.business_hours?.open || '09:00'}</span> - <span className="text-white font-medium">{profile.business_hours?.close || '22:00'}</span>
           </p>
 
           {/* Botón de cierre manual */}
@@ -851,26 +858,26 @@ const SettingsPage = () => {
             {profile.business_hours?.is_manually_closed ? (
               <>
                 <X size={16} />
-                Tienda Cerrada Manualmente — Click para Reabrir
+                {t('settings.manualClosed')}
               </>
             ) : (
               <>
                 <Clock size={16} />
-                Pausar Servicio (Cerrar Tienda Ahora)
+                {t('settings.pauseService')}
               </>
             )}
           </button>
           {profile.business_hours?.is_manually_closed && (
             <p className="text-xs text-red-400/80 text-center animate-fade-in">
-              ⚠ Tu tienda aparecerá como CERRADA hasta que desactives esta opción, incluso dentro de tu horario regular.
+              {t('settings.manualClosedWarning')}
             </p>
           )}
         </div>
 
         {/* Categorías */}
         <div className="glass-panel p-5 space-y-3">
-          <h2 className="text-lg font-bold text-white">Categorías</h2>
-          <p className="text-xs text-slate-400">Selecciona las que mejor describan tu negocio (para que los clientes te encuentren fácilmente).</p>
+          <h2 className="text-lg font-bold text-white">{t('settings.categories')}</h2>
+          <p className="text-xs text-slate-400">{t('settings.categoriesHelp')}</p>
           <div className="flex flex-wrap gap-2">
             {AVAILABLE_CATEGORIES.map(cat => {
               const isSelected = profile.categories.includes(cat);
@@ -904,17 +911,17 @@ const SettingsPage = () => {
             ) : (
               <Save size={18} />
             )}
-            {isSaving ? 'Guardando...' : 'Guardar Cambios'}
+            {isSaving ? t('settings.saving') : t('settings.saveChanges')}
           </button>
 
           {saveStatus === 'success' && (
             <span className="flex items-center gap-1 text-emerald-400 text-sm font-medium animate-fade-in">
-              <CheckCircle2 size={16} /> ¡Guardado correctamente!
+              <CheckCircle2 size={16} /> {t('settings.saved')}
             </span>
           )}
           {saveStatus === 'error' && (
             <span className="flex items-center gap-1 text-red-400 text-sm font-medium">
-              <AlertCircle size={16} /> Error al guardar. Intenta de nuevo.
+              <AlertCircle size={16} /> {t('settings.saveError')}
             </span>
           )}
         </div>

@@ -1,6 +1,9 @@
 import { Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const ItemCard = ({ item, isCategory, onClick, onDelete, isClientMode = false }) => {
+  const { t } = useTranslation();
+
   return (
     <div 
       className="glass-card flex flex-col items-center justify-center p-4 h-48 relative overflow-hidden group cursor-pointer"
@@ -13,7 +16,7 @@ const ItemCard = ({ item, isCategory, onClick, onDelete, isClientMode = false })
             onDelete(item.id, isCategory);
           }}
           className="absolute top-2 right-2 p-1.5 bg-red-500/20 text-red-400 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/40 z-10"
-          title="Eliminar"
+          title={t('common.actions.delete')}
         >
           <Trash2 size={16} />
         </button>
@@ -28,7 +31,7 @@ const ItemCard = ({ item, isCategory, onClick, onDelete, isClientMode = false })
           {item.image ? (
             <img src={item.image} alt={item.name} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
           ) : (
-            <span className="text-slate-500 text-xs text-center px-2">Sin Imagen</span>
+            <span className="text-slate-500 text-xs text-center px-2">{t('pos.noImage')}</span>
           )}
         </div>
 

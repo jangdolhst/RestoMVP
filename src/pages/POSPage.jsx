@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import POSGrid from '../components/pos/POSGrid';
 import TicketSidebar from '../components/pos/TicketSidebar';
 import { usePOS } from '../context/POSContext';
@@ -7,6 +8,7 @@ import { ShoppingBag } from 'lucide-react';
 const POSPage = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const { cartItems, cartTotal } = usePOS();
+  const { t } = useTranslation();
 
   return (
     <div className="flex w-full h-full relative">
@@ -26,7 +28,7 @@ const POSPage = () => {
         >
           <div className="flex items-center gap-2">
             <ShoppingBag size={20} />
-            <span className="font-medium">Ver Ticket ({cartItems.length})</span>
+            <span className="font-medium">{t('pos.viewTicket', { count: cartItems.length })}</span>
           </div>
           <span className="font-bold text-lg">${cartTotal}</span>
         </button>

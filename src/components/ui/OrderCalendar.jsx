@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
@@ -20,15 +21,18 @@ const OrderCalendar = ({ value, onChange, tenantId }) => {
   const [activeDays, setActiveDays] = useState(new Set());
   const [isLoadingDays, setIsLoadingDays] = useState(false);
   const calendarRef = useRef(null);
+  const { t, i18n } = useTranslation();
 
   const today = new Date();
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
-  const WEEKDAY_NAMES = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do'];
-  const MONTH_NAMES = [
-    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-  ];
+  const locale = i18n.language === 'en' ? 'en-US' : 'es-MX';
+  const WEEKDAY_NAMES = i18n.language === 'en'
+    ? ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']
+    : ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do'];
+  const MONTH_NAMES = Array.from({ length: 12 }, (_, index) =>
+    new Date(2026, index, 1).toLocaleDateString(locale, { month: 'long' })
+  );
 
   // Cerrar el dropdown al hacer clic fuera
   useEffect(() => {
@@ -164,7 +168,7 @@ const OrderCalendar = ({ value, onChange, tenantId }) => {
 
   // Formatear la fecha seleccionada para mostrar en el botón
   const formatDisplayDate = (dateStr) => {
-    if (!dateStr) return 'Seleccionar fecha';
+    if (!dateStr) return t('payments.calendar.selectDate');
     const [y, m, d] = dateStr.split('-').map(Number);
     const dayNum = d;
     const monthName = MONTH_NAMES[m - 1]?.slice(0, 3) || '';
@@ -253,7 +257,7 @@ const OrderCalendar = ({ value, onChange, tenantId }) => {
                   type="button"
                   onClick={() => handleSelectDay(dateStr)}
                   className={dayClasses}
-                  title={hasOrders ? `${dateStr} — tiene pedidos` : dateStr}
+                  title={hasOrders ? t('payments.calendar.hasOrders', { date: dateStr }) : dateStr}
                 >
                   <span>{day}</span>
                   {/* Punto indicador de órdenes */}
@@ -277,14 +281,14 @@ const OrderCalendar = ({ value, onChange, tenantId }) => {
           <div className="flex items-center justify-center gap-4 px-3 py-2 border-t border-white/5 text-[10px] text-slate-500">
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-orange-500" />
-              Con pedidos
+              {t('payments.calendar.withOrders')}
             </div>
             <div className="flex items-center gap-1.5">
               <span className="w-4 h-4 rounded ring-2 ring-blue-500/50 bg-blue-500/20" />
-              Hoy
+              {t('payments.calendar.today')}
             </div>
             {isLoadingDays && (
-              <span className="text-orange-400 animate-pulse">Cargando...</span>
+              <span className="text-orange-400 animate-pulse">{t('common.actions.loading')}</span>
             )}
           </div>
         </div>

@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { Mail, Lock, LogIn, UserPlus, AlertCircle } from 'lucide-react';
 import Logo from '../components/ui/Logo';
+import LanguageSwitcher from '../components/ui/LanguageSwitcher';
 
 const LoginPage = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -10,6 +12,7 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const { t } = useTranslation();
   
   const { login, register } = useAuth();
   const navigate = useNavigate();
@@ -27,11 +30,11 @@ const LoginPage = () => {
         await register(email, password);
         // Si el registro es exitoso y requiere confirmación, Supabase maneja eso. 
         // Si autologuea, entrará igual. Si requiere confirmación de email:
-        setError('Registro exitoso. Revisa tu correo (si está configurado) o inicia sesión.');
+        setError(t('auth.successRegister'));
         setIsLogin(true);
       }
     } catch (err) {
-      setError(err.message || 'Error al autenticar');
+      setError(err.message || t('auth.authError'));
     } finally {
       setIsLoading(false);
     }
@@ -49,6 +52,9 @@ const LoginPage = () => {
         <div className="flex flex-col items-center mb-8">
           <Logo size="xl" showText={true} className="justify-center" />
           <p className="text-slate-500 text-xs tracking-widest uppercase font-medium mt-2">Easy Collection</p>
+          <div className="mt-4">
+            <LanguageSwitcher />
+          </div>
         </div>
 
         {/* Tabs */}
@@ -57,13 +63,13 @@ const LoginPage = () => {
             onClick={() => { setIsLogin(true); setError(''); }}
             className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${isLogin ? 'bg-orange-500 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
           >
-            Iniciar Sesión
+            {t('auth.login')}
           </button>
           <button 
             onClick={() => { setIsLogin(false); setError(''); }}
             className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${!isLogin ? 'bg-orange-500 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
           >
-            Registrarse
+            {t('auth.register')}
           </button>
         </div>
 
@@ -76,7 +82,7 @@ const LoginPage = () => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1">
-            <label className="text-sm text-slate-300 font-medium ml-1">Correo Electrónico</label>
+            <label className="text-sm text-slate-300 font-medium ml-1">{t('auth.email')}</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Mail size={18} className="text-slate-500" />
@@ -93,7 +99,7 @@ const LoginPage = () => {
           </div>
 
           <div className="space-y-1">
-            <label className="text-sm text-slate-300 font-medium ml-1">Contraseña</label>
+            <label className="text-sm text-slate-300 font-medium ml-1">{t('auth.password')}</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Lock size={18} className="text-slate-500" />
@@ -121,12 +127,12 @@ const LoginPage = () => {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                Procesando...
+                {t('common.actions.processing')}
               </span>
             ) : isLogin ? (
-              <><LogIn size={18} /> Entrar a mi Negocio</>
+              <><LogIn size={18} /> {t('auth.enterBusiness')}</>
             ) : (
-              <><UserPlus size={18} /> Crear Restaurante</>
+              <><UserPlus size={18} /> {t('auth.createRestaurant')}</>
             )}
           </button>
         </form>

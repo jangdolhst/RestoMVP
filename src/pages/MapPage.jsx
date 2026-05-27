@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -88,6 +89,7 @@ const MapController = ({ userPosition, restaurants, gpsReady, flyTrigger }) => {
 
 const MapPage = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [restaurants, setRestaurants] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
@@ -121,13 +123,13 @@ const MapPage = () => {
     };
 
     fetchRestaurants();
-  }, []);
+  }, [t]);
 
   // Solicitar ubicación GPS
   const requestGPS = useCallback(() => {
     if (!navigator.geolocation) {
       setGpsStatus('error');
-      setGpsError('Tu navegador no soporta geolocalización.');
+      setGpsError(t('map.unsupported'));
       return;
     }
 
@@ -142,14 +144,12 @@ const MapPage = () => {
         setGpsError('');
       },
       (err) => {
-        console.error('GPS Error:', err.code, err.message);
-
         if (err.code === 1) {
           setGpsStatus('denied');
-          setGpsError('Permiso de ubicación denegado.');
+          setGpsError(t('map.denied'));
         } else {
           setGpsStatus('error');
-          setGpsError('No se pudo obtener tu ubicación. Verifica que el GPS esté encendido.');
+          setGpsError(t('map.error'));
         }
       },
       {
@@ -158,7 +158,7 @@ const MapPage = () => {
         maximumAge: 300000,
       }
     );
-  }, []);
+  }, [t]);
 
   // Verificar el estado del permiso al montar
   useEffect(() => {
@@ -167,7 +167,7 @@ const MapPage = () => {
       navigator.permissions.query({ name: 'geolocation' }).then((result) => {
         if (result.state === 'denied') {
           setGpsStatus('denied');
-          setGpsError('Permiso bloqueado. Debes habilitarlo manualmente en tu navegador.');
+          setGpsError(t('map.blocked'));
         } else {
           // 'granted' o 'prompt' - intentar obtener ubicación
           requestGPS();
@@ -179,7 +179,7 @@ const MapPage = () => {
             requestGPS();
           } else if (result.state === 'denied') {
             setGpsStatus('denied');
-            setGpsError('Permiso bloqueado. Debes habilitarlo manualmente en tu navegador.');
+            setGpsError(t('map.blocked'));
           }
         };
       }).catch(() => {
@@ -190,7 +190,7 @@ const MapPage = () => {
       // Navegador sin Permissions API (ej: Safari), intentar directamente
       requestGPS();
     }
-  }, [requestGPS]);
+  }, [requestGPS, t]);
 
   const handleMarkerClick = useCallback((restaurant) => {
     setSelectedRestaurant(restaurant);
@@ -208,7 +208,7 @@ const MapPage = () => {
       <div className="h-screen w-screen flex items-center justify-center bg-slate-950">
         <div className="text-center">
           <Loader2 className="animate-spin text-orange-500 mx-auto mb-3" size={32} />
-          <p className="text-slate-400">Cargando mapa...</p>
+          <p className="text-slate-400">{t('map.loading')}</p>
         </div>
       </div>
     );
@@ -262,18 +262,18 @@ const MapPage = () => {
             <button
               onClick={() => navigate('/')}
               className="text-slate-300 hover:text-white p-2 rounded-xl hover:bg-white/10 transition-colors"
-              aria-label="Volver al directorio"
+              aria-label={t('client.backToDirectory')}
             >
               <ArrowLeft size={20} />
             </button>
             <div>
               <h1 className="text-lg font-bold text-white flex items-center gap-2">
                 <MapPin size={20} className="text-orange-400" />
-                Mapa de Restaurantes
+                {t('map.title')}
               </h1>
               <p className="text-xs text-slate-400">
-                {restaurants.length} local{restaurants.length !== 1 ? 'es' : ''} disponible{restaurants.length !== 1 ? 's' : ''}
-                {gpsStatus === 'loading' && ' · 📡 Buscando GPS...'}
+                {t('map.localCount', { count: restaurants.length })}
+                {gpsStatus === 'loading' && t('map.searchingGps')}
               </p>
             </div>
           </div>
@@ -283,10 +283,10 @@ const MapPage = () => {
             <button
               onClick={handleCenterOnUser}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-500/15 border border-blue-500/25 text-blue-400 hover:bg-blue-500/25 transition-colors text-sm font-medium"
-              aria-label="Centrar en mi ubicación"
+              aria-label={t('map.centerUserLabel')}
             >
               <LocateFixed size={16} />
-              <span className="hidden sm:inline">Mi Ubicación</span>
+              <span className="hidden sm:inline">{t('map.centerUser')}</span>
             </button>
           )}
         </div>
@@ -296,9 +296,9 @@ const MapPage = () => {
       {restaurants.length === 0 && (
         <div className="absolute bottom-28 lg:bottom-20 left-1/2 -translate-x-1/2 z-[500] bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-2xl px-6 py-4 text-center max-w-sm">
           <MapPin className="mx-auto text-slate-500 mb-2" size={28} />
-          <p className="text-sm text-slate-300 font-medium">No hay restaurantes con ubicación</p>
+          <p className="text-sm text-slate-300 font-medium">{t('map.noRestaurantsTitle')}</p>
           <p className="text-xs text-slate-500 mt-1">
-            Los restaurantes deben configurar su dirección para aparecer en el mapa.
+            {t('map.noRestaurantsDescription')}
           </p>
         </div>
       )}
@@ -307,7 +307,7 @@ const MapPage = () => {
       {gpsStatus === 'loading' && (
         <div className="absolute bottom-24 lg:bottom-6 left-1/2 -translate-x-1/2 z-[500] bg-blue-500/10 backdrop-blur-xl border border-blue-500/20 rounded-xl px-4 py-2.5 text-center flex items-center gap-2">
           <Loader2 size={14} className="animate-spin text-blue-400" />
-          <p className="text-xs text-blue-400">Obteniendo tu ubicación GPS...</p>
+          <p className="text-xs text-blue-400">{t('map.gettingGps')}</p>
         </div>
       )}
 
@@ -315,17 +315,17 @@ const MapPage = () => {
       {(gpsStatus === 'denied' || gpsStatus === 'error') && (
         <div className="absolute bottom-24 lg:bottom-6 left-1/2 -translate-x-1/2 z-[500] bg-amber-500/10 backdrop-blur-xl border border-amber-500/20 rounded-2xl px-5 py-3 text-center max-w-sm w-[90vw]">
           <p className="text-xs text-amber-400 mb-2">
-            {gpsError || '📍 Activa tu GPS para ver los restaurantes más cercanos a ti.'}
+            {gpsError || t('map.activate')}
           </p>
           <button
             onClick={requestGPS}
             className="text-xs font-medium text-white bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 px-4 py-1.5 rounded-lg transition-colors"
           >
-            🔄 Reintentar GPS
+            {t('map.retry')}
           </button>
           {gpsStatus === 'denied' && (
             <p className="text-[10px] text-amber-500/60 mt-2">
-              Chrome: toca ⋮ → Información del sitio → Permisos → Ubicación → Permitir
+              {t('map.chromeHelp')}
             </p>
           )}
         </div>

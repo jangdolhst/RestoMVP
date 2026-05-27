@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useMemo, useEffect, useRef } from 
 import { useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
+import i18n from '../i18n';
 
 const POSContext = createContext();
 
@@ -200,7 +201,7 @@ export const POSProvider = ({ children }) => {
     // Throttle: prevenir spam de pedidos (mínimo 15s entre cada uno)
     const now = Date.now();
     if (now - lastOrderTimeRef.current < ORDER_THROTTLE_MS) {
-      return { success: false, error: 'Espera unos segundos antes de enviar otro pedido.' };
+      return { success: false, error: i18n.t('pos.errors.throttle') };
     }
     
     const orderIsOnline = overrideIsOnline !== null ? overrideIsOnline : isOnline;
@@ -256,13 +257,13 @@ export const POSProvider = ({ children }) => {
 
 	        if (error) {
 	          console.error('Error creando orden pública:', error);
-	          return { success: false, error: 'No se pudo enviar el pedido. Intenta de nuevo.' };
+	          return { success: false, error: i18n.t('pos.errors.sendOrder') };
 	        }
 
 	        const createdOrder = data?.[0];
 	        if (!createdOrder) {
 	          console.error('No se pudo recuperar la orden pública creada');
-	          return { success: false, error: 'No se pudo confirmar el pedido creado.' };
+	          return { success: false, error: i18n.t('pos.errors.confirmOrder') };
 	        }
 
 	        try {
@@ -321,7 +322,7 @@ export const POSProvider = ({ children }) => {
       const { error: itemsError } = await supabase.from('order_items').insert(orderItemsData);
       if (itemsError) {
         console.error('Error creando items de orden:', itemsError);
-        return { success: false, error: 'No se pudieron guardar los productos del pedido.' };
+        return { success: false, error: i18n.t('pos.errors.saveItems') };
       }
 
 	      // Actualización local (solo para dueño, no cliente)

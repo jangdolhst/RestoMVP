@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { usePOS } from '../context/POSContext';
 import { UtensilsCrossed, Check } from 'lucide-react';
 
 const OrderCard = ({ order, updateOrderStatus }) => {
   const [minutes, setMinutes] = useState(0);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const calcTime = () => {
@@ -30,7 +32,7 @@ const OrderCard = ({ order, updateOrderStatus }) => {
             <span className="text-slate-400 font-normal">#{order.orderNumber}</span>
             {order.type === 'online' ? (
               <span className="bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded text-sm border border-blue-500/30">
-                EN LÍNEA
+                {t('common.states.online')}
               </span>
             ) : (
               order.tableName
@@ -39,10 +41,10 @@ const OrderCard = ({ order, updateOrderStatus }) => {
           <p className="text-sm text-slate-300">{order.clientName}</p>
         </div>
         <div className="text-right">
-          <span className="text-xs text-slate-400 block">Hace {minutes} min</span>
+          <span className="text-xs text-slate-400 block">{t('kitchen.ago', { minutes })}</span>
           {isUrgent && (
             <span className="text-xs font-bold px-2 py-1 bg-red-500/20 text-red-400 rounded mt-1 inline-block">
-              URGENTE
+              {t('common.states.urgent')}
             </span>
           )}
         </div>
@@ -60,7 +62,7 @@ const OrderCard = ({ order, updateOrderStatus }) => {
             {/* Ingredientes debajo del nombre */}
             {item.ingredients && (
               <p className="text-sm text-slate-400 pl-8 mt-1 italic">
-                Ing: {item.ingredients}
+                {t('kitchen.ingredients')} {item.ingredients}
               </p>
             )}
 
@@ -76,7 +78,7 @@ const OrderCard = ({ order, updateOrderStatus }) => {
                         : 'bg-red-500/20 text-red-300 border-red-500/30'
                     }`}
                   >
-                    {mod.type === 'extra' ? '+ AÑADIR ' : '- SIN '}
+                    {mod.type === 'extra' ? t('kitchen.add') : t('kitchen.without')}
                     {mod.name.toUpperCase()}
                   </div>
                 ))}
@@ -93,7 +95,7 @@ const OrderCard = ({ order, updateOrderStatus }) => {
           className="btn-primary w-full py-4 text-lg font-bold flex justify-center items-center gap-2"
         >
           <Check size={24} />
-          MARCAR LISTO
+          {t('kitchen.markReady')}
         </button>
       </div>
     </div>
@@ -102,6 +104,7 @@ const OrderCard = ({ order, updateOrderStatus }) => {
 
 const CocinaPage = () => {
   const { orders, updateOrderStatus } = usePOS();
+  const { t } = useTranslation();
   
   const pendingOrders = orders.filter(o => o.status === 'pendiente_cocina');
 
@@ -111,13 +114,13 @@ const CocinaPage = () => {
         <div className="p-3 bg-orange-500/20 rounded-xl">
           <UtensilsCrossed className="text-orange-400" size={28} />
         </div>
-        <h1 className="text-3xl font-bold text-white tracking-tight">KDS (Cocina)</h1>
+        <h1 className="text-3xl font-bold text-white tracking-tight">{t('kitchen.title')}</h1>
       </div>
 
       {pendingOrders.length === 0 ? (
         <div className="glass-panel p-10 text-center flex flex-col items-center justify-center h-64">
-          <h2 className="text-xl text-slate-300 font-medium">No hay órdenes pendientes</h2>
-          <p className="text-slate-500 mt-2">La cocina está libre por el momento.</p>
+          <h2 className="text-xl text-slate-300 font-medium">{t('kitchen.emptyTitle')}</h2>
+          <p className="text-slate-500 mt-2">{t('kitchen.emptyDescription')}</p>
         </div>
       ) : (
         <div className="flex gap-6 overflow-x-auto pb-4 snap-x">

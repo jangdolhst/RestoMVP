@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -67,6 +68,7 @@ const RecenterMap = ({ position }) => {
  * @param {function} onPositionChange - Callback(lat, lng) cuando el usuario mueve el marcador
  */
 const AddressMapPreview = ({ latitude, longitude, onPositionChange }) => {
+  const { t } = useTranslation();
   const hasPosition = latitude && longitude;
   const position = hasPosition ? [latitude, longitude] : [19.4326, -99.1332]; // Default: CDMX
 
@@ -97,12 +99,12 @@ const AddressMapPreview = ({ latitude, longitude, onPositionChange }) => {
       {hasPosition && (
         <p className="text-xs text-slate-500 mt-2 flex items-center gap-1">
           <span className="inline-block w-2 h-2 rounded-full bg-emerald-400" />
-          Arrastra el marcador si la ubicación no es exacta.
+          {t('settings.dragMarker')}
         </p>
       )}
       {!hasPosition && (
         <p className="text-xs text-slate-500 mt-2">
-          Escribe una dirección arriba para ver la ubicación en el mapa.
+          {t('settings.writeAddress')}
         </p>
       )}
     </div>

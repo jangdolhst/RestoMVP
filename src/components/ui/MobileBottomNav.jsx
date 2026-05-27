@@ -1,5 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Home, ClipboardList, Map, User, Store } from 'lucide-react';
+import LanguageSwitcher from './LanguageSwitcher';
 
 /**
  * MobileBottomNav — Barra de navegación inferior estilo app nativa.
@@ -7,15 +9,16 @@ import { Home, ClipboardList, Map, User, Store } from 'lucide-react';
  * Se oculta automáticamente en /menu/:tenantId (ClientePage tiene su propia barra).
  */
 const NAV_ITEMS = [
-  { path: '/', icon: Home, label: 'Inicio', exact: true },
-  { path: '/pedidos', icon: ClipboardList, label: 'Pedidos' },
-  { path: '/mapa', icon: Map, label: 'Mapa' },
-  { path: '/perfil', icon: User, label: 'Perfil' },
-  { path: '/partners', icon: Store, label: 'Negocios' },
+  { path: '/', icon: Home, labelKey: 'navigation.home', exact: true },
+  { path: '/pedidos', icon: ClipboardList, labelKey: 'navigation.orders' },
+  { path: '/mapa', icon: Map, labelKey: 'navigation.map' },
+  { path: '/perfil', icon: User, labelKey: 'navigation.profile' },
+  { path: '/partners', icon: Store, labelKey: 'navigation.business' },
 ];
 
 const MobileBottomNav = () => {
   const location = useLocation();
+  const { t } = useTranslation();
 
   // Ocultar en rutas de menú de restaurante (tiene su propia barra de carrito)
   // y en rutas admin
@@ -29,7 +32,7 @@ const MobileBottomNav = () => {
       {/* Glassmorphism bar */}
       <div className="bg-black/85 backdrop-blur-2xl border-t border-white/10 px-2 pt-2 pb-safe">
         <div className="flex items-center justify-around max-w-lg mx-auto">
-          {NAV_ITEMS.map(({ path, icon: Icon, label, exact }) => (
+          {NAV_ITEMS.map(({ path, icon: Icon, labelKey, exact }) => (
             <NavLink
               key={path}
               to={path}
@@ -56,12 +59,15 @@ const MobileBottomNav = () => {
                     )}
                   </div>
                   <span className={`text-[10px] font-medium leading-tight ${isActive ? 'text-orange-400' : ''}`}>
-                    {label}
+                    {t(labelKey)}
                   </span>
                 </>
               )}
             </NavLink>
           ))}
+          <div className="flex flex-col items-center justify-center min-w-[56px] px-1">
+            <LanguageSwitcher compact />
+          </div>
         </div>
       </div>
     </nav>

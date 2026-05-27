@@ -1,39 +1,40 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Clock, UtensilsCrossed, CheckCircle2, Package, RefreshCw, Trash2, History, MessageCircle, XCircle, Navigation2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 const STATUS_CONFIG = {
   pendiente_confirmacion: {
-    label: 'Esperando Confirmación',
+    labelKey: 'orders.statuses.pendingConfirmation',
     icon: MessageCircle,
     color: 'text-yellow-400',
     bg: 'bg-yellow-500/10 border-yellow-500/20',
     pulse: true,
   },
   pendiente_cocina: {
-    label: 'En Cocina',
+    labelKey: 'orders.statuses.kitchen',
     icon: UtensilsCrossed,
     color: 'text-amber-400',
     bg: 'bg-amber-500/10 border-amber-500/20',
     pulse: true,
   },
   listo: {
-    label: '¡Listo!',
+    labelKey: 'orders.statuses.ready',
     icon: CheckCircle2,
     color: 'text-emerald-400',
     bg: 'bg-emerald-500/10 border-emerald-500/20',
     pulse: false,
   },
   pagado: {
-    label: 'Pagado',
+    labelKey: 'orders.statuses.paid',
     icon: Package,
     color: 'text-blue-400',
     bg: 'bg-blue-500/10 border-blue-500/20',
     pulse: false,
   },
   cancelado: {
-    label: 'Cancelado',
+    labelKey: 'orders.statuses.canceled',
     icon: XCircle,
     color: 'text-red-400',
     bg: 'bg-red-500/10 border-red-500/20',
@@ -47,6 +48,7 @@ const MAX_TRACKING_TOKENS = 20;
 
 const OrderTrackingPage = () => {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -126,7 +128,7 @@ const OrderTrackingPage = () => {
   const formatTime = (dateStr) => {
     try {
       const date = new Date(dateStr);
-      return date.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+      return date.toLocaleTimeString(i18n.language === 'en' ? 'en-US' : 'es-MX', { hour: '2-digit', minute: '2-digit' });
     } catch {
       return '';
     }
@@ -137,8 +139,8 @@ const OrderTrackingPage = () => {
       const date = new Date(dateStr);
       const today = new Date();
       const isToday = date.toDateString() === today.toDateString();
-      if (isToday) return 'Hoy';
-      return date.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
+      if (isToday) return t('orders.today');
+      return date.toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'es-MX', { day: 'numeric', month: 'short' });
     } catch {
       return '';
     }
@@ -152,7 +154,7 @@ const OrderTrackingPage = () => {
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
           </svg>
-          <p className="text-slate-400">Cargando tus pedidos...</p>
+          <p className="text-slate-400">{t('orders.loading')}</p>
         </div>
       </div>
     );
@@ -173,18 +175,18 @@ const OrderTrackingPage = () => {
             <button
               onClick={() => showHistory ? setShowHistory(false) : navigate('/')}
               className="text-slate-400 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-colors"
-              aria-label={showHistory ? "Volver a activos" : "Volver al directorio"}
+              aria-label={showHistory ? t('orders.backActive') : t('orders.backDirectory')}
             >
               <ArrowLeft size={20} />
             </button>
             <div>
               <h1 className="text-xl font-bold text-white flex items-center gap-2">
                 {showHistory ? <History size={22} className="text-blue-400" /> : <Package size={22} className="text-orange-400" />}
-                {showHistory ? 'Historial' : 'Mis Pedidos'}
+                {showHistory ? t('orders.history') : t('orders.title')}
               </h1>
               {lastRefresh && (
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Actualizado: {formatTime(lastRefresh.toISOString())}
+                  {t('orders.updated', { time: formatTime(lastRefresh.toISOString()) })}
                 </p>
               )}
             </div>
@@ -195,7 +197,7 @@ const OrderTrackingPage = () => {
               onClick={() => fetchOrders(true)}
               disabled={isRefreshing}
               className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-50"
-              aria-label="Refrescar"
+              aria-label={t('orders.refresh')}
             >
               <RefreshCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
             </button>
@@ -203,8 +205,8 @@ const OrderTrackingPage = () => {
               <button
                 onClick={clearAllOrders}
                 className="p-2 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                aria-label="Limpiar historial"
-                title="Limpiar historial de pedidos"
+                aria-label={t('orders.clearHistory')}
+                title={t('orders.clearHistory')}
               >
                 <Trash2 size={18} />
               </button>
@@ -222,19 +224,19 @@ const OrderTrackingPage = () => {
               {showHistory ? <History size={36} className="text-slate-600" /> : <Package size={36} className="text-slate-600" />}
             </div>
             <h2 className="text-xl font-semibold text-white mb-2">
-              {showHistory ? 'No hay historial' : 'No tienes pedidos activos'}
+              {showHistory ? t('orders.emptyHistory') : t('orders.emptyActive')}
             </h2>
             <p className="text-slate-400 mb-6 max-w-sm mx-auto">
               {showHistory 
-                ? 'Los pedidos que ya han sido pagados y recogidos aparecerán aquí.' 
-                : 'Cuando hagas un pedido desde el menú de un restaurante, aparecerá aquí para que puedas seguir su estado.'}
+                ? t('orders.emptyHistoryDescription')
+                : t('orders.emptyActiveDescription')}
             </p>
             {!showHistory && (
               <button
                 onClick={() => navigate('/')}
                 className="btn-primary px-6 py-3 inline-flex items-center gap-2"
               >
-                Explorar Restaurantes
+                {t('orders.explore')}
               </button>
             )}
           </div>
@@ -260,7 +262,7 @@ const OrderTrackingPage = () => {
                     </div>
                     <div>
                       <span className={`text-sm font-bold ${status.color}`}>
-                        {status.label}
+                        {t(status.labelKey)}
                       </span>
                       {order.restaurant_name && (
                         <p className="text-xs text-slate-500">{order.restaurant_name}</p>
@@ -272,7 +274,7 @@ const OrderTrackingPage = () => {
                       {formatDate(order.created_at)} · {formatTime(order.created_at)}
                     </span>
                     <span className="text-xs text-slate-600">
-                      Pedido #{order.order_number}
+                      {t('orders.orderNumber', { number: order.order_number })}
                     </span>
                   </div>
                 </div>
@@ -307,7 +309,7 @@ const OrderTrackingPage = () => {
                 {order.status === 'listo' && (
                   <div className="px-4 py-2.5 bg-emerald-500/10 border-t border-emerald-500/20">
                     <p className="text-sm text-emerald-400 font-medium text-center">
-                      🎉 ¡Tu pedido está listo para recoger!
+                      {t('orders.ready')}
                     </p>
                   </div>
                 )}
@@ -316,7 +318,7 @@ const OrderTrackingPage = () => {
                 {order.status === 'pendiente_confirmacion' && (
                   <div className="px-4 py-2.5 bg-yellow-500/10 border-t border-yellow-500/20">
                     <p className="text-sm text-yellow-400 font-medium text-center">
-                      ⏳ Envía el mensaje de WhatsApp para confirmar tu pedido
+                      {t('orders.confirmWhatsApp')}
                     </p>
                   </div>
                 )}
@@ -332,7 +334,7 @@ const OrderTrackingPage = () => {
                       className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/25 text-blue-400 hover:text-blue-300 font-medium text-sm transition-all hover:scale-[1.01] active:scale-95"
                     >
                       <Navigation2 size={16} />
-                      Ir por pedido
+                      {t('orders.getDirections')}
                     </button>
                     {order.restaurant_address && (
                       <p className="text-[11px] text-slate-600 text-center mt-1.5">
@@ -354,7 +356,7 @@ const OrderTrackingPage = () => {
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-800/50 hover:bg-slate-800 text-slate-300 transition-colors border border-white/5 font-medium"
             >
               <History size={18} className="text-blue-400" />
-              Ver historial de pedidos ({historyOrders.length})
+              {t('orders.viewHistory', { count: historyOrders.length })}
             </button>
           </div>
         )}
@@ -363,7 +365,7 @@ const OrderTrackingPage = () => {
         {!showHistory && activeOrders.length > 0 && (
           <p className="text-center text-xs text-slate-600 pt-6 pb-2">
             <Clock size={12} className="inline mr-1 -mt-0.5" />
-            Se actualiza automáticamente cada 15 segundos
+            {t('orders.autoRefresh')}
           </p>
         )}
       </main>

@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Save, UploadCloud, Plus, Pencil } from 'lucide-react';
 import { usePOS } from '../../context/POSContext';
 
 const NewItemModal = ({ isOpen, onClose, onSave, currentCategoryId }) => {
   const { extras, updateExtra, deleteExtra } = usePOS();
+  const { t } = useTranslation();
   const [type, setType] = useState(currentCategoryId ? 'producto' : 'categoria');
   const [name, setName] = useState('');
   const [ingredients, setIngredients] = useState('');
@@ -45,11 +47,11 @@ const NewItemModal = ({ isOpen, onClose, onSave, currentCategoryId }) => {
   };
 
   const handleAddExtraToList = () => {
-    if (!name.trim() || !price || isNaN(price)) return alert('Ingresa un nombre y precio válido para el extra');
+    if (!name.trim() || !price || isNaN(price)) return alert(t('modals.validExtra'));
     // Evitar duplicados con extras existentes
     const isDuplicate = extras.some(ex => ex.name.toLowerCase() === name.trim().toLowerCase());
     const isPendingDuplicate = pendingExtras.some(ex => ex.name.toLowerCase() === name.trim().toLowerCase());
-    if (isDuplicate || isPendingDuplicate) return alert('Ya existe un extra con ese nombre');
+    if (isDuplicate || isPendingDuplicate) return alert(t('modals.duplicateExtra'));
 
     setPendingExtras(prev => [...prev, { name: name.trim(), price: parseFloat(price) }]);
     setName('');
@@ -67,14 +69,14 @@ const NewItemModal = ({ isOpen, onClose, onSave, currentCategoryId }) => {
 
   const handleSaveEditPrice = async (id) => {
     const newPrice = parseFloat(editingPrice);
-    if (isNaN(newPrice) || newPrice < 0) return alert('Ingresa un precio válido');
+    if (isNaN(newPrice) || newPrice < 0) return alert(t('modals.validPrice'));
     await updateExtra(id, newPrice);
     setEditingExtraId(null);
     setEditingPrice('');
   };
 
   const handleDeleteExtra = async (id) => {
-    if (!confirm('¿Eliminar este extra permanentemente?')) return;
+    if (!confirm(t('modals.deleteExtra'))) return;
     await deleteExtra(id);
   };
 
@@ -86,17 +88,17 @@ const NewItemModal = ({ isOpen, onClose, onSave, currentCategoryId }) => {
       if (name.trim() && price && !isNaN(price)) {
         extrasToSave.push({ name: name.trim(), price: parseFloat(price) });
       }
-      if (extrasToSave.length === 0) return alert('No hay extras nuevos para guardar');
+      if (extrasToSave.length === 0) return alert(t('modals.noNewExtras'));
       
       onSave({ type, data: extrasToSave });
       onClose();
       return;
     }
 
-    if (!name.trim()) return alert('El nombre es requerido');
+    if (!name.trim()) return alert(t('modals.requiredName'));
     
     if (type === 'producto') {
-      if (!price || isNaN(price)) return alert('Ingresa un precio válido');
+      if (!price || isNaN(price)) return alert(t('modals.validPrice'));
       onSave({
         type,
         data: {
@@ -124,20 +126,20 @@ const NewItemModal = ({ isOpen, onClose, onSave, currentCategoryId }) => {
           <X size={24} />
         </button>
 
-        <h2 className="text-2xl font-bold text-white mb-6">Nuevo Elemento</h2>
+        <h2 className="text-2xl font-bold text-white mb-6">{t('modals.newElement')}</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">Tipo de elemento</label>
+            <label className="block text-sm font-medium text-slate-300 mb-1">{t('modals.elementType')}</label>
             <select 
               value={type} 
               onChange={(e) => setType(e.target.value)}
               disabled={!!currentCategoryId}
               className="glass-input w-full appearance-none cursor-pointer disabled:opacity-50"
             >
-              <option value="categoria" className="bg-slate-800 text-white">Categoría</option>
-              <option value="producto" className="bg-slate-800 text-white">Producto</option>
-              <option value="extra" className="bg-slate-800 text-white">Extra</option>
+              <option value="categoria" className="bg-slate-800 text-white">{t('modals.category')}</option>
+              <option value="producto" className="bg-slate-800 text-white">{t('modals.product')}</option>
+              <option value="extra" className="bg-slate-800 text-white">{t('modals.extra')}</option>
             </select>
           </div>
 
@@ -146,14 +148,14 @@ const NewItemModal = ({ isOpen, onClose, onSave, currentCategoryId }) => {
             <>
               {/* Input para agregar nuevo extra */}
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Agregar nuevo extra:</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">{t('modals.addExtra')}</label>
                 <div className="flex items-center gap-2">
                   <input 
                     type="text" 
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     className="glass-input flex-1"
-                    placeholder="Nombre del extra"
+                    placeholder={t('modals.extraName')}
                   />
                   <div className="relative w-24 shrink-0">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">$</span>
@@ -179,7 +181,7 @@ const NewItemModal = ({ isOpen, onClose, onSave, currentCategoryId }) => {
 
               {/* Lista completa de extras (existentes + pendientes) */}
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Extras:</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">{t('modals.extras')}</label>
                 <div className="glass-panel p-3 min-h-[120px] max-h-[260px] overflow-y-auto space-y-2">
                   
                   {/* Extras existentes de la BD */}
@@ -209,7 +211,7 @@ const NewItemModal = ({ isOpen, onClose, onSave, currentCategoryId }) => {
                               type="button" 
                               onClick={() => handleSaveEditPrice(ex.id)} 
                               className="text-emerald-400 hover:text-emerald-300 transition-colors"
-                              title="Guardar precio"
+                              title={t('modals.savePrice')}
                             >
                               <Save size={14} />
                             </button>
@@ -219,7 +221,7 @@ const NewItemModal = ({ isOpen, onClose, onSave, currentCategoryId }) => {
                             <span 
                               className="text-green-400 font-mono text-sm cursor-pointer hover:text-green-300 transition-colors flex items-center gap-1"
                               onClick={() => handleStartEditPrice(ex)}
-                              title="Click para editar precio"
+                              title={t('modals.editPrice')}
                             >
                               ${Number(ex.price).toFixed(2)}
                               <Pencil size={12} className="opacity-50" />
@@ -230,7 +232,7 @@ const NewItemModal = ({ isOpen, onClose, onSave, currentCategoryId }) => {
                           type="button" 
                           onClick={() => handleDeleteExtra(ex.id)} 
                           className="text-red-400/60 hover:text-red-400 transition-colors"
-                          title="Eliminar extra"
+                          title={t('modals.deleteExtraTitle')}
                         >
                           <X size={16} />
                         </button>
@@ -242,7 +244,7 @@ const NewItemModal = ({ isOpen, onClose, onSave, currentCategoryId }) => {
                   {pendingExtras.map((ex, i) => (
                     <div key={`pending-${i}`} className="flex items-center justify-between bg-emerald-500/10 px-3 py-2 rounded-lg border border-emerald-500/20">
                       <div className="flex items-center gap-2">
-                        <span className="text-emerald-400 text-xs font-medium uppercase tracking-wider">Nuevo</span>
+                        <span className="text-emerald-400 text-xs font-medium uppercase tracking-wider">{t('modals.new')}</span>
                         <span className="text-white font-medium text-sm">{ex.name}</span>
                       </div>
                       <div className="flex items-center gap-2">
@@ -256,7 +258,7 @@ const NewItemModal = ({ isOpen, onClose, onSave, currentCategoryId }) => {
 
                   {/* Mensaje vacío */}
                   {extras.length === 0 && pendingExtras.length === 0 && (
-                    <p className="text-slate-500 text-sm italic text-center py-6">No hay extras registrados. Agrega uno arriba.</p>
+                    <p className="text-slate-500 text-sm italic text-center py-6">{t('modals.noExtras')}</p>
                   )}
                 </div>
               </div>
@@ -266,13 +268,13 @@ const NewItemModal = ({ isOpen, onClose, onSave, currentCategoryId }) => {
           {/* === SECCIÓN CATEGORÍA / PRODUCTO === */}
           {type !== 'extra' && (
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">Nombre:</label>
+              <label className="block text-sm font-medium text-slate-300 mb-1">{t('common.labels.name')}:</label>
               <input 
                 type="text" 
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="glass-input w-full"
-                placeholder={`Nombre de la ${type}`}
+                placeholder={`${t('common.labels.name')} ${type}`}
                 required
               />
             </div>
@@ -281,17 +283,17 @@ const NewItemModal = ({ isOpen, onClose, onSave, currentCategoryId }) => {
           {type === 'producto' && (
             <>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Ingredientes:</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">{t('modals.ingredients')}</label>
                 <textarea 
                   value={ingredients}
                   onChange={(e) => setIngredients(e.target.value)}
                   className="glass-input w-full min-h-[80px] resize-none"
-                  placeholder="Lista de ingredientes base..."
+                  placeholder={t('modals.ingredientsPlaceholder')}
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Precio:</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">{t('modals.price')}</label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">$</span>
                   <input 
@@ -311,7 +313,7 @@ const NewItemModal = ({ isOpen, onClose, onSave, currentCategoryId }) => {
 
           {type !== 'extra' && (
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">Imagen (Opcional):</label>
+              <label className="block text-sm font-medium text-slate-300 mb-1">{t('modals.imageOptional')}</label>
               <input 
                 type="file" 
                 accept="image/*" 
@@ -323,7 +325,7 @@ const NewItemModal = ({ isOpen, onClose, onSave, currentCategoryId }) => {
                 <div className="relative w-full h-32 rounded-lg overflow-hidden border border-white/10 group">
                   <img src={image} alt="Preview" className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button type="button" onClick={() => fileInputRef.current?.click()} className="btn-secondary text-sm">Cambiar</button>
+                    <button type="button" onClick={() => fileInputRef.current?.click()} className="btn-secondary text-sm">{t('modals.change')}</button>
                   </div>
                 </div>
               ) : (
@@ -333,7 +335,7 @@ const NewItemModal = ({ isOpen, onClose, onSave, currentCategoryId }) => {
                   className="btn-secondary w-full flex items-center justify-center gap-2 border-dashed border-2 py-4 text-slate-400 hover:text-white"
                 >
                   <UploadCloud size={20} />
-                  <span>Subir imagen</span>
+                  <span>{t('modals.uploadImage')}</span>
                 </button>
               )}
             </div>
@@ -343,8 +345,8 @@ const NewItemModal = ({ isOpen, onClose, onSave, currentCategoryId }) => {
             <button type="submit" className="btn-primary w-full flex justify-center items-center gap-2 py-3">
               <Save size={20} />
               {type === 'extra' 
-                ? (pendingExtras.length > 0 ? `Guardar ${pendingExtras.length} Extra${pendingExtras.length > 1 ? 's' : ''} Nuevo${pendingExtras.length > 1 ? 's' : ''}` : 'Guardar Extras')
-                : `Guardar ${type === 'categoria' ? 'Categoría' : 'Producto'}`
+                ? (pendingExtras.length > 0 ? t('modals.saveNewExtras', { count: pendingExtras.length, plural: pendingExtras.length > 1 ? 's' : '' }) : t('modals.saveExtras'))
+                : (type === 'categoria' ? t('modals.saveCategory') : t('modals.saveProduct'))
               }
             </button>
           </div>
