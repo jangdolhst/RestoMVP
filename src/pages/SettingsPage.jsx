@@ -17,9 +17,21 @@ const WEEK_DAYS = [
 ];
 
 const AVAILABLE_CATEGORIES = [
-  'Pizza', 'Hamburguesas', 'Sushi', 'Tacos', 'Mariscos',
-  'Italiana', 'China', 'Postres', 'Café', 'Saludable',
-  'BBQ', 'Pollo', 'Mexicana', 'Japonesa', 'Árabe'
+  { key: 'pizza', value: 'Pizza' },
+  { key: 'burgers', value: 'Hamburguesas' },
+  { key: 'sushi', value: 'Sushi' },
+  { key: 'tacos', value: 'Tacos' },
+  { key: 'seafood', value: 'Mariscos' },
+  { key: 'italian', value: 'Italiana' },
+  { key: 'chinese', value: 'China' },
+  { key: 'desserts', value: 'Postres' },
+  { key: 'coffee', value: 'Café' },
+  { key: 'healthy', value: 'Saludable' },
+  { key: 'bbq', value: 'BBQ' },
+  { key: 'chicken', value: 'Pollo' },
+  { key: 'mexican', value: 'Mexicana' },
+  { key: 'japanese', value: 'Japonesa' },
+  { key: 'arabic', value: 'Árabe' },
 ];
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
@@ -110,7 +122,7 @@ const WaitersSection = ({ waiters = [], onChange }) => {
               <button
                 onClick={() => handleRemove(name)}
                 className="p-0.5 rounded text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                title={`Eliminar ${name}`}
+                title={t('settings.removeWaiter', { name })}
               >
                 <X size={12} />
               </button>
@@ -479,7 +491,7 @@ const SettingsPage = () => {
             className={`relative w-12 h-6 rounded-full transition-colors duration-300 ${
               profile.is_active ? 'bg-emerald-500' : 'bg-white/10'
             }`}
-            aria-label="Toggle visibilidad"
+            aria-label={t('settings.toggleVisibility')}
           >
             <span
               className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 ${
@@ -719,7 +731,7 @@ const SettingsPage = () => {
               type="text"
               value={profile.fiscal_number}
               onChange={(e) => handleChange('fiscal_number', e.target.value.toUpperCase())}
-              placeholder="Ej: XAXX010101000"
+              placeholder={t('settings.fiscalPlaceholder')}
               className="glass-input w-full"
               maxLength={20}
             />
@@ -735,7 +747,7 @@ const SettingsPage = () => {
               className={`relative w-12 h-6 rounded-full transition-colors duration-300 ${
                 profile.tax_included ? 'bg-emerald-500' : 'bg-white/10'
               }`}
-              aria-label="Toggle impuestos"
+              aria-label={t('settings.toggleTaxes')}
             >
               <span
                 className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 ${
@@ -832,7 +844,7 @@ const SettingsPage = () => {
                         : 'bg-white/5 text-slate-500 hover:bg-white/10 hover:text-slate-300'
                     }`}
                   >
-                    {day.label}
+                    {t(`settings.weekDaysShort.${day.id}`, { defaultValue: day.label })}
                   </button>
                 );
               })}
@@ -880,11 +892,11 @@ const SettingsPage = () => {
           <p className="text-xs text-slate-400">{t('settings.categoriesHelp')}</p>
           <div className="flex flex-wrap gap-2">
             {AVAILABLE_CATEGORIES.map(cat => {
-              const isSelected = profile.categories.includes(cat);
+              const isSelected = profile.categories.includes(cat.value);
               return (
                 <button
-                  key={cat}
-                  onClick={() => toggleCategory(cat)}
+                  key={cat.value}
+                  onClick={() => toggleCategory(cat.value)}
                   className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all duration-200 ${
                     isSelected
                       ? 'bg-orange-500 text-white border-orange-500 shadow-md shadow-orange-500/20'
@@ -892,7 +904,7 @@ const SettingsPage = () => {
                   }`}
                 >
                   {isSelected && <span className="mr-1">✓</span>}
-                  {cat}
+                  {t(`marketplace.categories.${cat.key}`)}
                 </button>
               );
             })}

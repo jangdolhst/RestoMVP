@@ -5,6 +5,92 @@
   const contentEl = document.getElementById('ticket-content');
   const printBtn = document.getElementById('ticket-print-btn');
 
+  const translations = {
+    es: {
+      documentTitle: 'Ticket de Pedido',
+      printTicket: 'Imprimir Ticket',
+      noItems: 'Sin articulos',
+      itemFallback: 'Articulo',
+      folio: 'Folio:',
+      client: 'Cliente:',
+      date: 'Fecha:',
+      time: 'Hora:',
+      waiter: 'Mesero:',
+      qty: 'Cant',
+      item: 'Articulo',
+      subtotal: 'Subtotal',
+      total: 'TOTAL',
+      tax: 'Impuesto',
+      taxIncluded: '* Impuesto incluido en el precio',
+      takeout: 'PARA LLEVAR',
+      online: 'EN LINEA',
+      unnamed: 'Sin nombre',
+      missingOrder: 'No se encontraron datos del pedido. Cierra esta ventana e intenta de nuevo.',
+      renderError: 'Error al renderizar',
+      unknown: 'desconocido',
+      footerThanks: 'Gracias por tu preferencia',
+      footerReturn: 'Te esperamos pronto',
+    },
+    en: {
+      documentTitle: 'Order Ticket',
+      printTicket: 'Print Ticket',
+      noItems: 'No items',
+      itemFallback: 'Item',
+      folio: 'Folio:',
+      client: 'Customer:',
+      date: 'Date:',
+      time: 'Time:',
+      waiter: 'Waiter:',
+      qty: 'Qty',
+      item: 'Item',
+      subtotal: 'Subtotal',
+      total: 'TOTAL',
+      tax: 'Tax',
+      taxIncluded: '* Tax included in the price',
+      takeout: 'TAKEOUT',
+      online: 'ONLINE',
+      unnamed: 'Unnamed',
+      missingOrder: 'No order data was found. Close this window and try again.',
+      renderError: 'Render error',
+      unknown: 'unknown',
+      footerThanks: 'Thank you for your preference',
+      footerReturn: 'See you soon',
+    },
+  };
+
+  const getLanguage = () => {
+    try {
+      return String(localStorage.getItem('i18nextLng') || '').toLowerCase().startsWith('en') ? 'en' : 'es';
+    } catch {
+      return 'es';
+    }
+  };
+
+  const lang = getLanguage();
+  const t = translations[lang];
+  document.documentElement.lang = lang;
+  document.title = t.documentTitle;
+
+  const setText = (id, value) => {
+    const element = document.getElementById(id);
+    if (element) element.textContent = value;
+  };
+
+  setText('ticket-print-btn', t.printTicket);
+  setText('tk-label-folio', t.folio);
+  setText('tk-label-client', t.client);
+  setText('tk-label-date', t.date);
+  setText('tk-label-time', t.time);
+  setText('tk-label-waiter', t.waiter);
+  setText('tk-head-qty', t.qty);
+  setText('tk-head-item', t.item);
+  setText('tk-head-subtotal', t.subtotal);
+  setText('tk-label-subtotal', t.subtotal);
+  setText('tk-label-total', t.total);
+  setText('tk-tax-note', t.taxIncluded);
+  setText('tk-footer-thanks', t.footerThanks);
+  setText('tk-footer-return', t.footerReturn);
+
   if (printBtn) {
     printBtn.addEventListener('click', () => window.print());
   }
@@ -13,12 +99,6 @@
     errorEl.textContent = message;
     errorEl.style.display = 'block';
     contentEl.style.display = 'none';
-  };
-
-  const escapeHtml = (value) => {
-    const div = document.createElement('div');
-    div.textContent = String(value ?? '');
-    return div.innerHTML;
   };
 
   const parseJson = (raw) => {
@@ -32,26 +112,6 @@
   };
 
   const isSafeTicketId = (value) => /^[a-zA-Z0-9_-]{1,80}$/.test(value);
-
-  const getOrderFromOpener = () => {
-    try {
-      if (window.opener && window.opener.__jfPrintData) {
-        return window.opener.__jfPrintData;
-      }
-    } catch {
-      // Ignore cross-origin opener restrictions.
-    }
-
-    try {
-      if (window.__jfPrintData) {
-        return window.__jfPrintData;
-      }
-    } catch {
-      // Ignore access errors.
-    }
-
-    return null;
-  };
 
   const getOrderFromTicketStorage = () => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -111,14 +171,20 @@
   const renderItems = (items, tbody) => {
     if (items.length === 0) {
       const tr = document.createElement('tr');
-      tr.innerHTML = '<td colspan="3" style="text-align:center;padding:8px;color:#999;">Sin articulos</td>';
+      const emptyCell = document.createElement('td');
+      emptyCell.colSpan = 3;
+      emptyCell.style.textAlign = 'center';
+      emptyCell.style.padding = '8px';
+      emptyCell.style.color = '#999';
+      emptyCell.textContent = t.noItems;
+      tr.appendChild(emptyCell);
       tbody.appendChild(tr);
       return;
     }
 
     for (const item of items) {
       const qty = Number(item?.quantity) || 1;
-      const name = item?.product_name || item?.name || 'Articulo';
+      const name = item?.product_name || item?.name || t.itemFallback;
       const unitPrice = Number(item?.price) || 0;
       const modifications = normalizeMods(item?.modifications);
 
@@ -136,7 +202,7 @@
 
       const nameCell = document.createElement('td');
       nameCell.className = 'col-name';
-      let nameHtml = escapeHtml(name);
+      nameCell.append(document.createTextNode(String(name)));
 
       for (const mod of modifications) {
         if (!mod || !mod.name) continue;
@@ -145,10 +211,11 @@
           ? ` ($${Number(mod.price).toFixed(2)})`
           : '';
 
-        nameHtml += `<div class="mod-line">${sign} ${escapeHtml(mod.name)}${amount}</div>`;
+        const modLine = document.createElement('div');
+        modLine.className = 'mod-line';
+        modLine.textContent = `${sign} ${mod.name}${amount}`;
+        nameCell.appendChild(modLine);
       }
-
-      nameCell.innerHTML = nameHtml;
 
       const priceCell = document.createElement('td');
       priceCell.className = 'col-price';
@@ -220,7 +287,7 @@
 
     // Mostrar Impuesto
     const taxRow = document.getElementById('tk-tax-row');
-    document.getElementById('tk-tax-label').textContent = `Impuesto (${profile.tax_rate}%)`;
+    document.getElementById('tk-tax-label').textContent = `${t.tax} (${profile.tax_rate}%)`;
     document.getElementById('tk-tax-amount').textContent = `$${tax.toFixed(2)}`;
     taxRow.style.display = 'flex';
 
@@ -234,14 +301,14 @@
 
     const orderNum = order.orderNumber || order.order_number || '0';
     const tableName = order.tableName || order.table_name || '';
-    const clientName = order.clientName || order.client_name || 'Sin nombre';
+    const clientName = order.clientName || order.client_name || t.unnamed;
 
     // Folio formateado: TKT-000045
     const folioText = `TKT-${String(orderNum).padStart(6, '0')}`;
 
-    let typeText = 'PARA LLEVAR';
+    let typeText = t.takeout;
     if (order.type === 'online') {
-      typeText = 'EN LINEA';
+      typeText = t.online;
     } else if (tableName) {
       typeText = String(tableName).toUpperCase();
     }
@@ -271,7 +338,7 @@
     // Desglose de impuestos
     renderTaxBreakdown(total, order.restaurantProfile);
 
-    document.title = `Ticket #${orderNum} - ${clientName}`;
+    document.title = `${t.documentTitle} #${orderNum} - ${clientName}`;
     contentEl.style.display = 'block';
 
     setTimeout(() => {
@@ -280,15 +347,15 @@
   };
 
   try {
-    const order = getOrderFromOpener() || getOrderFromTicketStorage();
+    const order = getOrderFromTicketStorage();
     if (!order) {
-      showError('No se encontraron datos del pedido. Cierra esta ventana e intenta de nuevo.');
+      showError(t.missingOrder);
       return;
     }
 
     renderTicket(order);
   } catch (error) {
-    showError(`Error al renderizar: ${error?.message || 'desconocido'}`);
+    showError(`${t.renderError}: ${error?.message || t.unknown}`);
     console.error('Ticket render error:', error);
   }
 })();

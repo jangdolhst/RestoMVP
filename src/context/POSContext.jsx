@@ -24,6 +24,7 @@ export const POSProvider = ({ children }) => {
   
   // El tenant activo es el de la URL (cliente) o el del dueño logueado
   const currentTenantId = urlTenantId || user?.id;
+  const canManageTenant = Boolean(user?.id && currentTenantId === user.id && !isClientMenu);
 
   // Estado desde Supabase
   const [categories, setCategories] = useState([]);
@@ -293,6 +294,8 @@ export const POSProvider = ({ children }) => {
 	        };
 	      }
 
+      if (!canManageTenant) return false;
+
 	      const { data: createdOrder, error: orderError } = await supabase
 	        .from('orders')
 	        .insert(newOrderData)
@@ -363,16 +366,24 @@ export const POSProvider = ({ children }) => {
   const VALID_ORDER_STATUSES = ['pendiente_confirmacion', 'pendiente_cocina', 'listo', 'pagado', 'cancelado'];
 
   const updateOrderStatus = async (orderId, newStatus) => {
-    if (!VALID_ORDER_STATUSES.includes(newStatus)) return;
+    if (!canManageTenant || !VALID_ORDER_STATUSES.includes(newStatus)) return;
     setOrders(prev => prev.map(order => 
       order.id === orderId ? { ...order, status: newStatus } : order
     ));
-    await supabase.from('orders').update({ status: newStatus }).eq('id', orderId);
+    const { error } = await supabase
+      .from('orders')
+      .update({ status: newStatus })
+      .eq('id', orderId)
+      .eq('tenant_id', currentTenantId);
+
+    if (error) {
+      console.error('Error actualizando estado de orden:', error);
+    }
   };
 
   // Acciones de Inventario (Supabase)
   const addCategory = async (data) => {
-    if (!currentTenantId) return;
+    if (!canManageTenant) return;
     const { data: newCat } = await supabase
       .from('categories')
       .insert({ tenant_id: currentTenantId, name: data.name, image_url: data.image })
@@ -383,7 +394,7 @@ export const POSProvider = ({ children }) => {
   };
 
   const addProduct = async (data) => {
-    if (!currentTenantId) return;
+    if (!canManageTenant) return;
     const { data: newProd } = await supabase
       .from('products')
       .insert({
@@ -401,7 +412,7 @@ export const POSProvider = ({ children }) => {
   };
 
   const addExtras = async (extrasArray) => {
-    if (!currentTenantId || !extrasArray.length) return;
+    if (!canManageTenant || !extrasArray.length) return;
     const insertData = extrasArray.map(extra => ({
       tenant_id: currentTenantId,
       name: extra.name,
@@ -419,10 +430,12 @@ export const POSProvider = ({ children }) => {
   };
 
   const updateExtra = async (id, newPrice) => {
+    if (!canManageTenant) return;
     const { error } = await supabase
       .from('extras')
       .update({ price: newPrice })
-      .eq('id', id);
+      .eq('id', id)
+      .eq('tenant_id', currentTenantId);
 
     if (!error) {
       setExtras(prev => prev.map(ex => ex.id === id ? { ...ex, price: newPrice } : ex));
@@ -430,10 +443,12 @@ export const POSProvider = ({ children }) => {
   };
 
   const deleteExtra = async (id) => {
+    if (!canManageTenant) return;
     const { error } = await supabase
       .from('extras')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .eq('tenant_id', currentTenantId);
 
     if (!error) {
       setExtras(prev => prev.filter(ex => ex.id !== id));
@@ -441,14 +456,16 @@ export const POSProvider = ({ children }) => {
   };
 
   const deleteCategory = async (id) => {
+    if (!canManageTenant) return;
     setCategories(prev => prev.filter(c => c.id !== id));
     setProducts(prev => prev.filter(p => p.categoryId !== id));
-    await supabase.from('categories').delete().eq('id', id);
+    await supabase.from('categories').delete().eq('id', id).eq('tenant_id', currentTenantId);
   };
 
   const deleteProduct = async (id) => {
+    if (!canManageTenant) return;
     setProducts(prev => prev.filter(p => p.id !== id));
-    await supabase.from('products').delete().eq('id', id);
+    await supabase.from('products').delete().eq('id', id).eq('tenant_id', currentTenantId);
   };
 
   const value = {

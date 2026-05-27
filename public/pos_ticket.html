@@ -226,23 +226,23 @@
     <hr class="divider">
 
     <div class="info-line">
-      <span class="info-label">Folio:</span>
+      <span id="tk-label-folio" class="info-label">Folio:</span>
       <span class="info-value" id="tk-folio">-</span>
     </div>
     <div class="info-line">
-      <span class="info-label">Cliente:</span>
+      <span id="tk-label-client" class="info-label">Cliente:</span>
       <span class="info-value" id="tk-client">-</span>
     </div>
     <div class="info-line">
-      <span class="info-label">Fecha:</span>
+      <span id="tk-label-date" class="info-label">Fecha:</span>
       <span class="info-value" id="tk-date">-</span>
     </div>
     <div class="info-line">
-      <span class="info-label">Hora:</span>
+      <span id="tk-label-time" class="info-label">Hora:</span>
       <span class="info-value" id="tk-time">-</span>
     </div>
     <div id="tk-waiter-row" class="info-line" style="display:none;">
-      <span class="info-label">Mesero:</span>
+      <span id="tk-label-waiter" class="info-label">Mesero:</span>
       <span class="info-value" id="tk-waiter">-</span>
     </div>
 
@@ -251,9 +251,9 @@
     <table class="items-table">
       <thead>
         <tr>
-          <th class="col-qty">Cant</th>
-          <th class="col-name">Articulo</th>
-          <th class="col-price">Subtotal</th>
+          <th id="tk-head-qty" class="col-qty">Cant</th>
+          <th id="tk-head-item" class="col-name">Articulo</th>
+          <th id="tk-head-subtotal" class="col-price">Subtotal</th>
         </tr>
       </thead>
       <tbody id="tk-items"></tbody>
@@ -262,7 +262,7 @@
     <hr class="divider-double">
 
     <div id="tk-subtotal-row" class="subtotal-line" style="display:none;">
-      <span>Subtotal</span>
+      <span id="tk-label-subtotal">Subtotal</span>
       <span id="tk-subtotal">$0.00</span>
     </div>
     <div id="tk-tax-row" class="tax-line" style="display:none;">
@@ -271,7 +271,7 @@
     </div>
 
     <div class="total-line">
-      <span>TOTAL</span>
+      <span id="tk-label-total">TOTAL</span>
       <span id="tk-total">$0.00</span>
     </div>
 
@@ -282,8 +282,8 @@
     <hr class="divider">
 
     <div class="footer">
-      Gracias por tu preferencia<br>
-      Te esperamos pronto
+      <span id="tk-footer-thanks">Gracias por tu preferencia</span><br>
+      <span id="tk-footer-return">Te esperamos pronto</span>
     </div>
     <div class="footer-brand">Powered by JAMM FREE</div>
   </div>

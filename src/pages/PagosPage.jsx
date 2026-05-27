@@ -46,7 +46,8 @@ const PagosPage = () => {
           await supabase
             .from('orders')
             .update({ status: 'cancelado' })
-            .eq('id', order.id);
+            .eq('id', order.id)
+            .eq('tenant_id', user.id);
         } else {
           validOrders.push({
             ...order,
@@ -76,7 +77,8 @@ const PagosPage = () => {
       await supabase
         .from('orders')
         .update({ status: 'pendiente_cocina' })
-        .eq('id', orderId);
+        .eq('id', orderId)
+        .eq('tenant_id', user.id);
       updateOrderStatus(orderId, 'pendiente_cocina');
     } catch (err) {
       console.error('Error confirmando orden:', err.message);
@@ -90,7 +92,8 @@ const PagosPage = () => {
       await supabase
         .from('orders')
         .update({ status: 'cancelado' })
-        .eq('id', orderId);
+        .eq('id', orderId)
+        .eq('tenant_id', user.id);
       updateOrderStatus(orderId, 'cancelado');
     } catch (err) {
       console.error('Error rechazando orden:', err.message);
@@ -281,7 +284,6 @@ const PagosPage = () => {
                 <div className="mt-auto flex flex-col gap-2">
                   <button 
                     onClick={() => {
-                      // Método 1: Guardar en la ventana actual (para window.opener)
                       const compactOrder = {
                         orderNumber: order.orderNumber, clientName: order.clientName,
                         tableName: order.tableName, type: order.type, total: order.total,
@@ -299,15 +301,11 @@ const PagosPage = () => {
                       try {
                         localStorage.setItem(storageKey, JSON.stringify(compactOrder));
                       } catch { void 0; }
-                      const popup = window.open(
+                      window.open(
                         `/pos_ticket.html?ticket=${encodeURIComponent(ticketId)}`,
                         '_blank',
-                        'width=420,height=650'
+                        'width=420,height=650,noopener,noreferrer'
                       );
-                      try {
-                        window.__jfPrintData = compactOrder;
-                        if (popup) popup.__jfPrintData = compactOrder;
-                      } catch { void 0; }
                     }}
                     className="w-full flex justify-center items-center gap-2 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white border border-slate-600 transition-colors font-medium text-sm"
                   >
