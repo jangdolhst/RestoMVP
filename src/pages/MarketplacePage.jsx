@@ -9,7 +9,6 @@ import useCityDetection, { haversineDistance } from '../hooks/useCityDetection';
 import { isRestaurantOpen } from '../utils/businessHours';
 
 const MAX_DISTANCE_GPS_KM = 15;  // Radio para GPS (preciso)
-const MAX_DISTANCE_IP_KM = 50;   // Radio para IP geo (menos preciso)
 
 const FOOD_CATEGORIES = [
   { key: 'all', value: 'Todos' },
@@ -145,7 +144,6 @@ const MarketplacePage = () => {
     requestPreciseLocation,
   } = useCityDetection();
   const hasLocation = userLat !== null && userLng !== null;
-  const maxDistanceKm = geoSource === 'ip' ? MAX_DISTANCE_IP_KM : MAX_DISTANCE_GPS_KM;
   const isApproximateLocation = geoSource === 'ip';
   const locationTitle = geoSource === 'gps'
     ? t('marketplace.actions.updatePreciseLocation')
@@ -197,8 +195,10 @@ const MarketplacePage = () => {
         return { ...r, distance: null };
       });
 
-      // Filtrar por radio máximo (GPS=15km, IP=50km)
-      filtered = filtered.filter(r => r.distance === null || r.distance <= maxDistanceKm);
+      // Solo el GPS exacto filtra por radio. La IP es aproximada y no debe ocultar restaurantes.
+      if (geoSource === 'gps') {
+        filtered = filtered.filter(r => r.distance === null || r.distance <= MAX_DISTANCE_GPS_KM);
+      }
 
       // Ordenar por distancia (más cercanos primero, sin coords al final)
       filtered.sort((a, b) => {
@@ -226,7 +226,7 @@ const MarketplacePage = () => {
     }
 
     return filtered;
-  }, [restaurants, searchQuery, activeCategory, hasLocation, userLat, userLng, maxDistanceKm]);
+  }, [restaurants, searchQuery, activeCategory, hasLocation, userLat, userLng, geoSource]);
 
   return (
     <div className="min-h-screen text-white relative overflow-x-hidden">
