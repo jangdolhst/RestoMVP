@@ -180,10 +180,22 @@ CREATE POLICY "Dueños pueden gestionar items" ON order_items
   ) WITH CHECK (
     EXISTS (SELECT 1 FROM orders WHERE orders.id = order_items.order_id AND orders.tenant_id = auth.uid())
   );
--- Clientes: Pueden insertar items si la orden existe
-CREATE POLICY "Clientes pueden insertar items" ON order_items
+-- Clientes anonimos: solo pueden insertar los items iniciales de una orden recien creada.
+-- Esto evita que un token/order_id filtrado permita modificar pedidos ya enviados.
+CREATE POLICY "Clientes pueden insertar items iniciales" ON order_items
   FOR INSERT WITH CHECK (
-    EXISTS (SELECT 1 FROM orders WHERE orders.id = order_id)
+    auth.uid() IS NULL
+    AND EXISTS (
+      SELECT 1
+      FROM orders
+      WHERE orders.id = order_id
+        AND orders.created_at >= (NOW() - INTERVAL '2 minutes')
+        AND NOT EXISTS (
+          SELECT 1
+          FROM order_items existing
+          WHERE existing.order_id = orders.id
+        )
+    )
   );
 
 
@@ -339,4 +351,4 @@ END;
 $$;
 
 REVOKE EXECUTE ON FUNCTION public.get_orders_by_tokens(UUID[]) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION get_orders_by_tokens(UUID[]) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION get_orders_by_tokens(UUID[]) TO anon;

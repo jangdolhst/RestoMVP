@@ -9,9 +9,29 @@ import RestaurantPreviewPopup from '../components/map/RestaurantPreviewPopup';
 
 // ─── Helpers para íconos personalizados ────────────────────────────
 
+const escapeHtmlAttribute = (value) => String(value ?? '')
+  .replaceAll('&', '&amp;')
+  .replaceAll('"', '&quot;')
+  .replaceAll("'", '&#39;')
+  .replaceAll('<', '&lt;')
+  .replaceAll('>', '&gt;');
+
+const getSafeImageUrl = (url) => {
+  if (!url) return null;
+
+  try {
+    const parsed = new URL(url, window.location.origin);
+    if (!['http:', 'https:'].includes(parsed.protocol)) return null;
+    return parsed.href;
+  } catch {
+    return null;
+  }
+};
+
 const createRestaurantIcon = (logoUrl) => {
-  const html = logoUrl
-    ? `<div class="restaurant-marker"><img src="${logoUrl}" alt="logo" /></div>`
+  const safeLogoUrl = getSafeImageUrl(logoUrl);
+  const html = safeLogoUrl
+    ? `<div class="restaurant-marker"><img src="${escapeHtmlAttribute(safeLogoUrl)}" alt="logo" /></div>`
     : `<div class="restaurant-marker"><span class="restaurant-marker-fallback">🍽️</span></div>`;
 
   return L.divIcon({

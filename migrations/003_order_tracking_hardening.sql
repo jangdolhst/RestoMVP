@@ -83,5 +83,4 @@ $$;
 
 -- Endurecer permisos: evitar ejecución por rol PUBLIC global.
 REVOKE EXECUTE ON FUNCTION public.get_orders_by_tokens(UUID[]) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.get_orders_by_tokens(UUID[]) TO anon, authenticated;
-
+GRANT EXECUTE ON FUNCTION public.get_orders_by_tokens(UUID[]) TO anon;

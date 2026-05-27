@@ -268,7 +268,11 @@ export const POSProvider = ({ children }) => {
         modifications: item.modifications,
       }));
 
-      await supabase.from('order_items').insert(orderItemsData);
+      const { error: itemsError } = await supabase.from('order_items').insert(orderItemsData);
+      if (itemsError) {
+        console.error('Error creando items de orden:', itemsError);
+        return { success: false, error: 'No se pudieron guardar los productos del pedido.' };
+      }
 
       // Guardar token en localStorage para seguimiento
       if (isClientMenu) {

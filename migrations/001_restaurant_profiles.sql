@@ -57,7 +57,7 @@ CREATE TRIGGER on_auth_user_created_profile
 -- INSERT INTO storage.buckets (id, name, public) VALUES ('restaurant-media', 'restaurant-media', true);
 
 -- Políticas de Storage:
--- CREATE POLICY "Público puede ver media" ON storage.objects FOR SELECT USING (bucket_id = 'restaurant-media');
+-- No crear SELECT publico sobre storage.objects: los buckets publicos sirven URLs directas sin permitir listado.
 -- CREATE POLICY "Autenticados suben media" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'restaurant-media' AND auth.role() = 'authenticated');
 -- CREATE POLICY "Dueños actualizan su media" ON storage.objects FOR UPDATE USING (bucket_id = 'restaurant-media' AND auth.uid()::text = (storage.foldername(name))[1]);
 -- CREATE POLICY "Dueños eliminan su media" ON storage.objects FOR DELETE USING (bucket_id = 'restaurant-media' AND auth.uid()::text = (storage.foldername(name))[1]);
