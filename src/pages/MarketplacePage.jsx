@@ -119,10 +119,21 @@ const MarketplacePage = () => {
     return () => container.removeEventListener('wheel', onWheel);
   }, []);
 
-  // Detección de ubicación: GPS → IP fallback (Vercel Geo)
-  const { city, state, lat: userLat, lng: userLng, isLoading: gpsLoading, error: gpsError, source: geoSource, retry: retryGps } = useCityDetection();
+  // Deteccion de ubicacion: IP aproximada primero, GPS solo si el usuario lo pide.
+  const {
+    city,
+    state,
+    lat: userLat,
+    lng: userLng,
+    isLoading: locationLoading,
+    error: locationError,
+    source: geoSource,
+    requestPreciseLocation,
+  } = useCityDetection();
   const hasLocation = userLat !== null && userLng !== null;
   const maxDistanceKm = geoSource === 'ip' ? MAX_DISTANCE_IP_KM : MAX_DISTANCE_GPS_KM;
+  const isApproximateLocation = geoSource === 'ip';
+  const locationTitle = geoSource === 'gps' ? 'Actualizar ubicación exacta' : 'Usar ubicación exacta';
 
   // Verificar si hay pedidos en localStorage
   useEffect(() => {
@@ -213,37 +224,53 @@ const MarketplacePage = () => {
 
           {/* City indicator — mobile */}
           <div className="flex items-center gap-1.5 lg:hidden">
-            {gpsLoading ? (
+            {locationLoading ? (
               <Loader2 size={14} className="animate-spin text-slate-500" />
             ) : city ? (
-              <button onClick={retryGps} className="flex items-center gap-1 text-xs text-slate-400 hover:text-orange-400 transition-colors px-2 py-1 rounded-lg bg-white/5 border border-white/5" title="Reintentar GPS">
+              <button onClick={requestPreciseLocation} className="flex items-center gap-1 text-xs text-slate-400 hover:text-orange-400 transition-colors px-2 py-1 rounded-lg bg-white/5 border border-white/5" title={locationTitle}>
                 <MapPin size={12} className="text-orange-400" />
                 <span className="max-w-[120px] truncate">{city}</span>
+                {isApproximateLocation && <span className="text-[10px] text-amber-300">Aprox.</span>}
               </button>
-            ) : gpsError ? (
-              <button onClick={retryGps} className="flex items-center gap-1 text-xs text-slate-500 hover:text-orange-400 transition-colors px-2 py-1 rounded-lg bg-white/5 border border-white/5">
+            ) : locationError ? (
+              <button onClick={requestPreciseLocation} className="flex items-center gap-1 text-xs text-slate-500 hover:text-orange-400 transition-colors px-2 py-1 rounded-lg bg-white/5 border border-white/5">
                 <MapPin size={12} />
-                <span>Activar GPS</span>
+                <span>Usar ubicación exacta</span>
               </button>
             ) : null}
           </div>
 
           <div className="hidden lg:flex items-center gap-3">
             {/* City indicator — PC */}
-            {gpsLoading ? (
+            {locationLoading ? (
               <div className="flex items-center gap-1.5 text-sm text-slate-500">
                 <Loader2 size={14} className="animate-spin" />
                 <span>Detectando...</span>
               </div>
             ) : city ? (
-              <button onClick={retryGps} className="flex items-center gap-1.5 text-sm text-slate-300 hover:text-orange-400 transition-colors px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:border-orange-500/20" title="Reintentar GPS">
-                <MapPin size={14} className="text-orange-400" />
-                {city}{state ? `, ${state}` : ''}
-              </button>
-            ) : gpsError ? (
-              <button onClick={retryGps} className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-orange-400 transition-colors px-3 py-1.5 rounded-lg bg-white/5 border border-white/10">
+              <div className="flex items-center gap-2">
+                <button onClick={requestPreciseLocation} className="flex items-center gap-1.5 text-sm text-slate-300 hover:text-orange-400 transition-colors px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:border-orange-500/20" title={locationTitle}>
+                  <MapPin size={14} className="text-orange-400" />
+                  {city}{state ? `, ${state}` : ''}
+                  {isApproximateLocation && (
+                    <span className="text-[11px] text-amber-300 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded-full">
+                      Ubicación aproximada
+                    </span>
+                  )}
+                </button>
+                {isApproximateLocation && (
+                  <button
+                    onClick={requestPreciseLocation}
+                    className="text-xs text-orange-300 hover:text-orange-200 transition-colors px-2.5 py-1.5 rounded-lg bg-orange-500/10 border border-orange-500/20"
+                  >
+                    Usar ubicación exacta
+                  </button>
+                )}
+              </div>
+            ) : locationError ? (
+              <button onClick={requestPreciseLocation} className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-orange-400 transition-colors px-3 py-1.5 rounded-lg bg-white/5 border border-white/10">
                 <MapPin size={14} />
-                Activar GPS
+                Usar ubicación exacta
               </button>
             ) : null}
             {hasOrders && (

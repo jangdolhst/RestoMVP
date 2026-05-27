@@ -1,12 +1,20 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
-const CACHE_KEY = 'jf_user_location';
+export const LOCATION_CACHE_KEY = 'jf_user_location_v2';
 const GPS_CACHE_DURATION = 60 * 60 * 1000; // 1 hora
 const IP_CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
 
+const EMPTY_LOCATION = {
+  city: null,
+  state: null,
+  country: null,
+  lat: null,
+  lng: null,
+};
+
 /**
- * Calcula distancia entre dos puntos GPS usando fórmula de Haversine.
- * @returns Distancia en kilómetros
+ * Calcula distancia entre dos puntos GPS usando formula de Haversine.
+ * @returns Distancia en kilometros
  */
 export const haversineDistance = (lat1, lng1, lat2, lng2) => {
   const R = 6371; // Radio de la Tierra en km
@@ -21,180 +29,230 @@ export const haversineDistance = (lat1, lng1, lat2, lng2) => {
   return R * c;
 };
 
+const isFiniteCoordinate = (value) => Number.isFinite(Number(value));
+
+const toLocationState = (locationData) => ({
+  city: locationData.city,
+  state: locationData.state || '',
+  country: locationData.country || null,
+  lat: locationData.lat,
+  lng: locationData.lng,
+});
+
+export const getUsableCachedLocation = (rawCache, now = Date.now()) => {
+  if (!rawCache) return null;
+
+  try {
+    const cached = JSON.parse(rawCache);
+    const isKnownSource = cached.source === 'gps' || cached.source === 'ip';
+    const hasRequiredData =
+      cached.city &&
+      cached.timestamp &&
+      isFiniteCoordinate(cached.lat) &&
+      isFiniteCoordinate(cached.lng) &&
+      isKnownSource;
+
+    if (!hasRequiredData) return null;
+
+    const cacheTtl = cached.source === 'ip' ? IP_CACHE_DURATION : GPS_CACHE_DURATION;
+    if (now - cached.timestamp >= cacheTtl) return null;
+
+    return {
+      city: cached.city,
+      state: cached.state || '',
+      country: cached.country || null,
+      lat: Number(cached.lat),
+      lng: Number(cached.lng),
+      source: cached.source,
+      timestamp: cached.timestamp,
+    };
+  } catch {
+    return null;
+  }
+};
+
+const readCachedLocation = () => {
+  try {
+    return getUsableCachedLocation(localStorage.getItem(LOCATION_CACHE_KEY));
+  } catch {
+    return null;
+  }
+};
+
+const saveCachedLocation = (locationData) => {
+  try {
+    localStorage.setItem(LOCATION_CACHE_KEY, JSON.stringify(locationData));
+  } catch {
+    // Storage puede fallar en modo privado o por cuota; la ubicacion actual sigue siendo usable.
+  }
+};
+
 /**
- * Obtiene la ubicación aproximada via Vercel Geo Headers (IP-based).
- * Solo funciona en producción. En local devuelve null.
+ * Obtiene la ubicacion aproximada via Vercel Geo Headers (IP-based).
+ * Solo funciona en produccion/preview. En local devuelve null.
  */
 const fetchIpGeo = async () => {
   try {
     const res = await fetch('/api/geo');
     if (!res.ok) return null;
     const data = await res.json();
-    if (!data.latitude || !data.longitude) return null;
+    if (!isFiniteCoordinate(data.latitude) || !isFiniteCoordinate(data.longitude)) return null;
     return data;
   } catch {
     return null;
   }
 };
 
-const getGeolocationPermissionState = async () => {
-  if (!navigator.permissions?.query) return null;
-  try {
-    const result = await navigator.permissions.query({ name: 'geolocation' });
-    return result.state; // 'granted' | 'denied' | 'prompt'
-  } catch {
-    return null;
-  }
+const reverseGeocode = async (latitude, longitude) => {
+  const response = await fetch(
+    `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=es`,
+    { headers: { 'User-Agent': 'JammFree/1.0' } }
+  );
+  const data = await response.json();
+
+  return {
+    city:
+      data.address?.city ||
+      data.address?.town ||
+      data.address?.village ||
+      data.address?.municipality ||
+      data.address?.county ||
+      'Tu ubicacion',
+    state: data.address?.state || '',
+    country: data.address?.country_code?.toUpperCase() || null,
+  };
 };
 
+const getBrowserPosition = () =>
+  new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(resolve, reject, {
+      enableHighAccuracy: false,
+      timeout: 10000,
+      maximumAge: 300000,
+    });
+  });
+
 /**
- * useCityDetection — Hook que detecta la ciudad del usuario.
- * 
- * Estrategia de detección (waterfall):
- *   1. Cache local (localStorage, 1 hora)
- *   2. GPS del navegador + Nominatim reverse geocoding
- *   3. Fallback: Vercel Geo Headers (IP-based, via /api/geo)
+ * useCityDetection - Hook que detecta la ubicacion del usuario.
  *
- * Retorna: { city, state, country, lat, lng, isLoading, error, source, retry }
- *   - source: 'cache' | 'gps' | 'ip' | null
+ * Estrategia:
+ *   1. Carga cache fresca (GPS o IP) si existe.
+ *   2. Si no hay cache, consulta /api/geo sin pedir permisos.
+ *   3. Solo pide GPS cuando el usuario ejecuta requestPreciseLocation().
+ *
+ * Retorna: { city, state, country, lat, lng, isLoading, error, source, retry,
+ *            requestPreciseLocation, refreshApproximateLocation }
+ *   - source: 'gps' | 'ip' | null
  */
 const useCityDetection = () => {
-  const [location, setLocation] = useState({
-    city: null,
-    state: null,
-    country: null,
-    lat: null,
-    lng: null,
-  });
+  const [location, setLocation] = useState(EMPTY_LOCATION);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [source, setSource] = useState(null);
 
-  const detectCity = useCallback(async ({ forceRefresh = false } = {}) => {
+  const applyLocation = useCallback((locationData) => {
+    setLocation(toLocationState(locationData));
+    setSource(locationData.source);
+  }, []);
+
+  const refreshApproximateLocation = useCallback(async ({ forceRefresh = false } = {}) => {
     setIsLoading(true);
     setError(null);
 
-    const permissionState = await getGeolocationPermissionState();
-
-    // --- PASO 1: Verificar cache ---
     if (!forceRefresh) {
-      try {
-        const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
-        const isGpsCache = cached.source === 'gps';
-        const isIpCache = cached.source === 'ip';
-        const cacheTtl = isIpCache ? IP_CACHE_DURATION : GPS_CACHE_DURATION;
-        const isFresh = cached.city && cached.timestamp && Date.now() - cached.timestamp < cacheTtl;
-        const shouldBypassIpCache = isIpCache && permissionState === 'granted';
-
-        if (isFresh && !shouldBypassIpCache) {
-          setLocation({
-            city: cached.city,
-            state: cached.state,
-            country: cached.country || null,
-            lat: cached.lat,
-            lng: cached.lng,
-          });
-          setSource(isGpsCache || isIpCache ? cached.source : 'cache');
-          setIsLoading(false);
-          return;
-        }
-      } catch {
-        // Cache corrupto, continuar
-      }
-    }
-
-    // --- PASO 2: Intentar GPS ---
-    if (navigator.geolocation) {
-      try {
-        const position = await new Promise((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
-            enableHighAccuracy: false,
-            timeout: 10000,
-            maximumAge: 300000, // Cache GPS por 5 min
-          });
-        });
-
-        const { latitude, longitude } = position.coords;
-
-        // Reverse geocoding con Nominatim
-        try {
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=es`,
-            { headers: { 'User-Agent': 'JammFree/1.0' } }
-          );
-          const data = await response.json();
-
-          const city =
-            data.address?.city ||
-            data.address?.town ||
-            data.address?.village ||
-            data.address?.municipality ||
-            data.address?.county ||
-            'Tu ubicación';
-          const state = data.address?.state || '';
-          const country = data.address?.country_code?.toUpperCase() || null;
-
-          const locationData = { city, state, country, lat: latitude, lng: longitude, source: 'gps', timestamp: Date.now() };
-          localStorage.setItem(CACHE_KEY, JSON.stringify(locationData));
-          setLocation({ city, state, country, lat: latitude, lng: longitude });
-          setSource('gps');
-        } catch {
-          // Nominatim falló, pero tenemos GPS
-          const locationData = { city: 'Tu ubicación', state: '', country: null, lat: latitude, lng: longitude, source: 'gps', timestamp: Date.now() };
-          localStorage.setItem(CACHE_KEY, JSON.stringify(locationData));
-          setLocation({ city: 'Tu ubicación', state: '', country: null, lat: latitude, lng: longitude });
-          setSource('gps');
-        }
-
+      const cached = readCachedLocation();
+      if (cached) {
+        applyLocation(cached);
         setIsLoading(false);
-        return; // GPS exitoso, no necesitamos fallback
-      } catch (geoError) {
-        // GPS denegado o falló — continuamos al fallback
-        if (geoError.code === 1) {
-          setError('GPS denegado — usando ubicación aproximada');
-        }
+        return cached;
       }
     }
 
-    // --- PASO 3: Fallback con IP Geolocation (Vercel Geo Headers) ---
     const ipGeo = await fetchIpGeo();
     if (ipGeo) {
       const locationData = {
         city: ipGeo.city || 'Tu zona',
         state: ipGeo.countryRegion || '',
         country: ipGeo.country || null,
-        lat: ipGeo.latitude,
-        lng: ipGeo.longitude,
+        lat: Number(ipGeo.latitude),
+        lng: Number(ipGeo.longitude),
         source: 'ip',
         timestamp: Date.now(),
       };
-      localStorage.setItem(CACHE_KEY, JSON.stringify(locationData));
-      setLocation({
-        city: locationData.city,
-        state: locationData.state,
-        country: locationData.country,
-        lat: locationData.lat,
-        lng: locationData.lng,
-      });
-      setSource('ip');
-      setError(null); // Limpiar error de GPS ya que tenemos ubicación por IP
-    } else {
-      // Ni GPS ni IP funcionaron
-      setError('No se pudo determinar tu ubicación');
+      saveCachedLocation(locationData);
+      applyLocation(locationData);
+      setIsLoading(false);
+      return locationData;
     }
 
+    setLocation(EMPTY_LOCATION);
+    setSource(null);
+    setError('No se pudo determinar tu ubicacion aproximada');
     setIsLoading(false);
-  }, []);
+    return null;
+  }, [applyLocation]);
+
+  const requestPreciseLocation = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+
+    if (!navigator.geolocation) {
+      setError('Tu navegador no soporta GPS');
+      setIsLoading(false);
+      return null;
+    }
+
+    try {
+      const position = await getBrowserPosition();
+      const { latitude, longitude } = position.coords;
+      let place = { city: 'Tu ubicacion', state: '', country: null };
+
+      try {
+        place = await reverseGeocode(latitude, longitude);
+      } catch {
+        // Si Nominatim falla, las coordenadas GPS siguen siendo precisas y utiles.
+      }
+
+      const locationData = {
+        ...place,
+        lat: latitude,
+        lng: longitude,
+        source: 'gps',
+        timestamp: Date.now(),
+      };
+      saveCachedLocation(locationData);
+      applyLocation(locationData);
+      setIsLoading(false);
+      return locationData;
+    } catch (geoError) {
+      setError(
+        geoError?.code === 1
+          ? 'GPS denegado. Seguimos usando ubicacion aproximada.'
+          : 'No se pudo obtener tu ubicacion exacta.'
+      );
+      setIsLoading(false);
+      return null;
+    }
+  }, [applyLocation]);
 
   useEffect(() => {
-    detectCity();
-  }, [detectCity]);
+    refreshApproximateLocation();
+  }, [refreshApproximateLocation]);
 
-  const retry = useCallback(() => {
-    detectCity({ forceRefresh: true });
-  }, [detectCity]);
+  const retry = useCallback(
+    () => refreshApproximateLocation({ forceRefresh: true }),
+    [refreshApproximateLocation]
+  );
 
-  return { ...location, isLoading, error, source, retry };
+  return {
+    ...location,
+    isLoading,
+    error,
+    source,
+    retry,
+    requestPreciseLocation,
+    refreshApproximateLocation: retry,
+  };
 };
 
 export default useCityDetection;

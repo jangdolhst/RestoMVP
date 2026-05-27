@@ -1,14 +1,11 @@
 /**
- * Vercel Edge Function — Geolocalización por IP.
- * Lee los headers automáticos de Vercel (x-vercel-ip-*) y devuelve
- * país, ciudad y coordenadas aproximadas del visitante.
- * 
- * 100% gratis, sin límites, sin API key.
- * Solo funciona en producción (Vercel). En local devuelve nulls.
+ * Vercel Function - Geolocalizacion por IP.
+ * Lee los headers automaticos de Vercel (x-vercel-ip-*) y devuelve
+ * pais, ciudad y coordenadas aproximadas del visitante.
+ *
+ * Solo funciona en produccion/preview de Vercel. En local devuelve nulls.
  */
-export const config = { runtime: 'edge' };
-
-export default function handler(request) {
+export function GET(request) {
   const country = request.headers.get('x-vercel-ip-country') || null;
   const countryRegion = request.headers.get('x-vercel-ip-country-region') || null;
   const city = request.headers.get('x-vercel-ip-city') || null;
