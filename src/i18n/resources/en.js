@@ -62,6 +62,16 @@ const en = {
     qrTitle: 'Your Digital Menu',
     qrDescription: 'Scan this QR to view the menu and order.',
   },
+  location: {
+    fallbackApproximate: 'Your area',
+    fallbackPrecise: 'Your location',
+    errors: {
+      approximateUnavailable: 'Could not determine your approximate location',
+      gpsUnsupported: 'Your browser does not support GPS',
+      gpsDenied: 'GPS denied. We will keep using approximate location.',
+      preciseUnavailable: 'Could not get your exact location.',
+    },
+  },
   marketplace: {
     hero: {
       badge: 'Discover the best restaurants',

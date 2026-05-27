@@ -13,6 +13,8 @@ const criticalKeys = [
   'marketplace.hero.badge',
   'marketplace.hero.titlePrefix',
   'marketplace.actions.usePreciseLocation',
+  'location.errors.approximateUnavailable',
+  'location.errors.gpsDenied',
   'navigation.orders',
   'auth.login',
   'orders.title',

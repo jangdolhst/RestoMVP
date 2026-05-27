@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import i18n from '../i18n/index.js';
 
 export const LOCATION_CACHE_KEY = 'jf_user_location_v2';
 const GPS_CACHE_DURATION = 60 * 60 * 1000; // 1 hora
@@ -117,7 +118,7 @@ const reverseGeocode = async (latitude, longitude) => {
       data.address?.village ||
       data.address?.municipality ||
       data.address?.county ||
-      'Tu ubicacion',
+      i18n.t('location.fallbackPrecise'),
     state: data.address?.state || '',
     country: data.address?.country_code?.toUpperCase() || null,
   };
@@ -171,7 +172,7 @@ const useCityDetection = () => {
     const ipGeo = await fetchIpGeo();
     if (ipGeo) {
       const locationData = {
-        city: ipGeo.city || 'Tu zona',
+        city: ipGeo.city || i18n.t('location.fallbackApproximate'),
         state: ipGeo.countryRegion || '',
         country: ipGeo.country || null,
         lat: Number(ipGeo.latitude),
@@ -187,7 +188,7 @@ const useCityDetection = () => {
 
     setLocation(EMPTY_LOCATION);
     setSource(null);
-    setError('No se pudo determinar tu ubicacion aproximada');
+    setError(i18n.t('location.errors.approximateUnavailable'));
     setIsLoading(false);
     return null;
   }, [applyLocation]);
@@ -197,7 +198,7 @@ const useCityDetection = () => {
     setError(null);
 
     if (!navigator.geolocation) {
-      setError('Tu navegador no soporta GPS');
+      setError(i18n.t('location.errors.gpsUnsupported'));
       setIsLoading(false);
       return null;
     }
@@ -205,7 +206,7 @@ const useCityDetection = () => {
     try {
       const position = await getBrowserPosition();
       const { latitude, longitude } = position.coords;
-      let place = { city: 'Tu ubicacion', state: '', country: null };
+      let place = { city: i18n.t('location.fallbackPrecise'), state: '', country: null };
 
       try {
         place = await reverseGeocode(latitude, longitude);
@@ -227,8 +228,8 @@ const useCityDetection = () => {
     } catch (geoError) {
       setError(
         geoError?.code === 1
-          ? 'GPS denegado. Seguimos usando ubicacion aproximada.'
-          : 'No se pudo obtener tu ubicacion exacta.'
+          ? i18n.t('location.errors.gpsDenied')
+          : i18n.t('location.errors.preciseUnavailable')
       );
       setIsLoading(false);
       return null;
