@@ -144,19 +144,35 @@ const en = {
     authError: 'Authentication error',
   },
   billing: {
-    trialEnded: 'Trial Ended',
-    inactive: 'Inactive Subscription',
-    description: 'To keep using Jamm Free and access your control panel, please activate your subscription.',
+    trialEnded: 'Pro Plan Ended',
+    inactive: 'Inactive Pro Plan',
+    description: 'Orders, menu management, and kitchen flow are free. Activate Pro for tickets, fiscal data, and financial tools.',
     plan: 'Pro Plan',
     perMonth: '/month',
     features: {
-      pos: 'Full POS access',
-      kitchen: 'Real-time kitchen screen',
-      qr: 'Digital QR menu for your customers',
+      pos: 'Ticket and receipt printing',
+      kitchen: 'Fiscal data and tax breakdowns',
+      qr: 'Financial calendar and history',
     },
     subscribe: 'Subscribe Now',
     refreshPayment: 'I already paid / Refresh status',
     logout: 'Log Out',
+  },
+  premium: {
+    badge: 'PRO',
+    lockedTitle: 'Pro Feature',
+    lockedDescription: 'This tool is part of the Pro plan. Orders and menu management remain free.',
+    upgradeCta: 'Upgrade to Pro',
+    features: {
+      paymentHistory: {
+        title: 'Financial history and tickets',
+        description: 'Review orders by date, mark payments, and print tickets with the Pro plan.',
+      },
+      fiscalData: {
+        title: 'Fiscal data and taxes',
+        description: 'Configure fiscal data and tax breakdowns for professional tickets.',
+      },
+    },
   },
   client: {
     backToDirectory: 'Back to directory',

@@ -1,9 +1,9 @@
 import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
 import { Loader2 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 const ProtectedRoute = () => {
-  const { user, subscriptionData, isLoading } = useAuth();
+  const { user, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -13,20 +13,8 @@ const ProtectedRoute = () => {
     );
   }
 
-  // Si no hay usuario, redirigir al login
   if (!user) {
     return <Navigate to="/login" replace />;
-  }
-
-  // Verificar suscripción activa o en prueba
-  // Si subscriptionData es null (error de red, fila eliminada), denegar acceso
-  const subStatus = subscriptionData?.status;
-  const periodEnd = subscriptionData?.current_period_end ? new Date(subscriptionData.current_period_end) : new Date(0);
-  const isPeriodValid = periodEnd > new Date();
-
-  // Permitimos si el estado es explícitamente activo/prueba OR si la fecha de expiración aún no llega
-  if (subStatus !== 'active' && subStatus !== 'trialing' && !isPeriodValid) {
-    return <Navigate to="/billing" replace />;
   }
 
   return <Outlet />;

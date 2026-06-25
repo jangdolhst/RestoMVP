@@ -144,19 +144,35 @@ const es = {
     authError: 'Error al autenticar',
   },
   billing: {
-    trialEnded: 'Prueba Finalizada',
-    inactive: 'Suscripción Inactiva',
-    description: 'Para continuar utilizando Jamm Free y acceder a tu panel de control, por favor activa tu suscripción.',
+    trialEnded: 'Plan Pro Finalizado',
+    inactive: 'Plan Pro Inactivo',
+    description: 'Los pedidos, menú y cocina son gratis. Activa Pro para tickets, fiscal y herramientas financieras.',
     plan: 'Plan Pro',
     perMonth: '/mes',
     features: {
-      pos: 'Acceso completo al POS',
-      kitchen: 'Pantalla de Cocina en tiempo real',
-      qr: 'Menú QR digital para tus clientes',
+      pos: 'Impresión de tickets y recibos',
+      kitchen: 'Datos fiscales e impuestos',
+      qr: 'Calendario e historial financiero',
     },
     subscribe: 'Suscribirse Ahora',
     refreshPayment: 'Ya pagué / Actualizar estado',
     logout: 'Cerrar Sesión',
+  },
+  premium: {
+    badge: 'PRO',
+    lockedTitle: 'Función Pro',
+    lockedDescription: 'Esta herramienta es parte del plan Pro. Los pedidos y el menú siguen siendo gratis.',
+    upgradeCta: 'Mejorar a Pro',
+    features: {
+      paymentHistory: {
+        title: 'Historial financiero y tickets',
+        description: 'Consulta órdenes por fecha, marca cobros e imprime tickets desde el plan Pro.',
+      },
+      fiscalData: {
+        title: 'Datos fiscales e impuestos',
+        description: 'Configura datos fiscales y desglose de impuestos para tickets profesionales.',
+      },
+    },
   },
   client: {
     backToDirectory: 'Volver al directorio',

@@ -5,6 +5,8 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import PhoneInput from '../components/ui/PhoneInput';
 import AddressMapPreview from '../components/ui/AddressMapPreview';
+import FeatureGate from '../components/billing/FeatureGate';
+import { PREMIUM_FEATURES, hasFeature } from '../lib/features';
 
 const WEEK_DAYS = [
   { id: 'monday', label: 'L' },
@@ -137,8 +139,9 @@ const WaitersSection = ({ waiters = [], onChange }) => {
 };
 
 const SettingsPage = () => {
-  const { user } = useAuth();
+  const { user, subscriptionData } = useAuth();
   const { t } = useTranslation();
+  const canUseFiscalData = hasFeature(subscriptionData, PREMIUM_FEATURES.fiscalData);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null); // 'success' | 'error' | null
@@ -418,30 +421,58 @@ const SettingsPage = () => {
     setSaveStatus(null);
 
     try {
+      const profilePayload = {
+        id: user.id,
+        name: profile.name.trim(),
+        description: profile.description.trim(),
+        logo_url: profile.logo_url,
+        banner_url: profile.banner_url,
+        address: profile.address.trim(),
+        phone: profile.phone.trim(),
+        categories: profile.categories,
+        is_active: profile.is_active,
+        latitude: profile.latitude,
+        longitude: profile.longitude,
+        table_count: profile.table_count,
+        waiters: profile.waiters,
+        business_hours: profile.business_hours,
+        updated_at: new Date().toISOString(),
+      };
+
       const { error } = await supabase
         .from('restaurant_profiles')
-        .upsert({
-          id: user.id,
-          name: profile.name.trim(),
-          description: profile.description.trim(),
-          logo_url: profile.logo_url,
-          banner_url: profile.banner_url,
-          address: profile.address.trim(),
-          phone: profile.phone.trim(),
-          categories: profile.categories,
-          is_active: profile.is_active,
-          latitude: profile.latitude,
-          longitude: profile.longitude,
-          table_count: profile.table_count,
-          waiters: profile.waiters,
-          fiscal_number: profile.fiscal_number.trim(),
-          tax_included: profile.tax_included,
-          tax_rate: profile.tax_rate,
-          business_hours: profile.business_hours,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'id' });
+        .upsert(profilePayload, { onConflict: 'id' });
 
       if (error) throw error;
+
+      if (canUseFiscalData) {
+        const fiscalPayload = {
+          p_fiscal_number: profile.fiscal_number.trim(),
+          p_tax_included: profile.tax_included,
+          p_tax_rate: profile.tax_rate,
+        };
+        const { error: fiscalError } = await supabase.rpc('update_restaurant_fiscal_settings', fiscalPayload);
+
+        if (fiscalError) {
+          const isMissingRpc = fiscalError.code === 'PGRST202'
+            || /function|schema cache|Could not find/i.test(fiscalError.message || '');
+
+          if (!isMissingRpc) throw fiscalError;
+
+          // Backward-compatible fallback while the DB hardening migration is pending.
+          const { error: fallbackError } = await supabase
+            .from('restaurant_profiles')
+            .update({
+              fiscal_number: fiscalPayload.p_fiscal_number,
+              tax_included: fiscalPayload.p_tax_included,
+              tax_rate: fiscalPayload.p_tax_rate,
+            })
+            .eq('id', user.id);
+
+          if (fallbackError) throw fallbackError;
+        }
+      }
+
       setSaveStatus('success');
       setTimeout(() => setSaveStatus(null), 3000);
     } catch (err) {
@@ -714,73 +745,79 @@ const SettingsPage = () => {
         {/* Meseros */}
         <WaitersSection waiters={profile.waiters} onChange={(w) => handleChange('waiters', w)} />
 
-        {/* Datos Fiscales */}
-        <div className="glass-panel p-5 space-y-4">
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <Receipt size={20} className="text-orange-400" />
-            {t('settings.fiscalData')}
-          </h2>
-          <p className="text-xs text-slate-400">{t('settings.fiscalHelp')}</p>
+        <FeatureGate
+          feature={PREMIUM_FEATURES.fiscalData}
+          title={t('premium.features.fiscalData.title')}
+          description={t('premium.features.fiscalData.description')}
+        >
+          {/* Datos Fiscales */}
+          <div className="glass-panel p-5 space-y-4">
+            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              <Receipt size={20} className="text-orange-400" />
+              {t('settings.fiscalData')}
+            </h2>
+            <p className="text-xs text-slate-400">{t('settings.fiscalHelp')}</p>
 
-          <div>
-            <label htmlFor="settings-fiscal" className="text-sm text-slate-300 font-medium mb-1 block">
-              {t('settings.fiscalNumber')}
-            </label>
-            <input
-              id="settings-fiscal"
-              type="text"
-              value={profile.fiscal_number}
-              onChange={(e) => handleChange('fiscal_number', e.target.value.toUpperCase())}
-              placeholder={t('settings.fiscalPlaceholder')}
-              className="glass-input w-full"
-              maxLength={20}
-            />
-          </div>
-
-          <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10">
             <div>
-              <h3 className="text-sm font-semibold text-white">{t('settings.taxBreakdown')}</h3>
-              <p className="text-xs text-slate-400 mt-0.5">{t('settings.taxHelp')}</p>
-            </div>
-            <button
-              onClick={() => handleChange('tax_included', !profile.tax_included)}
-              className={`relative w-12 h-6 rounded-full transition-colors duration-300 ${
-                profile.tax_included ? 'bg-emerald-500' : 'bg-white/10'
-              }`}
-              aria-label={t('settings.toggleTaxes')}
-            >
-              <span
-                className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 ${
-                  profile.tax_included ? 'translate-x-6' : 'translate-x-0'
-                }`}
-              />
-            </button>
-          </div>
-
-          {profile.tax_included && (
-            <div className="animate-fade-in">
-              <label htmlFor="settings-tax-rate" className="text-sm text-slate-300 font-medium mb-1 block">
-                {t('settings.taxPercent')}
+              <label htmlFor="settings-fiscal" className="text-sm text-slate-300 font-medium mb-1 block">
+                {t('settings.fiscalNumber')}
               </label>
               <input
-                id="settings-tax-rate"
-                type="number"
-                min="0"
-                max="30"
-                step="0.5"
-                value={profile.tax_rate}
-                onChange={(e) => handleChange('tax_rate', Math.max(0, Math.min(30, parseFloat(e.target.value) || 0)))}
-                className="glass-input w-32 py-2 text-center text-lg font-bold"
-                placeholder="16"
+                id="settings-fiscal"
+                type="text"
+                value={profile.fiscal_number}
+                onChange={(e) => handleChange('fiscal_number', e.target.value.toUpperCase())}
+                placeholder={t('settings.fiscalPlaceholder')}
+                className="glass-input w-full"
+                maxLength={20}
               />
-              <p className="text-xs text-slate-500 mt-1">
-                {profile.tax_rate > 0
-                  ? t('settings.taxIncluded', { rate: profile.tax_rate })
-                  : t('settings.taxPrompt')}
-              </p>
             </div>
-          )}
-        </div>
+
+            <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10">
+              <div>
+                <h3 className="text-sm font-semibold text-white">{t('settings.taxBreakdown')}</h3>
+                <p className="text-xs text-slate-400 mt-0.5">{t('settings.taxHelp')}</p>
+              </div>
+              <button
+                onClick={() => handleChange('tax_included', !profile.tax_included)}
+                className={`relative w-12 h-6 rounded-full transition-colors duration-300 ${
+                  profile.tax_included ? 'bg-emerald-500' : 'bg-white/10'
+                }`}
+                aria-label={t('settings.toggleTaxes')}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 ${
+                    profile.tax_included ? 'translate-x-6' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+
+            {profile.tax_included && (
+              <div className="animate-fade-in">
+                <label htmlFor="settings-tax-rate" className="text-sm text-slate-300 font-medium mb-1 block">
+                  {t('settings.taxPercent')}
+                </label>
+                <input
+                  id="settings-tax-rate"
+                  type="number"
+                  min="0"
+                  max="30"
+                  step="0.5"
+                  value={profile.tax_rate}
+                  onChange={(e) => handleChange('tax_rate', Math.max(0, Math.min(30, parseFloat(e.target.value) || 0)))}
+                  className="glass-input w-32 py-2 text-center text-lg font-bold"
+                  placeholder="16"
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  {profile.tax_rate > 0
+                    ? t('settings.taxIncluded', { rate: profile.tax_rate })
+                    : t('settings.taxPrompt')}
+                </p>
+              </div>
+            )}
+          </div>
+        </FeatureGate>
 
         {/* Horario de Operación */}
         <div className="glass-panel p-5 space-y-4">

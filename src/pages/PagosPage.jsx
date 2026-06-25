@@ -5,6 +5,8 @@ import { DollarSign, Search, CheckCircle, Receipt, Bell, XCircle, Clock, Phone }
 import OrderCalendar from '../components/ui/OrderCalendar';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import FeatureGate from '../components/billing/FeatureGate';
+import { PREMIUM_FEATURES } from '../lib/features';
 
 const PagosPage = () => {
   const { orders, updateOrderStatus, restaurantProfile } = usePOS();
@@ -112,8 +114,8 @@ const PagosPage = () => {
 
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      const matchClient = o.clientName.toLowerCase().includes(term);
-      const matchTable = o.tableName.toLowerCase().includes(term);
+      const matchClient = (o.clientName || '').toLowerCase().includes(term);
+      const matchTable = (o.tableName || '').toLowerCase().includes(term);
       if (!matchClient && !matchTable) return false;
     }
 
@@ -204,43 +206,48 @@ const PagosPage = () => {
         </div>
       )}
 
-      {/* ─── Sección: Historial de Órdenes ──────────────────────── */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-        <h1 className="text-3xl font-bold text-white tracking-tight">{t('payments.title')}</h1>
-        
-        <div className="flex items-center gap-4 w-full md:w-auto">
-          <OrderCalendar
-            value={filterDate}
-            onChange={setFilterDate}
-            tenantId={user?.id}
-          />
+      <FeatureGate
+        feature={PREMIUM_FEATURES.paymentHistory}
+        title={t('premium.features.paymentHistory.title')}
+        description={t('premium.features.paymentHistory.description')}
+      >
+        {/* ─── Sección: Historial de Órdenes ──────────────────────── */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+          <h1 className="text-3xl font-bold text-white tracking-tight">{t('payments.title')}</h1>
 
-          <div className="relative flex-1 md:w-64">
-            <input 
-              type="text" 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder={t('payments.searchPlaceholder')}
-              className="glass-input w-full pl-10"
+          <div className="flex items-center gap-4 w-full md:w-auto">
+            <OrderCalendar
+              value={filterDate}
+              onChange={setFilterDate}
+              tenantId={user?.id}
             />
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+
+            <div className="relative flex-1 md:w-64">
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder={t('payments.searchPlaceholder')}
+                className="glass-input w-full pl-10"
+              />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            </div>
           </div>
         </div>
-      </div>
 
-      {filteredOrders.length === 0 ? (
-        <div className="glass-panel p-10 text-center flex flex-col items-center justify-center">
-          <DollarSign size={48} className="text-slate-500 mb-4" />
-          <h2 className="text-xl text-slate-300 font-medium">{t('payments.emptyTitle')}</h2>
-          <p className="text-slate-500">{t('payments.emptyDescription')}</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredOrders.map(order => {
-            const isPagado = order.status === 'pagado';
-            
-            return (
-              <div key={order.id} className={`glass-card p-5 flex flex-col h-full border-t-4 transition-all duration-300 ${isPagado ? 'border-t-emerald-500 opacity-80 hover:opacity-100' : 'border-t-orange-500'}`}>
+        {filteredOrders.length === 0 ? (
+          <div className="glass-panel p-10 text-center flex flex-col items-center justify-center">
+            <DollarSign size={48} className="text-slate-500 mb-4" />
+            <h2 className="text-xl text-slate-300 font-medium">{t('payments.emptyTitle')}</h2>
+            <p className="text-slate-500">{t('payments.emptyDescription')}</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredOrders.map(order => {
+              const isPagado = order.status === 'pagado';
+
+              return (
+                <div key={order.id} className={`glass-card p-5 flex flex-col h-full border-t-4 transition-all duration-300 ${isPagado ? 'border-t-emerald-500 opacity-80 hover:opacity-100' : 'border-t-orange-500'}`}>
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <h3 className="text-lg font-bold text-white flex items-center gap-2">
@@ -332,6 +339,7 @@ const PagosPage = () => {
           })}
         </div>
       )}
+      </FeatureGate>
     </div>
   );
 };

@@ -22,6 +22,9 @@ const criticalKeys = [
   'navigation.orders',
   'auth.login',
   'orders.title',
+  'premium.badge',
+  'premium.features.paymentHistory.title',
+  'premium.features.fiscalData.title',
 ];
 
 const getPath = (object, path) =>
