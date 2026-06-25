@@ -4,6 +4,7 @@ export const FREE_FEATURES = {
   kitchen: 'kitchen',
   menuManagement: 'menuManagement',
   basicSettings: 'basicSettings',
+  paymentStatus: 'paymentStatus',
 };
 
 export const PREMIUM_FEATURES = {
@@ -12,7 +13,6 @@ export const PREMIUM_FEATURES = {
   taxBreakdown: 'taxBreakdown',
   financialCalendar: 'financialCalendar',
   paymentHistory: 'paymentHistory',
-  paymentStatus: 'paymentStatus',
 };
 
 const FREE_FEATURE_SET = new Set(Object.values(FREE_FEATURES));

@@ -22,6 +22,8 @@ const criticalKeys = [
   'navigation.orders',
   'auth.login',
   'orders.title',
+  'payments.activeTitle',
+  'payments.activeEmptyTitle',
   'premium.badge',
   'premium.features.paymentHistory.title',
   'premium.features.fiscalData.title',

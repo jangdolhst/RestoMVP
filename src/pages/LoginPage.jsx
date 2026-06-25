@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
@@ -14,8 +14,14 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { t } = useTranslation();
   
-  const { login, register } = useAuth();
+  const { user, isLoading: isAuthLoading, login, register } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isAuthLoading && user) {
+      navigate('/pos', { replace: true });
+    }
+  }, [isAuthLoading, navigate, user]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,11 +29,13 @@ const LoginPage = () => {
     setIsLoading(true);
 
     try {
+      const normalizedEmail = email.trim().toLowerCase();
+
       if (isLogin) {
-        await login(email, password);
+        await login(normalizedEmail, password);
         navigate('/pos'); // Redirigir al dashboard/POS tras el login exitoso
       } else {
-        await register(email, password);
+        await register(normalizedEmail, password);
         // Si el registro es exitoso y requiere confirmación, Supabase maneja eso. 
         // Si autologuea, entrará igual. Si requiere confirmación de email:
         setError(t('auth.successRegister'));

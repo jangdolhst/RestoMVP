@@ -8,22 +8,24 @@ import { useAuth } from '../context/AuthContext';
 import FeatureGate from '../components/billing/FeatureGate';
 import { PREMIUM_FEATURES } from '../lib/features';
 
+const ACTIVE_PAYMENT_STATUSES = new Set(['pendiente_cocina', 'listo']);
+
+const formatCurrency = (value) => `$${Number(value || 0).toFixed(2)}`;
+
 const PagosPage = () => {
   const { orders, updateOrderStatus, restaurantProfile } = usePOS();
   const { user } = useAuth();
   const { t } = useTranslation();
-  
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDate, setFilterDate] = useState(() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   });
 
-  // ─── Pedidos pendientes de confirmación ──────────────────────────
   const [pendingOrders, setPendingOrders] = useState([]);
   const intervalRef = useRef(null);
 
-  // Fetch pendientes de confirmación cada 10 segundos
   const fetchPendingOrders = useCallback(async () => {
     if (!user?.id) return;
     try {
@@ -44,7 +46,6 @@ const PagosPage = () => {
         const minutesElapsed = (now - createdAt) / 60000;
 
         if (minutesElapsed > 15) {
-          // Auto-cancelar órdenes viejas
           await supabase
             .from('orders')
             .update({ status: 'cancelado' })
@@ -64,7 +65,6 @@ const PagosPage = () => {
     }
   }, [user?.id]);
 
-  // Polling de datos cada 10s
   useEffect(() => {
     fetchPendingOrders();
     intervalRef.current = setInterval(fetchPendingOrders, 10000);
@@ -72,7 +72,6 @@ const PagosPage = () => {
   }, [fetchPendingOrders]);
 
   const handleConfirmOrder = async (orderId) => {
-    // Actualizar UI y sonido inmediatamente
     setPendingOrders((prev) => prev.filter((o) => o.id !== orderId));
     window.dispatchEvent(new Event('orders-updated'));
     try {
@@ -102,29 +101,136 @@ const PagosPage = () => {
     }
   };
 
-  // ─── Filtro de órdenes normales ──────────────────────────────────
-  const filteredOrders = orders.filter(o => {
-    // Excluir pendiente_confirmacion y cancelado
-    if (o.status === 'pendiente_confirmacion' || o.status === 'cancelado') return false;
+  const activeChargeOrders = orders.filter((order) => ACTIVE_PAYMENT_STATUSES.has(order.status));
 
-    const orderDate = new Date(o.createdAt);
+  const filteredHistoryOrders = orders.filter((order) => {
+    if (order.status === 'pendiente_confirmacion' || order.status === 'cancelado') return false;
+
+    const orderDate = new Date(order.createdAt);
     const orderDateStr = `${orderDate.getFullYear()}-${String(orderDate.getMonth() + 1).padStart(2, '0')}-${String(orderDate.getDate()).padStart(2, '0')}`;
-    
+
     if (filterDate && orderDateStr !== filterDate) return false;
 
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      const matchClient = (o.clientName || '').toLowerCase().includes(term);
-      const matchTable = (o.tableName || '').toLowerCase().includes(term);
+      const matchClient = (order.clientName || '').toLowerCase().includes(term);
+      const matchTable = (order.tableName || '').toLowerCase().includes(term);
       if (!matchClient && !matchTable) return false;
     }
 
     return true;
   });
 
+  const printTicket = (order) => {
+    const compactOrder = {
+      orderNumber: order.orderNumber,
+      clientName: order.clientName,
+      tableName: order.tableName,
+      type: order.type,
+      total: order.total,
+      createdAt: order.createdAt,
+      waiterName: order.waiterName,
+      restaurantProfile: restaurantProfile || null,
+      items: (order.items || []).map((item) => ({
+        product_name: item.product_name || item.name,
+        quantity: item.quantity,
+        price: item.price,
+        modifications: item.modifications,
+      })),
+    };
+    const ticketId = `order_${order.id}`;
+    const storageKey = `jf_print_order_${ticketId}`;
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(compactOrder));
+    } catch {
+      void 0;
+    }
+    window.open(
+      `/pos_ticket.html?ticket=${encodeURIComponent(ticketId)}`,
+      '_blank',
+      'width=420,height=650,noopener,noreferrer'
+    );
+  };
+
+  const renderOrderCard = (order, { allowPrint = false } = {}) => {
+    const isPagado = order.status === 'pagado';
+
+    return (
+      <div
+        key={order.id}
+        className={`glass-card p-5 flex flex-col h-full border-t-4 transition-all duration-300 ${isPagado ? 'border-t-emerald-500 opacity-80 hover:opacity-100' : 'border-t-orange-500'}`}
+      >
+        <div className="flex justify-between items-start mb-4">
+          <div>
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <span className="text-slate-400 font-normal">#{order.orderNumber}</span>
+              {order.clientName}
+              {isPagado && <Receipt size={16} className="text-emerald-400" title="Pagado" />}
+            </h3>
+            {order.phone && (
+              <p className="text-sm text-slate-400 mb-1">{order.phone}</p>
+            )}
+            <span className={`inline-flex text-sm font-medium px-2 py-0.5 rounded ${isPagado ? 'bg-emerald-500/10 text-emerald-400' : 'bg-orange-500/10 text-orange-400'}`}>
+              {order.type === 'online' ? (
+                <span className="text-blue-400 flex items-center gap-1">
+                  {t('common.states.online')}
+                </span>
+              ) : (
+                order.tableName
+              )}
+            </span>
+          </div>
+          <div className="text-right">
+            <p className="text-2xl font-bold text-emerald-400">{formatCurrency(order.total)}</p>
+            {isPagado && <span className="text-xs text-emerald-400 font-semibold uppercase tracking-wider block mt-1">{t('common.states.charged')}</span>}
+          </div>
+        </div>
+
+        <div className="flex-1 bg-black/20 rounded-lg p-3 mb-4 max-h-40 overflow-y-auto border border-white/5">
+          <ul className="space-y-2">
+            {order.items?.map((item) => (
+              <li key={item.id || item.cartId} className="text-sm flex justify-between">
+                <span className="text-slate-300">
+                  <span className="text-orange-400 mr-2">x{item.quantity}</span>
+                  {item.product_name || item.name}
+                </span>
+                <span className="text-slate-400">{formatCurrency(Number(item.price) * Number(item.quantity || 1))}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="mt-auto flex flex-col gap-2">
+          {allowPrint && (
+            <button
+              onClick={() => printTicket(order)}
+              className="w-full flex justify-center items-center gap-2 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white border border-slate-600 transition-colors font-medium text-sm"
+            >
+              🖨️ {t('common.actions.printTicket')}
+            </button>
+          )}
+
+          {isPagado ? (
+            <button disabled className="w-full flex justify-center items-center gap-2 py-2.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 cursor-not-allowed font-medium">
+              <CheckCircle size={20} />
+              {t('payments.orderPaid')}
+            </button>
+          ) : (
+            <button
+              onClick={() => updateOrderStatus(order.id, 'pagado')}
+              className="btn-success w-full flex justify-center items-center gap-2 py-2.5"
+            >
+              <CheckCircle size={20} />
+              {t('payments.markPaid')}
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="flex-1 p-6 overflow-y-auto h-[calc(100vh-100px)]">
-      {/* ─── Sección: Pedidos por Confirmar ─────────────────────── */}
       {pendingOrders.length > 0 && (
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
@@ -149,11 +255,9 @@ const PagosPage = () => {
                 className="glass-card p-4 border-l-4 border-l-amber-500 relative overflow-hidden"
                 style={{ animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}
               >
-                {/* Glow de fondo */}
                 <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 to-transparent pointer-events-none" />
 
                 <div className="relative z-10">
-                  {/* Header: código + tiempo */}
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <span className="text-2xl font-black text-amber-400 tracking-widest font-mono">
@@ -170,7 +274,6 @@ const PagosPage = () => {
                     </div>
                   </div>
 
-                  {/* Info cliente */}
                   <div className="space-y-1 mb-3">
                     <p className="text-sm text-white font-medium">{order.client_name}</p>
                     {order.phone && (
@@ -179,10 +282,9 @@ const PagosPage = () => {
                         {order.phone}
                       </p>
                     )}
-                    <p className="text-lg font-bold text-emerald-400">${Number(order.total).toFixed(2)}</p>
+                    <p className="text-lg font-bold text-emerald-400">{formatCurrency(order.total)}</p>
                   </div>
 
-                  {/* Botones confirmar/rechazar */}
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleConfirmOrder(order.id)}
@@ -206,14 +308,34 @@ const PagosPage = () => {
         </div>
       )}
 
+      <section className="mb-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-2">
+          <div>
+            <h1 className="text-3xl font-bold text-white tracking-tight">{t('payments.activeTitle')}</h1>
+            <p className="text-sm text-slate-400 mt-1">{t('payments.activeDescription')}</p>
+          </div>
+        </div>
+
+        {activeChargeOrders.length === 0 ? (
+          <div className="glass-panel p-10 text-center flex flex-col items-center justify-center">
+            <DollarSign size={48} className="text-slate-500 mb-4" />
+            <h2 className="text-xl text-slate-300 font-medium">{t('payments.activeEmptyTitle')}</h2>
+            <p className="text-slate-500">{t('payments.activeEmptyDescription')}</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {activeChargeOrders.map((order) => renderOrderCard(order))}
+          </div>
+        )}
+      </section>
+
       <FeatureGate
         feature={PREMIUM_FEATURES.paymentHistory}
         title={t('premium.features.paymentHistory.title')}
         description={t('premium.features.paymentHistory.description')}
       >
-        {/* ─── Sección: Historial de Órdenes ──────────────────────── */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-          <h1 className="text-3xl font-bold text-white tracking-tight">{t('payments.title')}</h1>
+          <h2 className="text-2xl font-bold text-white tracking-tight">{t('payments.title')}</h2>
 
           <div className="flex items-center gap-4 w-full md:w-auto">
             <OrderCalendar
@@ -235,7 +357,7 @@ const PagosPage = () => {
           </div>
         </div>
 
-        {filteredOrders.length === 0 ? (
+        {filteredHistoryOrders.length === 0 ? (
           <div className="glass-panel p-10 text-center flex flex-col items-center justify-center">
             <DollarSign size={48} className="text-slate-500 mb-4" />
             <h2 className="text-xl text-slate-300 font-medium">{t('payments.emptyTitle')}</h2>
@@ -243,102 +365,9 @@ const PagosPage = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredOrders.map(order => {
-              const isPagado = order.status === 'pagado';
-
-              return (
-                <div key={order.id} className={`glass-card p-5 flex flex-col h-full border-t-4 transition-all duration-300 ${isPagado ? 'border-t-emerald-500 opacity-80 hover:opacity-100' : 'border-t-orange-500'}`}>
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                      <span className="text-slate-400 font-normal">#{order.orderNumber}</span>
-                      {order.clientName}
-                      {isPagado && <Receipt size={16} className="text-emerald-400" title="Pagado" />}
-                    </h3>
-                    {order.phone && (
-                      <p className="text-sm text-slate-400 mb-1">{order.phone}</p>
-                    )}
-                    <span className={`inline-flex text-sm font-medium px-2 py-0.5 rounded ${isPagado ? 'bg-emerald-500/10 text-emerald-400' : 'bg-orange-500/10 text-orange-400'}`}>
-                      {order.type === 'online' ? (
-                        <span className="text-blue-400 flex items-center gap-1">
-                          {t('common.states.online')}
-                        </span>
-                      ) : (
-                        order.tableName
-                      )}
-                    </span>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-emerald-400">${order.total}</p>
-                    {isPagado && <span className="text-xs text-emerald-400 font-semibold uppercase tracking-wider block mt-1">{t('common.states.charged')}</span>}
-                  </div>
-                </div>
-
-                <div className="flex-1 bg-black/20 rounded-lg p-3 mb-4 max-h-40 overflow-y-auto border border-white/5">
-                  <ul className="space-y-2">
-                    {order.items?.map(item => (
-                      <li key={item.id || item.cartId} className="text-sm flex justify-between">
-                        <span className="text-slate-300">
-                          <span className="text-orange-400 mr-2">x{item.quantity}</span>
-                          {item.product_name || item.name}
-                        </span>
-                        <span className="text-slate-400">${item.price * item.quantity}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="mt-auto flex flex-col gap-2">
-                  <button 
-                    onClick={() => {
-                      const compactOrder = {
-                        orderNumber: order.orderNumber, clientName: order.clientName,
-                        tableName: order.tableName, type: order.type, total: order.total,
-                        createdAt: order.createdAt, waiterName: order.waiterName,
-                        restaurantProfile: restaurantProfile || null,
-                        items: (order.items || []).map(i => ({
-                          product_name: i.product_name || i.name, quantity: i.quantity,
-                          price: i.price, modifications: i.modifications
-                        }))
-                      };
-                      const ticketId = crypto.randomUUID
-                        ? crypto.randomUUID()
-                        : `tk_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-                      const storageKey = `jf_print_order_${ticketId}`;
-                      try {
-                        localStorage.setItem(storageKey, JSON.stringify(compactOrder));
-                      } catch { void 0; }
-                      window.open(
-                        `/pos_ticket.html?ticket=${encodeURIComponent(ticketId)}`,
-                        '_blank',
-                        'width=420,height=650,noopener,noreferrer'
-                      );
-                    }}
-                    className="w-full flex justify-center items-center gap-2 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white border border-slate-600 transition-colors font-medium text-sm"
-                  >
-                    🖨️ {t('common.actions.printTicket')}
-                  </button>
-
-                  {isPagado ? (
-                    <button disabled className="w-full flex justify-center items-center gap-2 py-2.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 cursor-not-allowed font-medium">
-                      <CheckCircle size={20} />
-                      {t('payments.orderPaid')}
-                    </button>
-                  ) : (
-                    <button 
-                      onClick={() => updateOrderStatus(order.id, 'pagado')}
-                      className="btn-success w-full flex justify-center items-center gap-2 py-2.5"
-                    >
-                      <CheckCircle size={20} />
-                      {t('payments.markPaid')}
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+            {filteredHistoryOrders.map((order) => renderOrderCard(order, { allowPrint: true }))}
+          </div>
+        )}
       </FeatureGate>
     </div>
   );

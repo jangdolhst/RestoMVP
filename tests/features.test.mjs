@@ -12,6 +12,7 @@ test('orders core features are free without a subscription', () => {
   assert.equal(hasFeature(null, FREE_FEATURES.receiveOrders), true);
   assert.equal(hasFeature(null, FREE_FEATURES.manualOrders), true);
   assert.equal(hasFeature(null, FREE_FEATURES.kitchen), true);
+  assert.equal(hasFeature(null, FREE_FEATURES.paymentStatus), true);
   assert.equal(hasFeature(null, FREE_FEATURES.menuManagement), true);
 });
 
