@@ -2,19 +2,22 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
-import { Mail, Lock, LogIn, UserPlus, AlertCircle } from 'lucide-react';
+import { Mail, Lock, LogIn, UserPlus, AlertCircle, Eye, EyeOff, KeyRound } from 'lucide-react';
 import Logo from '../components/ui/Logo';
 import LanguageSwitcher from '../components/ui/LanguageSwitcher';
 
 const LoginPage = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [isResetRequest, setIsResetRequest] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState('error');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { t } = useTranslation();
   
-  const { user, isLoading: isAuthLoading, login, register } = useAuth();
+  const { user, isLoading: isAuthLoading, login, register, requestPasswordReset } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -25,27 +28,52 @@ const LoginPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setMessage('');
+    setMessageType('error');
     setIsLoading(true);
 
     try {
       const normalizedEmail = email.trim().toLowerCase();
 
-      if (isLogin) {
+      if (isResetRequest) {
+        await requestPasswordReset(normalizedEmail);
+        setMessageType('success');
+        setMessage(t('auth.resetEmailSent'));
+      } else if (isLogin) {
         await login(normalizedEmail, password);
         navigate('/pos'); // Redirigir al dashboard/POS tras el login exitoso
       } else {
         await register(normalizedEmail, password);
         // Si el registro es exitoso y requiere confirmación, Supabase maneja eso. 
         // Si autologuea, entrará igual. Si requiere confirmación de email:
-        setError(t('auth.successRegister'));
+        setMessageType('success');
+        setMessage(t('auth.successRegister'));
         setIsLogin(true);
       }
     } catch (err) {
-      setError(err.message || t('auth.authError'));
+      setMessageType('error');
+      setMessage(err.message || t('auth.authError'));
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const showLogin = () => {
+    setIsLogin(true);
+    setIsResetRequest(false);
+    setMessage('');
+  };
+
+  const showRegister = () => {
+    setIsLogin(false);
+    setIsResetRequest(false);
+    setMessage('');
+  };
+
+  const showResetRequest = () => {
+    setIsLogin(true);
+    setIsResetRequest(true);
+    setMessage('');
   };
 
   return (
@@ -67,24 +95,36 @@ const LoginPage = () => {
 
         {/* Tabs */}
         <div className="flex bg-black/40 p-1 rounded-xl mb-6 border border-white/5">
-          <button 
-            onClick={() => { setIsLogin(true); setError(''); }}
-            className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${isLogin ? 'bg-orange-500 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+          <button
+            type="button"
+            onClick={showLogin}
+            className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${isLogin && !isResetRequest ? 'bg-orange-500 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
           >
             {t('auth.login')}
           </button>
-          <button 
-            onClick={() => { setIsLogin(false); setError(''); }}
-            className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${!isLogin ? 'bg-orange-500 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+          <button
+            type="button"
+            onClick={showRegister}
+            className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${!isLogin && !isResetRequest ? 'bg-orange-500 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
           >
             {t('auth.register')}
           </button>
         </div>
 
-        {error && (
-          <div className={`p-3 rounded-lg mb-4 text-sm flex items-start gap-2 ${error.includes('exitoso') ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
+        {isResetRequest && (
+          <div className="mb-5 p-4 rounded-xl bg-orange-500/10 border border-orange-500/20">
+            <p className="text-sm font-semibold text-white flex items-center gap-2">
+              <KeyRound size={16} className="text-orange-400" />
+              {t('auth.resetTitle')}
+            </p>
+            <p className="text-xs text-slate-400 mt-1">{t('auth.resetDescription')}</p>
+          </div>
+        )}
+
+        {message && (
+          <div className={`p-3 rounded-lg mb-4 text-sm flex items-start gap-2 ${messageType === 'success' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
             <AlertCircle size={16} className="mt-0.5 shrink-0" />
-            <p>{error}</p>
+            <p>{message}</p>
           </div>
         )}
 
@@ -106,23 +146,44 @@ const LoginPage = () => {
             </div>
           </div>
 
-          <div className="space-y-1">
-            <label className="text-sm text-slate-300 font-medium ml-1">{t('auth.password')}</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Lock size={18} className="text-slate-500" />
+          {!isResetRequest && (
+            <div className="space-y-1">
+              <label className="text-sm text-slate-300 font-medium ml-1">{t('auth.password')}</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock size={18} className="text-slate-500" />
+                </div>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="glass-input w-full pl-10 pr-12 py-3"
+                  placeholder="********"
+                  required
+                  minLength={6}
+                  autoComplete={isLogin ? 'current-password' : 'new-password'}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((current) => !current)}
+                  className="absolute inset-y-0 right-0 px-3 flex items-center text-slate-500 hover:text-white transition-colors"
+                  aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="glass-input w-full pl-10 py-3"
-                placeholder="••••••••"
-                required
-                minLength={6}
-              />
             </div>
-          </div>
+          )}
+
+          {isLogin && !isResetRequest && (
+            <button
+              type="button"
+              onClick={showResetRequest}
+              className="text-sm text-orange-400 hover:text-orange-300 transition-colors"
+            >
+              {t('auth.forgotPassword')}
+            </button>
+          )}
 
           <button 
             type="submit" 
@@ -137,12 +198,24 @@ const LoginPage = () => {
                 </svg>
                 {t('common.actions.processing')}
               </span>
+            ) : isResetRequest ? (
+              <><KeyRound size={18} /> {t('auth.sendResetLink')}</>
             ) : isLogin ? (
               <><LogIn size={18} /> {t('auth.enterBusiness')}</>
             ) : (
               <><UserPlus size={18} /> {t('auth.createRestaurant')}</>
             )}
           </button>
+
+          {isResetRequest && (
+            <button
+              type="button"
+              onClick={showLogin}
+              className="w-full text-sm text-slate-400 hover:text-white transition-colors"
+            >
+              {t('auth.backToLogin')}
+            </button>
+          )}
         </form>
 
       </div>

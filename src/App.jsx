@@ -18,6 +18,7 @@ const POSPage = lazy(() => import('./pages/POSPage'))
 const PagosPage = lazy(() => import('./pages/PagosPage'))
 const CocinaPage = lazy(() => import('./pages/CocinaPage'))
 const LoginPage = lazy(() => import('./pages/LoginPage'))
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
 const BillingPage = lazy(() => import('./pages/BillingPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 
@@ -40,6 +41,7 @@ function App() {
               {/* Landing Page del SaaS - Para venderle el sistema a los dueños */}
               <Route path="/partners" element={<LandingPage />} />
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
 
               {/* Ruta para clientes (Menú por Restaurante) */}
               <Route path="/menu/:tenantId" element={<ClientePage />} />
