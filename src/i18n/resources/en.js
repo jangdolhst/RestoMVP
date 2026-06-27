@@ -463,6 +463,11 @@ const en = {
     invalid: '✗ Incomplete or invalid number',
     valid: '✓ Valid number',
   },
+  reviews: {
+    noReviews: 'No reviews',
+    reviewCountShort: '{{count}} reviews',
+    starLabel: 'Select {{star}} stars',
+  },
 };
 
 export default en;

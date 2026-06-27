@@ -9,23 +9,14 @@ const ReviewSummaryBadge = ({ summary, compact = false }) => {
   const average = summary?.average_rating;
 
   if (count === 0) {
-    return (
-      <span className="text-xs text-slate-500">
-        {t('reviews.noReviews', { defaultValue: 'Sin reseñas' })}
-      </span>
-    );
+    return <span className="text-xs text-slate-500">{t('reviews.noReviews')}</span>;
   }
 
   return (
     <span className="inline-flex items-center gap-1.5 text-xs text-slate-300">
       <StarRating value={Number(average)} readOnly size={compact ? 13 : 15} />
       <strong className="text-amber-300">{formatRating(average)}</strong>
-      <span className="text-slate-500">
-        {t('reviews.reviewCountShort', {
-          count,
-          defaultValue: `${count} reseñas`,
-        })}
-      </span>
+      <span className="text-slate-500">{t('reviews.reviewCountShort', { count })}</span>
     </span>
   );
 };

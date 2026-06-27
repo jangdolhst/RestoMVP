@@ -463,6 +463,11 @@ const es = {
     invalid: '✗ Número incompleto o inválido',
     valid: '✓ Número válido',
   },
+  reviews: {
+    noReviews: 'Sin rese�as',
+    reviewCountShort: '{{count}} rese�as',
+    starLabel: 'Seleccionar {{star}} estrellas',
+  },
 };
 
 export default es;

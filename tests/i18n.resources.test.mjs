@@ -29,6 +29,9 @@ const criticalKeys = [
   'payments.activeTitle',
   'payments.activeEmptyTitle',
   'premium.badge',
+  'reviews.noReviews',
+  'reviews.reviewCountShort',
+  'reviews.starLabel',
   'premium.features.paymentHistory.title',
   'premium.features.fiscalData.title',
 ];
