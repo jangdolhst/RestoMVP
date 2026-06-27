@@ -29,26 +29,23 @@ const FOOD_CATEGORIES = [
   { key: 'chicken', value: 'Pollo' },
 ];
 
-const RestaurantCard = ({ restaurant, onClick, onOpenReviews, distance, isOpen, navigate, t }) => {
+const RestaurantCard = ({ restaurant, onClick, onOpenReviews, distance, isOpen, t }) => {
   const placeholderBanner = `https://ui-avatars.com/api/?name=${encodeURIComponent(restaurant.name)}&background=f97316&color=fff&size=400&font-size=0.33&bold=true&format=svg`;
-  const handleOpenReviews = (event) => {
-    event.stopPropagation();
-    onOpenReviews?.();
-  };
+  const handleCardKeyDown = (event) => {
+    if (!isOpen) return;
 
-  const handleReviewKeyDown = (event) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
-      event.stopPropagation();
-      navigate(`/opiniones/${restaurant.id}`);
+      onClick?.();
     }
   };
 
   return (
-    <button
-      type="button"
+    <article
+      role={isOpen ? 'button' : undefined}
+      tabIndex={isOpen ? 0 : -1}
       onClick={isOpen ? onClick : undefined}
-      disabled={!isOpen}
+      onKeyDown={handleCardKeyDown}
       data-restaurant-id={restaurant.id}
       className={`group relative overflow-hidden text-left w-full rounded-3xl transition-all duration-500 focus:outline-none focus:ring-2 focus:ring-orange-500/50 ${isOpen ? 'hover:-translate-y-2 hover:shadow-2xl hover:shadow-orange-500/20 cursor-pointer' : 'opacity-60 cursor-not-allowed'}`}
     >
@@ -109,15 +106,16 @@ const RestaurantCard = ({ restaurant, onClick, onOpenReviews, distance, isOpen, 
 
         <div className="mb-4 flex items-center justify-between gap-3">
           <ReviewSummaryBadge summary={restaurant.reviewSummary} compact />
-          <span
-            role="link"
-            tabIndex={0}
-            onClick={handleOpenReviews}
-            onKeyDown={handleReviewKeyDown}
-            className="text-xs text-orange-300 hover:text-orange-200 underline-offset-4 hover:underline"
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onOpenReviews?.();
+            }}
+            className="text-xs text-orange-300 hover:text-orange-200 underline-offset-4 hover:underline focus:outline-none focus:ring-2 focus:ring-orange-500/50 rounded"
           >
             {t('reviews.viewReviews')}
-          </span>
+          </button>
         </div>
 
         <div className="flex items-center gap-4 text-xs font-medium text-slate-400 flex-wrap">
@@ -135,7 +133,7 @@ const RestaurantCard = ({ restaurant, onClick, onOpenReviews, distance, isOpen, 
           )}
         </div>
       </div>
-    </button>
+    </article>
   );
 };
 
@@ -480,7 +478,6 @@ const MarketplacePage = () => {
                     isOpen={isRestaurantOpen(restaurant.business_hours)}
                     onClick={() => navigate(`/menu/${restaurant.id}`)}
                     onOpenReviews={() => navigate(`/opiniones/${restaurant.id}`)}
-                    navigate={navigate}
                     t={t}
                   />
                 ))}

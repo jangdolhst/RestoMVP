@@ -2,6 +2,7 @@ import { Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import ReviewSummaryBadge from './ReviewSummaryBadge.jsx';
+import { isRestaurantOpen } from '../../utils/businessHours';
 
 const MIN_FEATURED_REVIEW_COUNT = 3;
 const MAX_FEATURED_RESTAURANTS = 3;
@@ -40,7 +41,15 @@ const FeaturedRestaurantsSection = ({ restaurants, onOpenMenu, onOpenReviews }) 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {featuredRestaurants.map((restaurant) => (
             <article key={restaurant.id} className="glass-card p-4 border border-amber-400/10">
-              <button type="button" onClick={() => onOpenMenu(restaurant.id)} className="text-left w-full group">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!isRestaurantOpen(restaurant.business_hours)) return;
+                  onOpenMenu(restaurant.id);
+                }}
+                disabled={!isRestaurantOpen(restaurant.business_hours)}
+                className="text-left w-full group disabled:cursor-not-allowed disabled:opacity-70"
+              >
                 <h3 className="font-bold text-white group-hover:text-orange-400 transition-colors truncate">
                   {restaurant.name}
                 </h3>

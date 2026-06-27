@@ -12,3 +12,15 @@ Commit:
 
 Concerns:
 - No automated test runner is configured in this repository, so verification for this task is limited to linting.
+
+---
+
+Fix follow-up:
+- Replaced the outer restaurant card `<button>` with an `<article>` so `Ver opiniones` is no longer nested inside an interactive ancestor.
+- Kept `data-restaurant-id` on the card root.
+- Kept the main card/menu action clickable only when the restaurant is open.
+- Made `Ver opiniones` an independent button that remains usable for closed restaurants.
+- Aligned the featured restaurants section with the same open-only menu behavior.
+
+Fresh verification:
+- `npm run lint`
