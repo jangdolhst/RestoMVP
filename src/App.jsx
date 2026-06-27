@@ -13,6 +13,7 @@ const LandingPage = lazy(() => import('./pages/LandingPage'))
 const ClientePage = lazy(() => import('./pages/ClientePage'))
 const OrderTrackingPage = lazy(() => import('./pages/OrderTrackingPage'))
 const MapPage = lazy(() => import('./pages/MapPage'))
+const ReviewsPage = lazy(() => import('./pages/ReviewsPage'))
 const UserProfilePage = lazy(() => import('./pages/UserProfilePage'))
 const POSPage = lazy(() => import('./pages/POSPage'))
 const PagosPage = lazy(() => import('./pages/PagosPage'))
@@ -51,6 +52,9 @@ function App() {
 
               {/* Mapa interactivo de restaurantes */}
               <Route path="/mapa" element={<MapPage />} />
+
+              {/* Opiniones verificadas por restaurante */}
+              <Route path="/opiniones/:restaurantId" element={<ReviewsPage />} />
 
               {/* Perfil de usuario (localStorage) */}
               <Route path="/perfil" element={<UserProfilePage />} />
