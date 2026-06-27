@@ -22,8 +22,34 @@ test('reviews migration exposes only controlled RPCs to anon', () => {
   assert.match(normalized, /grant execute on function public\.get_restaurant_review_summary\(uuid\[\]\) to anon/);
 });
 
-test('public review readers do not return order tokens or phone numbers', () => {
-  const publicReaders = normalized.slice(normalized.indexOf('create or replace function public.get_restaurant_reviews'));
-  assert.doesNotMatch(publicReaders, /customer_phone_normalized/);
-  assert.doesNotMatch(publicReaders, /order_token/);
+test('public eligibility and reader surfaces do not expose sensitive order fields', () => {
+  const eligibilityStart = normalized.indexOf('create or replace function public.get_review_eligibility');
+  const createReviewStart = normalized.indexOf('create or replace function public.create_restaurant_review');
+  const readersStart = normalized.indexOf('create or replace function public.get_restaurant_reviews');
+  const summaryStart = normalized.indexOf('create or replace function public.get_restaurant_review_summary');
+
+  assert.ok(eligibilityStart !== -1);
+  assert.ok(createReviewStart !== -1);
+  assert.ok(readersStart !== -1);
+  assert.ok(summaryStart !== -1);
+
+  const eligibility = normalized.slice(eligibilityStart, createReviewStart);
+  const readers = normalized.slice(readersStart, summaryStart);
+  const summary = normalized.slice(summaryStart);
+
+  assert.match(eligibility, /returns table \( eligible boolean, reason text, order_status text, client_name text, phone_hint text \)/);
+  assert.doesNotMatch(eligibility, /order_id uuid/);
+  const eligibilityReturns = eligibility.match(/return query select[\s\S]*?;/g) ?? [];
+  assert.ok(eligibilityReturns.length > 0);
+  for (const row of eligibilityReturns) {
+    assert.doesNotMatch(row, /v_order\.id/);
+    assert.doesNotMatch(row, /order_token/);
+    assert.doesNotMatch(row, /customer_phone_normalized/);
+  }
+  assert.doesNotMatch(readers, /order_token/);
+  assert.doesNotMatch(readers, /customer_phone_normalized/);
+  assert.doesNotMatch(readers, /order_id uuid/);
+  assert.doesNotMatch(summary, /order_token/);
+  assert.doesNotMatch(summary, /customer_phone_normalized/);
+  assert.doesNotMatch(summary, /order_id uuid/);
 });

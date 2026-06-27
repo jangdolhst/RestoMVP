@@ -50,7 +50,6 @@ CREATE OR REPLACE FUNCTION public.get_review_eligibility(
 RETURNS TABLE (
   eligible BOOLEAN,
   reason TEXT,
-  order_id UUID,
   order_status TEXT,
   client_name TEXT,
   phone_hint TEXT
@@ -70,17 +69,17 @@ BEGIN
   LIMIT 1;
 
   IF NOT FOUND OR v_order.tenant_id <> p_restaurant_id THEN
-    RETURN QUERY SELECT false, 'invalid_order', NULL::UUID, NULL::TEXT, ''::TEXT, ''::TEXT;
+    RETURN QUERY SELECT false, 'invalid_order', NULL::TEXT, ''::TEXT, ''::TEXT;
     RETURN;
   END IF;
 
   IF EXISTS (SELECT 1 FROM public.restaurant_reviews rr WHERE rr.order_id = v_order.id) THEN
-    RETURN QUERY SELECT false, 'already_reviewed', v_order.id, v_order.status, COALESCE(v_order.client_name, ''), ''::TEXT;
+    RETURN QUERY SELECT false, 'already_reviewed', v_order.status, COALESCE(v_order.client_name, ''), ''::TEXT;
     RETURN;
   END IF;
 
   IF v_order.status <> 'pagado' THEN
-    RETURN QUERY SELECT false, 'order_not_paid', v_order.id, v_order.status, COALESCE(v_order.client_name, ''), ''::TEXT;
+    RETURN QUERY SELECT false, 'order_not_paid', v_order.status, COALESCE(v_order.client_name, ''), ''::TEXT;
     RETURN;
   END IF;
 
@@ -89,7 +88,6 @@ BEGIN
   RETURN QUERY SELECT
     true,
     'eligible',
-    v_order.id,
     v_order.status,
     COALESCE(v_order.client_name, ''),
     CASE
