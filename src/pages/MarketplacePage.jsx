@@ -4,6 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { Search, MapPin, Store, Sparkles, X, Package, Map, Navigation, Loader2 } from 'lucide-react';
 import Logo from '../components/ui/Logo';
 import LanguageSwitcher from '../components/ui/LanguageSwitcher';
+import FeaturedRestaurantsSection from '../components/reviews/FeaturedRestaurantsSection.jsx';
+import ReviewSummaryBadge from '../components/reviews/ReviewSummaryBadge.jsx';
+import { mergeReviewSummaries } from '../lib/reviews.js';
 import { supabase } from '../lib/supabase';
 import useCityDetection, { haversineDistance } from '../hooks/useCityDetection';
 import { isRestaurantOpen } from '../utils/businessHours';
@@ -26,13 +29,27 @@ const FOOD_CATEGORIES = [
   { key: 'chicken', value: 'Pollo' },
 ];
 
-const RestaurantCard = ({ restaurant, onClick, distance, isOpen, t }) => {
+const RestaurantCard = ({ restaurant, onClick, onOpenReviews, distance, isOpen, navigate, t }) => {
   const placeholderBanner = `https://ui-avatars.com/api/?name=${encodeURIComponent(restaurant.name)}&background=f97316&color=fff&size=400&font-size=0.33&bold=true&format=svg`;
+  const handleOpenReviews = (event) => {
+    event.stopPropagation();
+    onOpenReviews?.();
+  };
+
+  const handleReviewKeyDown = (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      event.stopPropagation();
+      navigate(`/opiniones/${restaurant.id}`);
+    }
+  };
 
   return (
     <button
+      type="button"
       onClick={isOpen ? onClick : undefined}
       disabled={!isOpen}
+      data-restaurant-id={restaurant.id}
       className={`group relative overflow-hidden text-left w-full rounded-3xl transition-all duration-500 focus:outline-none focus:ring-2 focus:ring-orange-500/50 ${isOpen ? 'hover:-translate-y-2 hover:shadow-2xl hover:shadow-orange-500/20 cursor-pointer' : 'opacity-60 cursor-not-allowed'}`}
     >
       {/* Premium Glass Background */}
@@ -90,6 +107,19 @@ const RestaurantCard = ({ restaurant, onClick, distance, isOpen, t }) => {
           </p>
         )}
 
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <ReviewSummaryBadge summary={restaurant.reviewSummary} compact />
+          <span
+            role="link"
+            tabIndex={0}
+            onClick={handleOpenReviews}
+            onKeyDown={handleReviewKeyDown}
+            className="text-xs text-orange-300 hover:text-orange-200 underline-offset-4 hover:underline"
+          >
+            {t('reviews.viewReviews')}
+          </span>
+        </div>
+
         <div className="flex items-center gap-4 text-xs font-medium text-slate-400 flex-wrap">
           {restaurant.address && (
             <span className="flex items-center gap-1.5 bg-white/5 px-2.5 py-1 rounded-lg border border-white/5">
@@ -113,6 +143,7 @@ const MarketplacePage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [restaurants, setRestaurants] = useState([]);
+  const [reviewSummaries, setReviewSummaries] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('Todos');
@@ -171,9 +202,27 @@ const MarketplacePage = () => {
 
         if (error) throw error;
         setRestaurants(data || []);
+
+        const restaurantIds = (data || []).map((restaurant) => restaurant.id);
+
+        if (restaurantIds.length > 0) {
+          const { data: summaryData, error: summaryError } = await supabase.rpc('get_restaurant_review_summary', {
+            p_restaurant_ids: restaurantIds,
+          });
+
+          if (summaryError) {
+            console.error('Error cargando resumenes de opiniones:', summaryError.message);
+            setReviewSummaries([]);
+          } else {
+            setReviewSummaries(summaryData || []);
+          }
+        } else {
+          setReviewSummaries([]);
+        }
       } catch (err) {
         console.error('Error cargando restaurantes:', err.message);
         setRestaurants([]);
+        setReviewSummaries([]);
       } finally {
         setIsLoading(false);
       }
@@ -182,8 +231,13 @@ const MarketplacePage = () => {
     fetchRestaurants();
   }, []);
 
+  const restaurantsWithReviews = useMemo(
+    () => mergeReviewSummaries(restaurants, reviewSummaries),
+    [restaurants, reviewSummaries]
+  );
+
   const filteredRestaurants = useMemo(() => {
-    let filtered = restaurants;
+    let filtered = restaurantsWithReviews;
 
     // Calcular distancia para cada restaurante
     if (hasLocation) {
@@ -226,7 +280,7 @@ const MarketplacePage = () => {
     }
 
     return filtered;
-  }, [restaurants, searchQuery, activeCategory, hasLocation, userLat, userLng, geoSource]);
+  }, [restaurantsWithReviews, searchQuery, activeCategory, hasLocation, userLat, userLng, geoSource]);
 
   return (
     <div className="min-h-screen text-white relative overflow-x-hidden">
@@ -366,6 +420,12 @@ const MarketplacePage = () => {
         </div>
       </section>
 
+      <FeaturedRestaurantsSection
+        restaurants={restaurantsWithReviews}
+        onOpenMenu={(restaurantId) => navigate(`/menu/${restaurantId}`)}
+        onOpenReviews={(restaurantId) => navigate(`/opiniones/${restaurantId}`)}
+      />
+
       {/* Category Chips */}
       <section className="relative z-10 px-4 sm:px-6 pb-6">
         <div className="max-w-5xl mx-auto">
@@ -419,6 +479,8 @@ const MarketplacePage = () => {
                     distance={restaurant.distance}
                     isOpen={isRestaurantOpen(restaurant.business_hours)}
                     onClick={() => navigate(`/menu/${restaurant.id}`)}
+                    onOpenReviews={() => navigate(`/opiniones/${restaurant.id}`)}
+                    navigate={navigate}
                     t={t}
                   />
                 ))}
