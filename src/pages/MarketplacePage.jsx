@@ -40,6 +40,12 @@ const RestaurantCard = ({ restaurant, onClick, onOpenReviews, distance, isOpen, 
     }
   };
 
+  const handleOpenReviewsKeyDown = (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.stopPropagation();
+    }
+  };
+
   return (
     <article
       role={isOpen ? 'button' : undefined}
@@ -112,6 +118,7 @@ const RestaurantCard = ({ restaurant, onClick, onOpenReviews, distance, isOpen, 
               event.stopPropagation();
               onOpenReviews?.();
             }}
+            onKeyDown={handleOpenReviewsKeyDown}
             className="text-xs text-orange-300 hover:text-orange-200 underline-offset-4 hover:underline focus:outline-none focus:ring-2 focus:ring-orange-500/50 rounded"
           >
             {t('reviews.viewReviews')}

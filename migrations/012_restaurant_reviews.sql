@@ -85,6 +85,16 @@ BEGIN
 
   v_phone_digits := public.normalize_review_phone(v_order.phone);
 
+  IF EXISTS (
+    SELECT 1
+    FROM public.restaurant_reviews rr
+    WHERE rr.restaurant_id = p_restaurant_id
+      AND rr.customer_phone_normalized = v_phone_digits
+  ) THEN
+    RETURN QUERY SELECT false, 'already_reviewed', v_order.status, COALESCE(v_order.client_name, ''), ''::TEXT;
+    RETURN;
+  END IF;
+
   RETURN QUERY SELECT
     true,
     'eligible',
@@ -174,7 +184,7 @@ BEGIN
     RAISE EXCEPTION 'already_reviewed';
   END IF;
 
-  v_customer_name := left(trim(COALESCE(NULLIF(p_customer_name, ''), v_order.client_name, 'Cliente')), 80);
+  v_customer_name := left(COALESCE(NULLIF(trim(p_customer_name), ''), NULLIF(trim(v_order.client_name), ''), 'Cliente'), 80);
   v_comment := left(trim(COALESCE(p_comment, '')), 800);
 
   INSERT INTO public.restaurant_reviews (
@@ -286,3 +296,7 @@ GRANT EXECUTE ON FUNCTION public.get_review_eligibility(UUID, UUID) TO anon;
 GRANT EXECUTE ON FUNCTION public.create_restaurant_review(UUID, UUID, TEXT, TEXT, INTEGER, TEXT) TO anon;
 GRANT EXECUTE ON FUNCTION public.get_restaurant_reviews(UUID, INTEGER) TO anon;
 GRANT EXECUTE ON FUNCTION public.get_restaurant_review_summary(UUID[]) TO anon;
+GRANT EXECUTE ON FUNCTION public.get_review_eligibility(UUID, UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.create_restaurant_review(UUID, UUID, TEXT, TEXT, INTEGER, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_restaurant_reviews(UUID, INTEGER) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_restaurant_review_summary(UUID[]) TO authenticated;
