@@ -1,5 +1,9 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import {
+  shouldClearSubscriptionForAuthEvent,
+  shouldRefetchSubscriptionForAuthEvent,
+} from '../lib/authEvents';
 
 const AuthContext = createContext();
 
@@ -12,52 +16,82 @@ export const AuthProvider = ({ children }) => {
   const [session, setSession] = useState(null);
   const [subscriptionData, setSubscriptionData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const currentUserIdRef = useRef(null);
 
-  const fetchSubscription = async (userId) => {
-    setIsLoading(true);
+  const fetchSubscription = async (userId, { showGlobalLoading = false } = {}) => {
+    if (showGlobalLoading) setIsLoading(true);
+
     if (!userId) {
       setSubscriptionData(null);
-      setIsLoading(false);
+      if (showGlobalLoading) setIsLoading(false);
       return;
     }
+
     const { data, error } = await supabase
       .from('subscriptions')
       .select('id, status, current_period_end')
       .eq('tenant_id', userId)
       .maybeSingle();
-      
+
     if (!error && data) {
       setSubscriptionData(data);
     } else {
       setSubscriptionData(null);
     }
-    setIsLoading(false);
+
+    if (showGlobalLoading) setIsLoading(false);
   };
 
   useEffect(() => {
-    // Obtener la sesión actual al cargar
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user || null);
-      if (session?.user) {
-        fetchSubscription(session.user.id).then(() => setIsLoading(false));
-      } else {
-        setIsLoading(false);
-      }
-    });
+    let isMounted = true;
 
-    // Escuchar cambios de autenticación
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    // Obtener la sesion actual al cargar. Esta es la unica carga global inicial.
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!isMounted) return;
+
+      const initialUser = session?.user || null;
       setSession(session);
-      setUser(session?.user || null);
-      if (session?.user) {
-        fetchSubscription(session.user.id);
+      setUser(initialUser);
+      currentUserIdRef.current = initialUser?.id || null;
+
+      if (initialUser?.id) {
+        await fetchSubscription(initialUser.id);
       } else {
         setSubscriptionData(null);
       }
+
+      if (isMounted) setIsLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    // Supabase puede emitir TOKEN_REFRESHED al volver al foco. No debe desmontar la ruta.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      const nextUser = nextSession?.user || null;
+      const nextUserId = nextUser?.id || null;
+      const currentUserId = currentUserIdRef.current;
+
+      setSession(nextSession);
+      setUser(nextUser);
+
+      if (shouldClearSubscriptionForAuthEvent({ event, nextUserId })) {
+        currentUserIdRef.current = null;
+        setSubscriptionData(null);
+        setIsLoading(false);
+        return;
+      }
+
+      if (shouldRefetchSubscriptionForAuthEvent({ event, currentUserId, nextUserId })) {
+        currentUserIdRef.current = nextUserId;
+        fetchSubscription(nextUserId);
+        return;
+      }
+
+      currentUserIdRef.current = nextUserId;
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email, password) => {
