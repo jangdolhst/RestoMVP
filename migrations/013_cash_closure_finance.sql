@@ -88,7 +88,7 @@ CREATE INDEX IF NOT EXISTS idx_cash_closures_tenant_date
 ALTER TABLE public.cash_closures ENABLE ROW LEVEL SECURITY;
 
 REVOKE ALL ON TABLE public.cash_closures FROM PUBLIC, anon, authenticated;
-GRANT SELECT, INSERT, UPDATE ON TABLE public.cash_closures TO authenticated;
+GRANT SELECT ON TABLE public.cash_closures TO authenticated;
 
 DROP POLICY IF EXISTS "Restaurant owners read their cash closures" ON public.cash_closures;
 CREATE POLICY "Restaurant owners read their cash closures"

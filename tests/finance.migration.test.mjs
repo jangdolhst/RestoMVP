@@ -35,6 +35,8 @@ test('finance migration creates cash closures with RLS and one closure per day',
 
 test('finance migration blocks anon from finance data and RPCs', () => {
   assert.match(normalized, /revoke all on table public\.cash_closures from public, anon/);
+  assert.match(normalized, /grant select on table public\.cash_closures to authenticated/);
+  assert.doesNotMatch(normalized, /grant select, insert, update on table public\.cash_closures to authenticated/);
   assert.match(normalized, /revoke execute on function public\.capture_order_payment/);
   assert.doesNotMatch(normalized, /grant execute on function public\.capture_order_payment[^;]+ to anon/);
   assert.doesNotMatch(normalized, /grant select on table public\.cash_closures to anon/);
