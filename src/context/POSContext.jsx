@@ -5,6 +5,8 @@ import { useAuth } from './AuthContext';
 import i18n from '../i18n';
 
 const POSContext = createContext();
+const ORDER_SELECT = 'id, tenant_id, order_number, client_name, table_name, phone, type, total, status, created_at, paid_at, payment_cash_mxn_received, payment_cash_usd_received, payment_card_mxn_amount, payment_transfer_mxn_amount, payment_exchange_rate, payment_change_mxn, payment_total_effective_mxn, items:order_items(id, product_name, quantity, price, ingredients, modifications)';
+const PROFILE_SELECT = 'name, logo_url, address, phone, table_count, waiters, fiscal_number, tax_included, tax_rate, accepts_usd, usd_exchange_rate';
 
 export const usePOS = () => {
   const context = useContext(POSContext);
@@ -83,7 +85,7 @@ export const POSProvider = ({ children }) => {
 
       // Cargar perfil del restaurante (para dueño)
       if (!isClientMenu) {
-        supabase.from('restaurant_profiles').select('name, logo_url, address, phone, table_count, waiters, fiscal_number, tax_included, tax_rate').eq('id', currentTenantId).maybeSingle()
+        supabase.from('restaurant_profiles').select(PROFILE_SELECT).eq('id', currentTenantId).maybeSingle()
           .then(({ data }) => {
             if (data?.table_count != null) setTableCount(data.table_count);
             if (data?.waiters) setWaiters(data.waiters);
@@ -94,7 +96,7 @@ export const POSProvider = ({ children }) => {
       // Solo el dueño necesita las órdenes (RLS bloquea al anon de todas formas)
       if (!isClientMenu) {
         baseQueries.push(
-          supabase.from('orders').select('id, tenant_id, order_number, client_name, table_name, phone, type, total, status, created_at, items:order_items(id, product_name, quantity, price, ingredients, modifications)').eq('tenant_id', currentTenantId).order('created_at', { ascending: false })
+          supabase.from('orders').select(ORDER_SELECT).eq('tenant_id', currentTenantId).order('created_at', { ascending: false })
         );
       }
 
@@ -119,7 +121,8 @@ export const POSProvider = ({ children }) => {
           orderNumber: o.order_number,
           clientName: o.client_name,
           tableName: o.table_name,
-          createdAt: o.created_at
+          createdAt: o.created_at,
+          paidAt: o.paid_at
         })));
       }
       
@@ -136,7 +139,7 @@ export const POSProvider = ({ children }) => {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `tenant_id=eq.${currentTenantId}` }, async () => {
         const { data } = await supabase
           .from('orders')
-          .select('id, tenant_id, order_number, client_name, table_name, phone, type, total, status, created_at, items:order_items(id, product_name, quantity, price, ingredients, modifications)')
+          .select(ORDER_SELECT)
           .eq('tenant_id', currentTenantId)
           .order('created_at', { ascending: false });
         
@@ -146,7 +149,8 @@ export const POSProvider = ({ children }) => {
             orderNumber: o.order_number,
             clientName: o.client_name,
             tableName: o.table_name,
-            createdAt: o.created_at
+            createdAt: o.created_at,
+            paidAt: o.paid_at
           })));
         }
       })
@@ -381,6 +385,49 @@ export const POSProvider = ({ children }) => {
     }
   };
 
+  const captureOrderPayment = async (order, paymentInput) => {
+    if (!canManageTenant || !order?.id) return { success: false, error: i18n.t('payments.paymentModal.error') };
+
+    const { data, error } = await supabase.rpc('capture_order_payment', {
+      p_order_id: order.id,
+      p_cash_mxn_received: paymentInput.cashMxnReceived,
+      p_cash_usd_received: paymentInput.cashUsdReceived,
+      p_card_mxn_amount: paymentInput.cardMxnAmount,
+      p_transfer_mxn_amount: paymentInput.transferMxnAmount,
+    });
+
+    if (error) {
+      console.error('Error registrando pago:', error.message);
+      return { success: false, error: i18n.t('payments.paymentModal.error') };
+    }
+
+    const paidOrder = data?.[0];
+    if (!paidOrder) {
+      return { success: false, error: i18n.t('payments.paymentModal.error') };
+    }
+
+    setOrders((prev) => prev.map((current) => (
+      current.id === order.id
+        ? {
+            ...current,
+            status: paidOrder.status,
+            paid_at: paidOrder.paid_at,
+            paidAt: paidOrder.paid_at,
+            payment_cash_mxn_received: paidOrder.payment_cash_mxn_received,
+            payment_cash_usd_received: paidOrder.payment_cash_usd_received,
+            payment_card_mxn_amount: paidOrder.payment_card_mxn_amount,
+            payment_transfer_mxn_amount: paidOrder.payment_transfer_mxn_amount,
+            payment_exchange_rate: paidOrder.payment_exchange_rate,
+            payment_change_mxn: paidOrder.payment_change_mxn,
+            payment_total_effective_mxn: paidOrder.payment_total_effective_mxn,
+          }
+        : current
+    )));
+
+    window.dispatchEvent(new Event('orders-updated'));
+    return { success: true };
+  };
+
   // Acciones de Inventario (Supabase)
   const addCategory = async (data) => {
     if (!canManageTenant) return;
@@ -496,6 +543,7 @@ export const POSProvider = ({ children }) => {
     clearCart,
     placeOrder,
     updateOrderStatus,
+    captureOrderPayment,
     addCategory,
     addProduct,
     addExtras,

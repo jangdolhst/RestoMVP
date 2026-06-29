@@ -7,13 +7,14 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import FeatureGate from '../components/billing/FeatureGate';
 import { PREMIUM_FEATURES } from '../lib/features';
+import PaymentCaptureModal from '../components/payments/PaymentCaptureModal';
 
 const ACTIVE_PAYMENT_STATUSES = new Set(['pendiente_cocina', 'listo']);
 
 const formatCurrency = (value) => `$${Number(value || 0).toFixed(2)}`;
 
 const PagosPage = () => {
-  const { orders, updateOrderStatus, restaurantProfile } = usePOS();
+  const { orders, updateOrderStatus, captureOrderPayment, restaurantProfile } = usePOS();
   const { user } = useAuth();
   const { t } = useTranslation();
 
@@ -24,6 +25,9 @@ const PagosPage = () => {
   });
 
   const [pendingOrders, setPendingOrders] = useState([]);
+  const [paymentOrder, setPaymentOrder] = useState(null);
+  const [isPaymentSubmitting, setIsPaymentSubmitting] = useState(false);
+  const [paymentError, setPaymentError] = useState('');
   const intervalRef = useRef(null);
 
   const fetchPendingOrders = useCallback(async () => {
@@ -102,6 +106,21 @@ const PagosPage = () => {
   };
 
   const activeChargeOrders = orders.filter((order) => ACTIVE_PAYMENT_STATUSES.has(order.status));
+
+  const handleCapturePayment = async (paymentInput) => {
+    if (!paymentOrder) return;
+    setPaymentError('');
+    setIsPaymentSubmitting(true);
+    const result = await captureOrderPayment(paymentOrder, paymentInput);
+    setIsPaymentSubmitting(false);
+
+    if (!result?.success) {
+      setPaymentError(result?.error || t('payments.paymentModal.error'));
+      return;
+    }
+
+    setPaymentOrder(null);
+  };
 
   const filteredHistoryOrders = orders.filter((order) => {
     if (order.status === 'pendiente_confirmacion' || order.status === 'cancelado') return false;
@@ -217,7 +236,10 @@ const PagosPage = () => {
             </button>
           ) : (
             <button
-              onClick={() => updateOrderStatus(order.id, 'pagado')}
+              onClick={() => {
+                setPaymentError('');
+                setPaymentOrder(order);
+              }}
               className="btn-success w-full flex justify-center items-center gap-2 py-2.5"
             >
               <CheckCircle size={20} />
@@ -369,6 +391,28 @@ const PagosPage = () => {
           </div>
         )}
       </FeatureGate>
+
+      {paymentOrder && (
+        <>
+          <PaymentCaptureModal
+            order={paymentOrder}
+            restaurantProfile={restaurantProfile}
+            onClose={() => {
+              if (!isPaymentSubmitting) {
+                setPaymentOrder(null);
+                setPaymentError('');
+              }
+            }}
+            onConfirm={handleCapturePayment}
+            isSubmitting={isPaymentSubmitting}
+          />
+          {paymentError && (
+            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[120] max-w-sm w-[calc(100%-2rem)] rounded-2xl border border-red-500/30 bg-red-950/90 text-red-100 px-4 py-3 text-sm shadow-2xl">
+              {paymentError}
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 };
