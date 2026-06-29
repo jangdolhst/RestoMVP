@@ -166,6 +166,8 @@ const SettingsPage = () => {
     fiscal_number: '',
     tax_included: false,
     tax_rate: 0,
+    accepts_usd: false,
+    usd_exchange_rate: '',
     business_hours: { open: '09:00', close: '22:00', is_manually_closed: false },
   });
 
@@ -178,7 +180,7 @@ const SettingsPage = () => {
       try {
         const { data, error } = await supabase
           .from('restaurant_profiles')
-          .select('name, description, logo_url, banner_url, address, phone, categories, is_active, latitude, longitude, table_count, waiters, fiscal_number, tax_included, tax_rate, business_hours')
+          .select('name, description, logo_url, banner_url, address, phone, categories, is_active, latitude, longitude, table_count, waiters, fiscal_number, tax_included, tax_rate, accepts_usd, usd_exchange_rate, business_hours')
           .eq('id', user.id)
           .maybeSingle();
 
@@ -201,6 +203,8 @@ const SettingsPage = () => {
             fiscal_number: data.fiscal_number || '',
             tax_included: data.tax_included || false,
             tax_rate: data.tax_rate || 0,
+            accepts_usd: data.accepts_usd || false,
+            usd_exchange_rate: data.usd_exchange_rate || '',
             business_hours: data.business_hours || { open: '09:00', close: '22:00', is_manually_closed: false },
           });
         }
@@ -417,6 +421,11 @@ const SettingsPage = () => {
       return;
     }
 
+    if (profile.accepts_usd && Number(profile.usd_exchange_rate) <= 0) {
+      alert(t('settings.paymentSettings.exchangeRateRequired'));
+      return;
+    }
+
     setIsSaving(true);
     setSaveStatus(null);
 
@@ -444,6 +453,17 @@ const SettingsPage = () => {
         .upsert(profilePayload, { onConflict: 'id' });
 
       if (error) throw error;
+
+      const { error: paymentSettingsError } = await supabase
+        .from('restaurant_profiles')
+        .update({
+          accepts_usd: profile.accepts_usd,
+          usd_exchange_rate: profile.accepts_usd ? Number(profile.usd_exchange_rate) : null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id);
+
+      if (paymentSettingsError) throw paymentSettingsError;
 
       if (canUseFiscalData) {
         const fiscalPayload = {
@@ -740,6 +760,56 @@ const SettingsPage = () => {
                 : t('settings.tableAvailable', { count: profile.table_count })}
             </p>
           </div>
+        </div>
+
+        {/* Configuración de Pagos */}
+        <div className="glass-panel p-5 space-y-4">
+          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            <Receipt size={20} className="text-emerald-400" />
+            {t('settings.paymentSettings.title')}
+          </h2>
+          <p className="text-xs text-slate-400">{t('settings.paymentSettings.help')}</p>
+
+          <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10">
+            <div>
+              <h3 className="text-sm font-semibold text-white">{t('settings.paymentSettings.acceptUsd')}</h3>
+              <p className="text-xs text-slate-400 mt-0.5">{t('settings.paymentSettings.acceptUsdHelp')}</p>
+            </div>
+            <button
+              onClick={() => handleChange('accepts_usd', !profile.accepts_usd)}
+              className={`relative w-12 h-6 rounded-full transition-colors duration-300 ${
+                profile.accepts_usd ? 'bg-emerald-500' : 'bg-white/10'
+              }`}
+              aria-label={t('settings.paymentSettings.toggleUsd')}
+            >
+              <span
+                className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 ${
+                  profile.accepts_usd ? 'translate-x-6' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+
+          {profile.accepts_usd && (
+            <div className="animate-fade-in">
+              <label htmlFor="settings-usd-rate" className="text-sm text-slate-300 font-medium mb-1 block">
+                {t('settings.paymentSettings.exchangeRate')}
+              </label>
+              <input
+                id="settings-usd-rate"
+                type="number"
+                min="0.01"
+                step="0.01"
+                value={profile.usd_exchange_rate}
+                onChange={(e) => handleChange('usd_exchange_rate', e.target.value)}
+                className="glass-input w-40 py-2 text-center text-lg font-bold"
+                placeholder="18.50"
+              />
+              <p className="text-xs text-slate-500 mt-1">
+                {t('settings.paymentSettings.exchangeRateHelp')}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Meseros */}
