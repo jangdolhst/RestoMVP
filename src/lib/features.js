@@ -13,6 +13,7 @@ export const PREMIUM_FEATURES = {
   taxBreakdown: 'taxBreakdown',
   financialCalendar: 'financialCalendar',
   paymentHistory: 'paymentHistory',
+  cashClosure: 'cashClosure',
 };
 
 const FREE_FEATURE_SET = new Set(Object.values(FREE_FEATURES));
