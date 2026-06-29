@@ -23,6 +23,7 @@ const criticalKeys = [
   'settings.paymentSettings.exchangeRate',
   'settings.weekDaysShort.monday',
   'navigation.orders',
+  'navigation.finance',
   'auth.login',
   'auth.forgotPassword',
   'auth.resetEmailSent',
@@ -51,6 +52,12 @@ const criticalKeys = [
   'reviews.starLabel',
   'premium.features.paymentHistory.title',
   'premium.features.fiscalData.title',
+  'premium.features.cashClosure.title',
+  'finance.title',
+  'finance.todaySummary',
+  'finance.closeCash',
+  'finance.saveDraft',
+  'finance.closeClosure',
 ];
 
 const getPath = (object, path) =>

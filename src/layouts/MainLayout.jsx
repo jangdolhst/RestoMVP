@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ClipboardList, LayoutGrid, LogOut, QrCode, X, Copy, Check, Store } from 'lucide-react';
+import { ClipboardList, LayoutGrid, LogOut, QrCode, X, Copy, Check, Store, WalletCards } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { QRCodeSVG } from 'qrcode.react';
 import PendingOrderNotifier from '../components/ui/PendingOrderNotifier';
@@ -55,6 +55,19 @@ const MainLayout = () => {
             >
               <ClipboardList size={18} />
               <span className="hidden sm:inline">{t('navigation.payments')}</span>
+            </NavLink>
+            <NavLink
+              to="/finanzas"
+              className={({ isActive }) =>
+                `flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 rounded-lg font-medium transition-all duration-200 ${
+                  isActive
+                    ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20'
+                    : 'text-slate-300 hover:bg-white/10 hover:text-white'
+                }`
+              }
+            >
+              <WalletCards size={18} />
+              <span className="hidden sm:inline">{t('navigation.finance')}</span>
             </NavLink>
             <NavLink
               to="/settings"

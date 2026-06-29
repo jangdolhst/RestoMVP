@@ -17,6 +17,7 @@ const ReviewsPage = lazy(() => import('./pages/ReviewsPage'))
 const UserProfilePage = lazy(() => import('./pages/UserProfilePage'))
 const POSPage = lazy(() => import('./pages/POSPage'))
 const PagosPage = lazy(() => import('./pages/PagosPage'))
+const FinancePage = lazy(() => import('./pages/FinancePage'))
 const CocinaPage = lazy(() => import('./pages/CocinaPage'))
 const LoginPage = lazy(() => import('./pages/LoginPage'))
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
@@ -67,6 +68,7 @@ function App() {
                 <Route element={<MainLayout />}>
                   <Route path="/pos" element={<POSPage />} />
                   <Route path="/pagos" element={<PagosPage />} />
+                  <Route path="/finanzas" element={<FinancePage />} />
                   <Route path="/settings" element={<SettingsPage />} />
                 </Route>
 

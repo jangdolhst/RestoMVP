@@ -22,7 +22,7 @@ const MobileBottomNav = () => {
 
   // Ocultar en rutas de menú de restaurante (tiene su propia barra de carrito)
   // y en rutas admin
-  const hiddenPaths = ['/menu/', '/pos', '/pagos', '/settings', '/cocina', '/billing', '/login'];
+  const hiddenPaths = ['/menu/', '/pos', '/pagos', '/finanzas', '/settings', '/cocina', '/billing', '/login'];
   const shouldHide = hiddenPaths.some((p) => location.pathname.startsWith(p));
 
   if (shouldHide) return null;
