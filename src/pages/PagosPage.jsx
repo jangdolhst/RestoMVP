@@ -37,12 +37,13 @@ const formatOrderDateTime = (value, locale) => {
 const formatGroupDate = (value, locale) => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '';
-  return new Intl.DateTimeFormat(locale, {
+  const formatted = new Intl.DateTimeFormat(locale, {
     weekday: 'long',
     day: '2-digit',
     month: 'short',
     year: 'numeric',
   }).format(date);
+  return `${formatted.charAt(0).toUpperCase()}${formatted.slice(1)}`;
 };
 
 const PagosPage = () => {
@@ -400,7 +401,7 @@ const PagosPage = () => {
             {activeChargeGroups.map((group) => (
               <section key={group.key} className="space-y-4">
                 <div className="flex flex-wrap items-center gap-3">
-                  <h2 className="text-lg font-bold text-white capitalize">
+                  <h2 className="text-lg font-bold text-white">
                     {group.age.key === 'today' || group.age.key === 'yesterday'
                       ? t(`payments.age.${group.age.key}`)
                       : formatGroupDate(group.createdAt, currentLocale)}
