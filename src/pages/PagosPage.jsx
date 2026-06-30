@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePOS } from '../context/POSContext';
 import { DollarSign, Search, CheckCircle, Receipt, Bell, XCircle, Clock, Phone } from 'lucide-react';
@@ -8,15 +8,48 @@ import { useAuth } from '../context/AuthContext';
 import FeatureGate from '../components/billing/FeatureGate';
 import { PREMIUM_FEATURES } from '../lib/features';
 import PaymentCaptureModal from '../components/payments/PaymentCaptureModal';
+import { getOrderAgeMeta, groupOrdersByBusinessDate } from '../lib/orderGrouping';
 
 const ACTIVE_PAYMENT_STATUSES = new Set(['pendiente_cocina', 'listo']);
 
 const formatCurrency = (value) => `$${Number(value || 0).toFixed(2)}`;
 
+const ageBadgeClasses = {
+  emerald: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20',
+  amber: 'bg-amber-500/10 text-amber-300 border-amber-500/20',
+  orange: 'bg-orange-500/10 text-orange-300 border-orange-500/20',
+  red: 'bg-red-500/10 text-red-300 border-red-500/20',
+  slate: 'bg-slate-500/10 text-slate-300 border-slate-500/20',
+};
+
+const formatOrderDateTime = (value, locale) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat(locale, {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+};
+
+const formatGroupDate = (value, locale) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat(locale, {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(date);
+};
+
 const PagosPage = () => {
   const { orders, updateOrderStatus, captureOrderPayment, restaurantProfile } = usePOS();
   const { user } = useAuth();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const currentLocale = i18n.language?.startsWith('en') ? 'en-US' : 'es-MX';
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDate, setFilterDate] = useState(() => {
@@ -106,6 +139,10 @@ const PagosPage = () => {
   };
 
   const activeChargeOrders = orders.filter((order) => ACTIVE_PAYMENT_STATUSES.has(order.status));
+  const activeChargeGroups = useMemo(
+    () => groupOrdersByBusinessDate(activeChargeOrders),
+    [activeChargeOrders]
+  );
 
   const handleCapturePayment = async (paymentInput) => {
     if (!paymentOrder) return;
@@ -173,6 +210,9 @@ const PagosPage = () => {
 
   const renderOrderCard = (order, { allowPrint = false } = {}) => {
     const isPagado = order.status === 'pagado';
+    const ageMeta = getOrderAgeMeta(order.createdAt);
+    const ageLabel = t(`payments.age.${ageMeta.key}`, { count: ageMeta.dayDiff });
+    const orderDateTime = formatOrderDateTime(order.createdAt, currentLocale);
 
     return (
       <div
@@ -186,6 +226,17 @@ const PagosPage = () => {
               {order.clientName}
               {isPagado && <Receipt size={16} className="text-emerald-400" title="Pagado" />}
             </h3>
+            <div className="mt-1 mb-2 flex flex-wrap items-center gap-2 text-xs">
+              {orderDateTime && (
+                <span className="inline-flex items-center gap-1 text-slate-400">
+                  <Clock size={12} />
+                  {orderDateTime}
+                </span>
+              )}
+              <span className={`inline-flex items-center rounded-full border px-2 py-0.5 font-semibold ${ageBadgeClasses[ageMeta.tone] || ageBadgeClasses.slate}`}>
+                {ageLabel}
+              </span>
+            </div>
             {order.phone && (
               <p className="text-sm text-slate-400 mb-1">{order.phone}</p>
             )}
@@ -345,8 +396,27 @@ const PagosPage = () => {
             <p className="text-slate-500">{t('payments.activeEmptyDescription')}</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {activeChargeOrders.map((order) => renderOrderCard(order))}
+          <div className="space-y-8">
+            {activeChargeGroups.map((group) => (
+              <section key={group.key} className="space-y-4">
+                <div className="flex flex-wrap items-center gap-3">
+                  <h2 className="text-lg font-bold text-white capitalize">
+                    {group.age.key === 'today' || group.age.key === 'yesterday'
+                      ? t(`payments.age.${group.age.key}`)
+                      : formatGroupDate(group.createdAt, currentLocale)}
+                  </h2>
+                  <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${ageBadgeClasses[group.age.tone] || ageBadgeClasses.slate}`}>
+                    {t(`payments.age.${group.age.key}`, { count: group.age.dayDiff })}
+                  </span>
+                  <span className="text-xs text-slate-500">
+                    {t('payments.groupOrderCount', { count: group.orders.length })}
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {group.orders.map((order) => renderOrderCard(order))}
+                </div>
+              </section>
+            ))}
           </div>
         )}
       </section>
