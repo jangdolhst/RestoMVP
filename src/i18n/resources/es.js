@@ -433,6 +433,11 @@ const es = {
     emptyTitle: 'No hay órdenes pendientes',
     emptyDescription: 'La cocina está libre por el momento.',
     ago: 'Hace {{minutes}} min',
+    elapsed: {
+      minutes: 'Hace {{count}} min',
+      hours: 'Hace {{count}} h',
+      days: 'Hace {{count}} días',
+    },
     ingredients: 'Ing:',
     add: '+ AÑADIR ',
     without: '- SIN ',

@@ -433,6 +433,11 @@ const en = {
     emptyTitle: 'No pending orders',
     emptyDescription: 'The kitchen is clear for now.',
     ago: '{{minutes}} min ago',
+    elapsed: {
+      minutes: '{{count}} min ago',
+      hours: '{{count}} h ago',
+      days: '{{count}} days ago',
+    },
     ingredients: 'Ing:',
     add: '+ ADD ',
     without: '- NO ',

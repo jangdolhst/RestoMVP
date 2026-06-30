@@ -2,22 +2,22 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePOS } from '../context/POSContext';
 import { UtensilsCrossed, Check } from 'lucide-react';
+import { getElapsedOrderAge } from '../lib/orderAge';
 
 const OrderCard = ({ order, updateOrderStatus }) => {
-  const [minutes, setMinutes] = useState(0);
+  const [orderAge, setOrderAge] = useState(() => getElapsedOrderAge(order.createdAt));
   const { t } = useTranslation();
 
   useEffect(() => {
     const calcTime = () => {
-      const diffMs = new Date() - new Date(order.createdAt);
-      setMinutes(Math.floor(diffMs / 60000));
+      setOrderAge(getElapsedOrderAge(order.createdAt));
     };
     calcTime();
     const interval = setInterval(calcTime, 30000); // Check every 30s
     return () => clearInterval(interval);
   }, [order.createdAt]);
 
-  const isUrgent = minutes >= 10;
+  const isUrgent = orderAge.totalMinutes >= 10;
 
   return (
     <div 
@@ -41,7 +41,9 @@ const OrderCard = ({ order, updateOrderStatus }) => {
           <p className="text-sm text-slate-300">{order.clientName}</p>
         </div>
         <div className="text-right">
-          <span className="text-xs text-slate-400 block">{t('kitchen.ago', { minutes })}</span>
+          <span className="text-xs text-slate-400 block">
+            {t(`kitchen.elapsed.${orderAge.unit}`, { count: orderAge.count })}
+          </span>
           {isUrgent && (
             <span className="text-xs font-bold px-2 py-1 bg-red-500/20 text-red-400 rounded mt-1 inline-block">
               {t('common.states.urgent')}
