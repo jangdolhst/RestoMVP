@@ -7,6 +7,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import PendingOrderNotifier from '../components/ui/PendingOrderNotifier';
 import Logo from '../components/ui/Logo';
 import LanguageSwitcher from '../components/ui/LanguageSwitcher';
+import BusinessBottomNav from '../components/ui/BusinessBottomNav';
 
 const MainLayout = () => {
   const { user, logout } = useAuth();
@@ -25,11 +26,11 @@ const MainLayout = () => {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Navegación Superior Glassmorphism */}
-      <header className="sticky top-0 z-50 p-4">
-        <nav className="glass-panel mx-auto max-w-7xl flex items-center justify-between px-6 py-3">
-          <Logo size="md" showText={true} />
+      <header className="sticky top-0 z-50 p-3 md:p-4">
+        <nav className="glass-panel mx-auto max-w-7xl flex items-center justify-between gap-3 px-3 py-2.5 md:px-6 md:py-3">
+          <Logo size="sm" showText={true} />
 
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="hidden md:flex items-center gap-2 lg:gap-4">
             <NavLink
               to="/pos"
               className={({ isActive }) =>
@@ -82,9 +83,11 @@ const MainLayout = () => {
               <Store size={18} />
               <span className="hidden sm:inline">{t('navigation.myBusiness')}</span>
             </NavLink>
-            
+
             <div className="w-px h-6 bg-white/10 mx-1 hidden sm:block"></div>
-            
+          </div>
+
+          <div className="flex items-center gap-1.5 md:gap-3">
             <button
               onClick={() => setIsQrModalOpen(true)}
               className="flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-slate-300 hover:bg-emerald-500/20 hover:text-emerald-400 transition-all duration-200"
@@ -94,7 +97,12 @@ const MainLayout = () => {
               <span className="hidden sm:inline">{t('navigation.share')}</span>
             </button>
 
-            <LanguageSwitcher />
+            <div className="md:hidden">
+              <LanguageSwitcher compact />
+            </div>
+            <div className="hidden md:block">
+              <LanguageSwitcher />
+            </div>
 
             <button
               onClick={logout}
@@ -109,9 +117,11 @@ const MainLayout = () => {
       </header>
 
       {/* Contenido Principal (donde irá el POS o Pagos) */}
-      <main className="flex-1 w-full mx-auto px-4 pb-4 flex overflow-hidden">
+      <main className="flex-1 w-full mx-auto px-4 pb-28 md:pb-4 flex overflow-hidden">
         <Outlet />
       </main>
+
+      <BusinessBottomNav />
 
       {/* Notificador global de pedidos pendientes */}
       <PendingOrderNotifier />
