@@ -13,7 +13,7 @@ const POSPage = () => {
   return (
     <div className="flex w-full h-full relative">
       {/* Panel Izquierdo/Central: Menú */}
-      <div className="flex-1 pb-20 lg:pb-0">
+      <div className="flex-1 pb-44 lg:pb-0">
         <POSGrid />
       </div>
       
@@ -21,10 +21,10 @@ const POSPage = () => {
       <TicketSidebar isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
 
       {/* Barra flotante para móviles (lg:hidden) */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-slate-900/80 backdrop-blur-md border-t border-white/10 lg:hidden z-30">
+      <div className="fixed bottom-[calc(env(safe-area-inset-bottom)+5.9rem)] left-0 right-0 z-40 px-4 lg:hidden">
         <button 
           onClick={() => setIsCartOpen(true)}
-          className="btn-primary w-full py-4 flex justify-between items-center px-6 shadow-lg shadow-orange-500/20"
+          className="btn-primary w-full py-4 flex justify-between items-center px-6 shadow-2xl shadow-orange-500/30"
         >
           <div className="flex items-center gap-2">
             <ShoppingBag size={20} />
