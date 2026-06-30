@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import FeatureGate from '../components/billing/FeatureGate';
 import { PREMIUM_FEATURES } from '../lib/features';
 import PaymentCaptureModal from '../components/payments/PaymentCaptureModal';
-import { getOrderAgeMeta, groupOrdersByBusinessDate } from '../lib/orderGrouping';
+import { getOrderAgeMeta, getStaleOrders, groupOrdersByBusinessDate } from '../lib/orderGrouping';
 
 const ACTIVE_PAYMENT_STATUSES = new Set(['pendiente_cocina', 'listo']);
 
@@ -61,7 +61,9 @@ const PagosPage = () => {
   const [pendingOrders, setPendingOrders] = useState([]);
   const [paymentOrder, setPaymentOrder] = useState(null);
   const [isPaymentSubmitting, setIsPaymentSubmitting] = useState(false);
+  const [isCleaningOldOrders, setIsCleaningOldOrders] = useState(false);
   const [paymentError, setPaymentError] = useState('');
+  const [cleanupMessage, setCleanupMessage] = useState('');
   const intervalRef = useRef(null);
 
   const fetchPendingOrders = useCallback(async () => {
@@ -140,10 +142,37 @@ const PagosPage = () => {
   };
 
   const activeChargeOrders = orders.filter((order) => ACTIVE_PAYMENT_STATUSES.has(order.status));
+  const staleChargeOrders = useMemo(
+    () => getStaleOrders(activeChargeOrders),
+    [activeChargeOrders]
+  );
   const activeChargeGroups = useMemo(
     () => groupOrdersByBusinessDate(activeChargeOrders),
     [activeChargeOrders]
   );
+
+  const handleCancelOldOrders = async () => {
+    if (staleChargeOrders.length === 0 || isCleaningOldOrders) return;
+
+    const confirmed = window.confirm(t('payments.cleanupOld.confirm', { count: staleChargeOrders.length }));
+    if (!confirmed) return;
+
+    setCleanupMessage('');
+    setIsCleaningOldOrders(true);
+
+    try {
+      for (const order of staleChargeOrders) {
+        await updateOrderStatus(order.id, 'cancelado');
+      }
+      window.dispatchEvent(new Event('orders-updated'));
+      setCleanupMessage(t('payments.cleanupOld.success', { count: staleChargeOrders.length }));
+    } catch (err) {
+      console.error('Error cancelando órdenes antiguas:', err);
+      setCleanupMessage(t('payments.cleanupOld.error'));
+    } finally {
+      setIsCleaningOldOrders(false);
+    }
+  };
 
   const handleCapturePayment = async (paymentInput) => {
     if (!paymentOrder) return;
@@ -388,7 +417,24 @@ const PagosPage = () => {
             <h1 className="text-3xl font-bold text-white tracking-tight">{t('payments.activeTitle')}</h1>
             <p className="text-sm text-slate-400 mt-1">{t('payments.activeDescription')}</p>
           </div>
+          {staleChargeOrders.length > 0 && (
+            <button
+              type="button"
+              onClick={handleCancelOldOrders}
+              disabled={isCleaningOldOrders}
+              className="w-full md:w-auto rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm font-semibold text-red-200 transition-colors hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isCleaningOldOrders
+                ? t('payments.cleanupOld.cleaning')
+                : t('payments.cleanupOld.action', { count: staleChargeOrders.length })}
+            </button>
+          )}
         </div>
+        {cleanupMessage && (
+          <div className="mb-4 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
+            {cleanupMessage}
+          </div>
+        )}
 
         {activeChargeOrders.length === 0 ? (
           <div className="glass-panel p-10 text-center flex flex-col items-center justify-center">

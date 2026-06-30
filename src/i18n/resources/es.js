@@ -361,6 +361,13 @@ const es = {
       veryOld: 'Muy antigua',
       unknown: 'Sin fecha',
     },
+    cleanupOld: {
+      action: 'Cancelar {{count}} antiguas',
+      cleaning: 'Cancelando antiguas...',
+      confirm: 'Se cancelarán {{count}} órdenes antiguas pendientes de cobro. No se marcarán como pagadas ni afectarán ventas. ¿Continuar?',
+      success: '{{count}} órdenes antiguas canceladas.',
+      error: 'No se pudieron cancelar las órdenes antiguas.',
+    },
     paymentModal: {
       title: 'Registrar pago',
       description: 'Captura cómo se recibió el pago antes de marcar la orden como pagada.',

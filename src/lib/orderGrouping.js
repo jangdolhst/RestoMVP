@@ -72,3 +72,6 @@ export const groupOrdersByBusinessDate = (orders, now = new Date()) => {
     }))
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 };
+
+export const getStaleOrders = (orders, now = new Date()) =>
+  orders.filter((order) => getOrderAgeMeta(order.createdAt || order.created_at, now).key === 'veryOld');

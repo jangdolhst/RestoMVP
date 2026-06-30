@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import {
   getOrderAgeMeta,
+  getStaleOrders,
   groupOrdersByBusinessDate,
 } from '../src/lib/orderGrouping.js';
 
@@ -34,4 +35,17 @@ test('getOrderAgeMeta labels today yesterday old and very old orders', () => {
   assert.equal(getOrderAgeMeta('2026-06-28T08:00:00.000Z', new Date('2026-06-29T21:00:00.000Z')).key, 'yesterday');
   assert.equal(getOrderAgeMeta('2026-06-25T08:00:00.000Z', new Date('2026-06-29T21:00:00.000Z')).key, 'old');
   assert.equal(getOrderAgeMeta('2026-06-19T08:00:00.000Z', new Date('2026-06-29T21:00:00.000Z')).key, 'veryOld');
+});
+
+test('getStaleOrders returns only orders older than the stale threshold', () => {
+  const orders = [
+    { id: 'recent', createdAt: '2026-06-27T08:00:00.000Z' },
+    { id: 'old', createdAt: '2026-06-19T08:00:00.000Z' },
+    { id: 'very-old', createdAt: '2026-05-22T08:00:00.000Z' },
+  ];
+
+  assert.deepEqual(
+    getStaleOrders(orders, new Date('2026-06-29T21:00:00.000Z')).map((order) => order.id),
+    ['old', 'very-old']
+  );
 });

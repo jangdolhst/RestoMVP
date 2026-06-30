@@ -361,6 +361,13 @@ const en = {
       veryOld: 'Very old',
       unknown: 'No date',
     },
+    cleanupOld: {
+      action: 'Cancel {{count}} old',
+      cleaning: 'Canceling old orders...',
+      confirm: '{{count}} old unpaid orders will be canceled. They will not be marked as paid and will not affect sales. Continue?',
+      success: '{{count}} old orders canceled.',
+      error: 'Could not cancel old orders.',
+    },
     paymentModal: {
       title: 'Register payment',
       description: 'Capture how the payment was received before marking the order as paid.',
