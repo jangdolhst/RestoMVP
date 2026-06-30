@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useMemo, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { publicSupabase, supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 import i18n from '../i18n';
 
@@ -77,10 +77,11 @@ export const POSProvider = ({ children }) => {
       setIsLoading(true);
       
       // Queries base (necesarias para todos: dueño y cliente)
+      const dataClient = isClientMenu ? publicSupabase : supabase;
       const baseQueries = [
-        supabase.from('categories').select('id, tenant_id, name, image_url, created_at').eq('tenant_id', currentTenantId).order('created_at', { ascending: true }),
-        supabase.from('products').select('id, tenant_id, category_id, name, price, ingredients, image_url, created_at').eq('tenant_id', currentTenantId).order('created_at', { ascending: true }),
-        supabase.from('extras').select('id, tenant_id, name, price, created_at').eq('tenant_id', currentTenantId).order('created_at', { ascending: true }),
+        dataClient.from('categories').select('id, tenant_id, name, image_url, created_at').eq('tenant_id', currentTenantId).order('created_at', { ascending: true }),
+        dataClient.from('products').select('id, tenant_id, category_id, name, price, ingredients, image_url, created_at').eq('tenant_id', currentTenantId).order('created_at', { ascending: true }),
+        dataClient.from('extras').select('id, tenant_id, name, price, created_at').eq('tenant_id', currentTenantId).order('created_at', { ascending: true }),
       ];
 
       // Cargar perfil del restaurante (para dueño)
@@ -253,7 +254,7 @@ export const POSProvider = ({ children }) => {
 	          })),
 	        }));
 
-	        const { data, error } = await supabase.rpc('create_public_order', {
+	        const { data, error } = await publicSupabase.rpc('create_public_order', {
 	          p_tenant_id: currentTenantId,
 	          p_client_name: clientName || 'Sin Nombre',
 	          p_phone: phone || null,

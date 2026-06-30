@@ -5,7 +5,7 @@ import { ShoppingBag, ArrowLeft, Clock } from 'lucide-react';
 import POSGrid from '../components/pos/POSGrid';
 import TicketSidebar from '../components/pos/TicketSidebar';
 import { usePOS } from '../context/POSContext';
-import { supabase } from '../lib/supabase';
+import { publicSupabase } from '../lib/supabase';
 import { isRestaurantOpen } from '../utils/businessHours';
 
 const ClientePage = () => {
@@ -21,7 +21,7 @@ const ClientePage = () => {
 
     const fetchRestaurantInfo = async () => {
       try {
-        const { data } = await supabase
+        const { data } = await publicSupabase
           .from('restaurant_profiles')
           .select('name, logo_url, business_hours')
           .eq('id', tenantId)
