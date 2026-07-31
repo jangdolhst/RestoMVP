@@ -11,6 +11,7 @@ test('public menu uses a Supabase client without persisted business session', ()
   assert.match(supabaseClientSource, /persistSession:\s*false/);
   assert.match(supabaseClientSource, /autoRefreshToken:\s*false/);
   assert.match(supabaseClientSource, /detectSessionInUrl:\s*false/);
+  assert.match(supabaseClientSource, /storageKey:\s*'jamm-free-public-anon'/);
 });
 
 test('client menu reads and creates public orders through the anonymous client', () => {

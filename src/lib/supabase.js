@@ -10,5 +10,6 @@ export const publicSupabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: false,
     detectSessionInUrl: false,
     persistSession: false,
+    storageKey: 'jamm-free-public-anon',
   },
 });
