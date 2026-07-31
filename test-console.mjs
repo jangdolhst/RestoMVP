@@ -1,20 +1,38 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
 import { chromium } from 'playwright';
 
-(async () => {
+const TARGET_URL = process.env.TEST_CONSOLE_URL || 'http://localhost:5175/test-settings';
+
+const isServerAvailable = async (url) => {
+  try {
+    const response = await fetch(url, { method: 'HEAD' });
+    return response.ok || response.status < 500;
+  } catch {
+    return false;
+  }
+};
+
+test('settings page has no browser console errors when dev server is running', async (t) => {
+  if (!(await isServerAvailable(TARGET_URL))) {
+    t.skip(`Dev server not available at ${TARGET_URL}`);
+    return;
+  }
+
   const browser = await chromium.launch();
   const page = await browser.newPage();
-  
-  page.on('console', msg => console.log('PAGE LOG:', msg.type(), msg.text()));
-  page.on('pageerror', err => console.log('PAGE ERROR:', err.message));
-  
-  console.log('Navigating to settings...');
-  await page.goto('http://localhost:5175/test-settings', { waitUntil: 'networkidle' });
-  
-  await page.waitForTimeout(3000);
-  
-  const html = await page.content();
-  console.log("HTML length:", html.length);
-  
-  await browser.close();
-  process.exit(0);
-})();
+
+  const errors = [];
+  page.on('console', (msg) => {
+    if (msg.type() === 'error') errors.push(msg.text());
+  });
+  page.on('pageerror', (err) => errors.push(err.message));
+
+  try {
+    await page.goto(TARGET_URL, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(1000);
+    assert.equal(errors.length, 0, errors.join('\n'));
+  } finally {
+    await browser.close();
+  }
+});
