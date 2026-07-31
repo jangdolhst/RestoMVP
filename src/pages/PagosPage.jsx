@@ -9,6 +9,7 @@ import FeatureGate from '../components/billing/FeatureGate';
 import { PREMIUM_FEATURES } from '../lib/features';
 import PaymentCaptureModal from '../components/payments/PaymentCaptureModal';
 import { getOrderAgeMeta, getStaleOrders, groupOrdersByBusinessDate } from '../lib/orderGrouping';
+import { splitPendingConfirmationOrders } from '../lib/pendingOrders';
 
 const ACTIVE_PAYMENT_STATUSES = new Set(['pendiente_cocina', 'listo']);
 
@@ -78,28 +79,17 @@ const PagosPage = () => {
 
       if (error) throw error;
 
-      const now = new Date();
-      const validOrders = [];
+      const { fresh, expired } = splitPendingConfirmationOrders(data || []);
 
-      for (const order of (data || [])) {
-        const createdAt = new Date(order.created_at);
-        const minutesElapsed = (now - createdAt) / 60000;
+      await Promise.all(expired.map((order) => (
+        supabase
+          .from('orders')
+          .update({ status: 'cancelado' })
+          .eq('id', order.id)
+          .eq('tenant_id', user.id)
+      )));
 
-        if (minutesElapsed > 15) {
-          await supabase
-            .from('orders')
-            .update({ status: 'cancelado' })
-            .eq('id', order.id)
-            .eq('tenant_id', user.id);
-        } else {
-          validOrders.push({
-            ...order,
-            minutesElapsed: Math.floor(minutesElapsed),
-          });
-        }
-      }
-
-      setPendingOrders(validOrders);
+      setPendingOrders(fresh);
     } catch (err) {
       console.error('Error fetching pending orders:', err.message);
     }

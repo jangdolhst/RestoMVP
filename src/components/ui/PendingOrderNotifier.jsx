@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Bell } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
+import { splitPendingConfirmationOrders } from '../../lib/pendingOrders';
 
 /**
  * PendingOrderNotifier — Componente global que:
@@ -57,14 +58,25 @@ const PendingOrderNotifier = () => {
   const fetchPendingCount = useCallback(async () => {
     if (!user?.id) return;
     try {
-      const { count, error } = await supabase
+      const { data, error } = await supabase
         .from('orders')
-        .select('id', { count: 'exact', head: true })
+        .select('id, created_at')
         .eq('tenant_id', user.id)
         .eq('status', 'pendiente_confirmacion');
 
       if (error) throw error;
-      setPendingCount(count || 0);
+
+      const { fresh, expired } = splitPendingConfirmationOrders(data || []);
+
+      await Promise.all(expired.map((order) => (
+        supabase
+          .from('orders')
+          .update({ status: 'cancelado' })
+          .eq('id', order.id)
+          .eq('tenant_id', user.id)
+      )));
+
+      setPendingCount(fresh.length);
     } catch {
       // Silenciar errores de polling
     }
