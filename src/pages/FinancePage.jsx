@@ -12,6 +12,14 @@ const todayLocalDate = () => {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 };
 
+const getBusinessTimeZone = () => {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Tijuana';
+  } catch {
+    return 'America/Tijuana';
+  }
+};
+
 const formatCurrency = (value) => `$${Number(value || 0).toFixed(2)}`;
 const formatUsd = (value) => `$${Number(value || 0).toFixed(2)} USD`;
 
@@ -73,12 +81,20 @@ const FinancePage = () => {
 
   const loadFinance = useCallback(async () => {
     if (!user?.id) return;
+    if (!businessDate) {
+      setBusinessDate(todayLocalDate());
+      return;
+    }
+
     setIsLoading(true);
     setErrorMessage('');
 
     try {
       const [{ data: summaryData, error: summaryError }, { data: historyData, error: historyError }] = await Promise.all([
-        supabase.rpc('get_finance_day_summary', { p_business_date: businessDate }),
+        supabase.rpc('get_finance_day_summary', {
+          p_business_date: businessDate,
+          p_timezone: getBusinessTimeZone(),
+        }),
         supabase
           .from('cash_closures')
           .select('id, business_date, status, snapshot_total_sales_mxn, expected_cash_mxn, expected_cash_usd, difference_mxn, difference_usd, closed_at')
@@ -149,6 +165,7 @@ const FinancePage = () => {
         p_counted_cash_usd: closureForm.countedCashUsd === '' ? null : roundMoney(closureForm.countedCashUsd),
         p_cash_expenses_mxn: roundMoney(closureForm.cashExpensesMxn),
         p_notes: closureForm.notes,
+        p_timezone: getBusinessTimeZone(),
       });
 
       if (error) throw error;
@@ -189,7 +206,7 @@ const FinancePage = () => {
                   id="finance-date"
                   type="date"
                   value={businessDate}
-                  onChange={(event) => setBusinessDate(event.target.value)}
+                  onChange={(event) => setBusinessDate(event.target.value || todayLocalDate())}
                   className="bg-transparent text-white text-sm outline-none"
                 />
               </label>
