@@ -6,7 +6,7 @@ import i18n from '../i18n';
 
 const POSContext = createContext();
 const ORDER_SELECT = 'id, tenant_id, order_number, client_name, table_name, phone, type, total, status, created_at, paid_at, payment_cash_mxn_received, payment_cash_usd_received, payment_card_mxn_amount, payment_transfer_mxn_amount, payment_exchange_rate, payment_change_mxn, payment_total_effective_mxn, items:order_items(id, product_name, quantity, price, ingredients, modifications)';
-const PROFILE_SELECT = 'name, logo_url, address, phone, table_count, waiters, fiscal_number, tax_included, tax_rate, accepts_usd, usd_exchange_rate';
+const PROFILE_SELECT = 'name, logo_url, address, phone, table_count, waiters, fiscal_number, tax_included, tax_rate, accepts_usd, usd_exchange_rate, business_timezone';
 
 export const usePOS = () => {
   const context = useContext(POSContext);

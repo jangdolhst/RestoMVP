@@ -26,8 +26,10 @@ test('finance timezone RPCs remain protected from anon', () => {
   assert.match(normalized, /revoke execute on function public\.close_cash_closure\(date, numeric, numeric, numeric, numeric, numeric, text, text\) from public, anon/);
 });
 
-test('finance page sends browser timezone to summary and closure RPCs', () => {
+test('finance page sends restaurant profile timezone to summary and closure RPCs', () => {
   assert.match(financePage, /Intl\.DateTimeFormat\(\)\.resolvedOptions\(\)\.timeZone/);
-  assert.match(financePage, /p_timezone: getBusinessTimeZone\(\)/);
+  assert.match(financePage, /restaurantProfile\?\.business_timezone/);
+  assert.match(financePage, /normalizeBusinessTimeZone/);
+  assert.match(financePage, /p_timezone: businessTimezone/);
   assert.match(financePage, /setBusinessDate\(event\.target\.value \|\| todayLocalDate\(\)\)/);
 });

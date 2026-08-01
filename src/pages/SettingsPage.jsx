@@ -7,6 +7,11 @@ import PhoneInput from '../components/ui/PhoneInput';
 import AddressMapPreview from '../components/ui/AddressMapPreview';
 import FeatureGate from '../components/billing/FeatureGate';
 import { PREMIUM_FEATURES, hasFeature } from '../lib/features';
+import {
+  DEFAULT_BUSINESS_TIMEZONE,
+  deriveBusinessTimeZone,
+  normalizeBusinessTimeZone,
+} from '../lib/businessTimezone';
 
 const WEEK_DAYS = [
   { id: 'monday', label: 'L' },
@@ -168,6 +173,7 @@ const SettingsPage = () => {
     tax_rate: 0,
     accepts_usd: false,
     usd_exchange_rate: '',
+    business_timezone: DEFAULT_BUSINESS_TIMEZONE,
     business_hours: { open: '09:00', close: '22:00', is_manually_closed: false },
   });
 
@@ -180,7 +186,7 @@ const SettingsPage = () => {
       try {
         const { data, error } = await supabase
           .from('restaurant_profiles')
-          .select('name, description, logo_url, banner_url, address, phone, categories, is_active, latitude, longitude, table_count, waiters, fiscal_number, tax_included, tax_rate, accepts_usd, usd_exchange_rate, business_hours')
+          .select('name, description, logo_url, banner_url, address, phone, categories, is_active, latitude, longitude, table_count, waiters, fiscal_number, tax_included, tax_rate, accepts_usd, usd_exchange_rate, business_timezone, business_hours')
           .eq('id', user.id)
           .maybeSingle();
 
@@ -205,6 +211,7 @@ const SettingsPage = () => {
             tax_rate: data.tax_rate || 0,
             accepts_usd: data.accepts_usd || false,
             usd_exchange_rate: data.usd_exchange_rate || '',
+            business_timezone: normalizeBusinessTimeZone(data.business_timezone),
             business_hours: data.business_hours || { open: '09:00', close: '22:00', is_manually_closed: false },
           });
         }
@@ -278,6 +285,7 @@ const SettingsPage = () => {
           ...prev,
           latitude: result.lat,
           longitude: result.lng,
+          business_timezone: deriveBusinessTimeZone(result.lat, result.lng, prev.business_timezone),
         }));
       }
       setIsGeocoding(false);
@@ -298,6 +306,7 @@ const SettingsPage = () => {
             ...prev,
             latitude: result.lat,
             longitude: result.lng,
+            business_timezone: deriveBusinessTimeZone(result.lat, result.lng, prev.business_timezone),
           }));
         }
         setIsGeocoding(false);
@@ -322,6 +331,7 @@ const SettingsPage = () => {
         ...prev,
         latitude: result.lat,
         longitude: result.lng,
+        business_timezone: deriveBusinessTimeZone(result.lat, result.lng, prev.business_timezone),
       }));
     } else {
       alert(t('settings.locationNotFound'));
@@ -344,6 +354,7 @@ const SettingsPage = () => {
           ...prev,
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
+          business_timezone: deriveBusinessTimeZone(position.coords.latitude, position.coords.longitude, prev.business_timezone),
         }));
         setIsGeocoding(false);
       },
@@ -357,7 +368,12 @@ const SettingsPage = () => {
   };
 
   const handleMapPositionChange = (lat, lng) => {
-    setProfile(prev => ({ ...prev, latitude: lat, longitude: lng }));
+    setProfile(prev => ({
+      ...prev,
+      latitude: lat,
+      longitude: lng,
+      business_timezone: deriveBusinessTimeZone(lat, lng, prev.business_timezone),
+    }));
     setSaveStatus(null);
   };
 
@@ -445,6 +461,7 @@ const SettingsPage = () => {
         table_count: profile.table_count,
         waiters: profile.waiters,
         business_hours: profile.business_hours,
+        business_timezone: normalizeBusinessTimeZone(profile.business_timezone),
         updated_at: new Date().toISOString(),
       };
 
@@ -695,10 +712,18 @@ const SettingsPage = () => {
               )}
             </div>
             {profile.latitude && profile.longitude && (
-              <p className="text-xs text-emerald-400/80 mt-1 flex items-center gap-1">
-                <CheckCircle2 size={12} />
-                {t('settings.detectLocation', { lat: profile.latitude.toFixed(4), lng: profile.longitude.toFixed(4) })}
-              </p>
+              <div className="mt-1 space-y-1">
+                <p className="text-xs text-emerald-400/80 flex items-center gap-1">
+                  <CheckCircle2 size={12} />
+                  {t('settings.detectLocation', { lat: profile.latitude.toFixed(4), lng: profile.longitude.toFixed(4) })}
+                </p>
+                <p className="text-xs text-slate-500">
+                  {t('settings.businessTimezone')}: <span className="text-slate-300">{normalizeBusinessTimeZone(profile.business_timezone)}</span>
+                </p>
+                <p className="text-[11px] text-slate-600">
+                  {t('settings.businessTimezoneHelp')}
+                </p>
+              </div>
             )}
             <div className="flex flex-wrap gap-3 mt-2">
               {!profile.latitude && !profile.longitude && profile.address && profile.address.trim().length >= 5 && !isGeocoding && (

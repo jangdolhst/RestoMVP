@@ -460,6 +460,8 @@ const en = {
     description: 'Description',
     address: 'Address',
     detectLocation: 'Detected location ({{lat}}, {{lng}})',
+    businessTimezone: 'Business timezone',
+    businessTimezoneHelp: 'Calculated automatically from the business location and used for finance reports and daily closures.',
     searchAddress: 'Search by address',
     useGps: 'Use my GPS location',
     contactPhone: 'Contact Phone',

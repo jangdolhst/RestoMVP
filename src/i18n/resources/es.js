@@ -460,6 +460,8 @@ const es = {
     description: 'Descripción',
     address: 'Dirección',
     detectLocation: 'Ubicación detectada ({{lat}}, {{lng}})',
+    businessTimezone: 'Zona horaria del negocio',
+    businessTimezoneHelp: 'Se calcula automáticamente con la ubicación del negocio y se usa para finanzas y cortes diarios.',
     searchAddress: 'Buscar por dirección',
     useGps: 'Usar mi ubicación GPS',
     contactPhone: 'Teléfono de Contacto',

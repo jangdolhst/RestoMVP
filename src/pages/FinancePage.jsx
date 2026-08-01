@@ -4,19 +4,21 @@ import { Calculator, CalendarDays, CheckCircle, DollarSign, Loader2, RefreshCw, 
 import FeatureGate from '../components/billing/FeatureGate';
 import { PREMIUM_FEATURES } from '../lib/features';
 import { supabase } from '../lib/supabase';
+import { DEFAULT_BUSINESS_TIMEZONE, normalizeBusinessTimeZone } from '../lib/businessTimezone';
 import { calculateCashClosure, roundMoney } from '../lib/paymentMath';
 import { useAuth } from '../context/AuthContext';
+import { usePOS } from '../context/POSContext';
 
 const todayLocalDate = () => {
   const date = new Date();
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 };
 
-const getBusinessTimeZone = () => {
+const getBrowserTimeZone = () => {
   try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Tijuana';
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || DEFAULT_BUSINESS_TIMEZONE;
   } catch {
-    return 'America/Tijuana';
+    return DEFAULT_BUSINESS_TIMEZONE;
   }
 };
 
@@ -62,6 +64,7 @@ const NumberField = ({ id, label, value, onChange, disabled = false }) => (
 
 const FinancePage = () => {
   const { user } = useAuth();
+  const { restaurantProfile } = usePOS();
   const { t } = useTranslation();
   const [businessDate, setBusinessDate] = useState(todayLocalDate);
   const [summary, setSummary] = useState(null);
@@ -79,6 +82,11 @@ const FinancePage = () => {
     notes: '',
   });
 
+  const businessTimezone = useMemo(
+    () => normalizeBusinessTimeZone(restaurantProfile?.business_timezone, getBrowserTimeZone()),
+    [restaurantProfile?.business_timezone]
+  );
+
   const loadFinance = useCallback(async () => {
     if (!user?.id) return;
     if (!businessDate) {
@@ -93,7 +101,7 @@ const FinancePage = () => {
       const [{ data: summaryData, error: summaryError }, { data: historyData, error: historyError }] = await Promise.all([
         supabase.rpc('get_finance_day_summary', {
           p_business_date: businessDate,
-          p_timezone: getBusinessTimeZone(),
+          p_timezone: businessTimezone,
         }),
         supabase
           .from('cash_closures')
@@ -126,7 +134,7 @@ const FinancePage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [businessDate, t, user?.id]);
+  }, [businessDate, businessTimezone, t, user?.id]);
 
   useEffect(() => {
     loadFinance();
@@ -165,7 +173,7 @@ const FinancePage = () => {
         p_counted_cash_usd: closureForm.countedCashUsd === '' ? null : roundMoney(closureForm.countedCashUsd),
         p_cash_expenses_mxn: roundMoney(closureForm.cashExpensesMxn),
         p_notes: closureForm.notes,
-        p_timezone: getBusinessTimeZone(),
+        p_timezone: businessTimezone,
       });
 
       if (error) throw error;
