@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Save, Upload, Image, Store, Loader2, CheckCircle2, AlertCircle, X, MapPin, Search, Plus, UserRound, Clock, Receipt } from 'lucide-react';
+import { Save, Upload, Image, Store, Loader2, CheckCircle2, AlertCircle, X, MapPin, Search, Plus, UserRound, Clock, Receipt, Truck } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import PhoneInput from '../components/ui/PhoneInput';
@@ -42,6 +42,12 @@ const AVAILABLE_CATEGORIES = [
 ];
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+
+const toNullableNumber = (value) => {
+  if (value === '' || value === null || value === undefined) return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
 
 /**
  * WaitersSection — Subcomponente para gestionar lista de meseros.
@@ -174,6 +180,15 @@ const SettingsPage = () => {
     accepts_usd: false,
     usd_exchange_rate: '',
     business_timezone: DEFAULT_BUSINESS_TIMEZONE,
+    delivery_service_mode: 'pickup_only',
+    delivery_fee_mode: 'manual',
+    delivery_fixed_fee_mxn: 0,
+    delivery_base_fee_mxn: 0,
+    delivery_fee_per_km_mxn: 0,
+    delivery_max_distance_km: '',
+    delivery_min_order_mxn: '',
+    delivery_eta_min_minutes: '',
+    delivery_eta_max_minutes: '',
     business_hours: { open: '09:00', close: '22:00', is_manually_closed: false },
   });
 
@@ -186,7 +201,7 @@ const SettingsPage = () => {
       try {
         const { data, error } = await supabase
           .from('restaurant_profiles')
-          .select('name, description, logo_url, banner_url, address, phone, categories, is_active, latitude, longitude, table_count, waiters, fiscal_number, tax_included, tax_rate, accepts_usd, usd_exchange_rate, business_timezone, business_hours')
+          .select('name, description, logo_url, banner_url, address, phone, categories, is_active, latitude, longitude, table_count, waiters, fiscal_number, tax_included, tax_rate, accepts_usd, usd_exchange_rate, business_timezone, business_hours, delivery_service_mode, delivery_fee_mode, delivery_fixed_fee_mxn, delivery_base_fee_mxn, delivery_fee_per_km_mxn, delivery_max_distance_km, delivery_min_order_mxn, delivery_eta_min_minutes, delivery_eta_max_minutes')
           .eq('id', user.id)
           .maybeSingle();
 
@@ -212,6 +227,15 @@ const SettingsPage = () => {
             accepts_usd: data.accepts_usd || false,
             usd_exchange_rate: data.usd_exchange_rate || '',
             business_timezone: normalizeBusinessTimeZone(data.business_timezone),
+            delivery_service_mode: data.delivery_service_mode || 'pickup_only',
+            delivery_fee_mode: data.delivery_fee_mode || 'manual',
+            delivery_fixed_fee_mxn: data.delivery_fixed_fee_mxn ?? 0,
+            delivery_base_fee_mxn: data.delivery_base_fee_mxn ?? 0,
+            delivery_fee_per_km_mxn: data.delivery_fee_per_km_mxn ?? 0,
+            delivery_max_distance_km: data.delivery_max_distance_km ?? '',
+            delivery_min_order_mxn: data.delivery_min_order_mxn ?? '',
+            delivery_eta_min_minutes: data.delivery_eta_min_minutes ?? '',
+            delivery_eta_max_minutes: data.delivery_eta_max_minutes ?? '',
             business_hours: data.business_hours || { open: '09:00', close: '22:00', is_manually_closed: false },
           });
         }
@@ -442,6 +466,40 @@ const SettingsPage = () => {
       return;
     }
 
+    if (
+      profile.delivery_fee_mode === 'per_km'
+      && (!profile.latitude || !profile.longitude)
+    ) {
+      alert(t('settings.delivery.coordinatesRequired'));
+      return;
+    }
+
+    if (profile.delivery_fee_mode === 'per_km' && Number(profile.delivery_fee_per_km_mxn) <= 0) {
+      alert(t('settings.delivery.perKmRequired'));
+      return;
+    }
+
+    if (Number(profile.delivery_fixed_fee_mxn) < 0
+      || Number(profile.delivery_base_fee_mxn) < 0
+      || Number(profile.delivery_fee_per_km_mxn) < 0
+      || (profile.delivery_max_distance_km !== '' && Number(profile.delivery_max_distance_km) < 0)
+      || (profile.delivery_min_order_mxn !== '' && Number(profile.delivery_min_order_mxn) < 0)
+      || (profile.delivery_eta_min_minutes !== '' && Number(profile.delivery_eta_min_minutes) < 0)
+      || (profile.delivery_eta_max_minutes !== '' && Number(profile.delivery_eta_max_minutes) < 0)
+    ) {
+      alert(t('settings.delivery.nonNegativeRequired'));
+      return;
+    }
+
+    if (
+      profile.delivery_eta_min_minutes !== ''
+      && profile.delivery_eta_max_minutes !== ''
+      && Number(profile.delivery_eta_max_minutes) < Number(profile.delivery_eta_min_minutes)
+    ) {
+      alert(t('settings.delivery.etaRangeInvalid'));
+      return;
+    }
+
     setIsSaving(true);
     setSaveStatus(null);
 
@@ -462,6 +520,15 @@ const SettingsPage = () => {
         waiters: profile.waiters,
         business_hours: profile.business_hours,
         business_timezone: normalizeBusinessTimeZone(profile.business_timezone),
+        delivery_service_mode: profile.delivery_service_mode,
+        delivery_fee_mode: profile.delivery_fee_mode,
+        delivery_fixed_fee_mxn: Number(profile.delivery_fixed_fee_mxn) || 0,
+        delivery_base_fee_mxn: Number(profile.delivery_base_fee_mxn) || 0,
+        delivery_fee_per_km_mxn: Number(profile.delivery_fee_per_km_mxn) || 0,
+        delivery_max_distance_km: toNullableNumber(profile.delivery_max_distance_km),
+        delivery_min_order_mxn: toNullableNumber(profile.delivery_min_order_mxn),
+        delivery_eta_min_minutes: toNullableNumber(profile.delivery_eta_min_minutes),
+        delivery_eta_max_minutes: toNullableNumber(profile.delivery_eta_max_minutes),
         updated_at: new Date().toISOString(),
       };
 
@@ -833,6 +900,171 @@ const SettingsPage = () => {
               <p className="text-xs text-slate-500 mt-1">
                 {t('settings.paymentSettings.exchangeRateHelp')}
               </p>
+            </div>
+          )}
+        </div>
+
+        {/* Entrega a domicilio */}
+        <div className="glass-panel p-5 space-y-4">
+          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            <Truck size={20} className="text-sky-400" />
+            {t('settings.delivery.title')}
+          </h2>
+          <p className="text-xs text-slate-400">{t('settings.delivery.help')}</p>
+
+          <div>
+            <label htmlFor="settings-delivery-service-mode" className="text-sm text-slate-300 font-medium mb-1 block">
+              {t('settings.delivery.serviceMode')}
+            </label>
+            <select
+              id="settings-delivery-service-mode"
+              value={profile.delivery_service_mode}
+              onChange={(e) => handleChange('delivery_service_mode', e.target.value)}
+              className="glass-input w-full"
+            >
+              <option value="pickup_only">{t('settings.delivery.pickupOnly')}</option>
+              <option value="delivery_only">{t('settings.delivery.deliveryOnly')}</option>
+              <option value="pickup_and_delivery">{t('settings.delivery.pickupAndDelivery')}</option>
+            </select>
+          </div>
+
+          {profile.delivery_service_mode !== 'pickup_only' && (
+            <div className="space-y-4 animate-fade-in">
+              <div>
+                <label htmlFor="settings-delivery-fee-mode" className="text-sm text-slate-300 font-medium mb-1 block">
+                  {t('settings.delivery.feeMode')}
+                </label>
+                <select
+                  id="settings-delivery-fee-mode"
+                  value={profile.delivery_fee_mode}
+                  onChange={(e) => handleChange('delivery_fee_mode', e.target.value)}
+                  className="glass-input w-full"
+                >
+                  <option value="free">{t('settings.delivery.free')}</option>
+                  <option value="fixed">{t('settings.delivery.fixed')}</option>
+                  <option value="per_km">{t('settings.delivery.perKm')}</option>
+                  <option value="manual">{t('settings.delivery.manual')}</option>
+                </select>
+              </div>
+
+              {profile.delivery_fee_mode === 'fixed' && (
+                <div>
+                  <label htmlFor="settings-delivery-fixed-fee" className="text-sm text-slate-300 font-medium mb-1 block">
+                    {t('settings.delivery.fixedFee')}
+                  </label>
+                  <input
+                    id="settings-delivery-fixed-fee"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={profile.delivery_fixed_fee_mxn}
+                    onChange={(e) => handleChange('delivery_fixed_fee_mxn', e.target.value)}
+                    className="glass-input w-40 py-2 text-center text-lg font-bold"
+                  />
+                </div>
+              )}
+
+              {profile.delivery_fee_mode === 'per_km' && (
+                <div className="grid sm:grid-cols-3 gap-3">
+                  <div>
+                    <label htmlFor="settings-delivery-base-fee" className="text-sm text-slate-300 font-medium mb-1 block">
+                      {t('settings.delivery.baseFee')}
+                    </label>
+                    <input
+                      id="settings-delivery-base-fee"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={profile.delivery_base_fee_mxn}
+                      onChange={(e) => handleChange('delivery_base_fee_mxn', e.target.value)}
+                      className="glass-input w-full py-2 text-center font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="settings-delivery-per-km-fee" className="text-sm text-slate-300 font-medium mb-1 block">
+                      {t('settings.delivery.feePerKm')}
+                    </label>
+                    <input
+                      id="settings-delivery-per-km-fee"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={profile.delivery_fee_per_km_mxn}
+                      onChange={(e) => handleChange('delivery_fee_per_km_mxn', e.target.value)}
+                      className="glass-input w-full py-2 text-center font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="settings-delivery-radius" className="text-sm text-slate-300 font-medium mb-1 block">
+                      {t('settings.delivery.maxRadius')}
+                    </label>
+                    <input
+                      id="settings-delivery-radius"
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={profile.delivery_max_distance_km}
+                      onChange={(e) => handleChange('delivery_max_distance_km', e.target.value)}
+                      className="glass-input w-full py-2 text-center font-bold"
+                      placeholder="10"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {profile.delivery_fee_mode === 'manual' && (
+                <p className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-xs text-amber-200">
+                  {t('settings.delivery.manualHelp')}
+                </p>
+              )}
+
+              <div className="grid sm:grid-cols-3 gap-3">
+                <div>
+                  <label htmlFor="settings-delivery-min-order" className="text-sm text-slate-300 font-medium mb-1 block">
+                    {t('settings.delivery.minOrder')}
+                  </label>
+                  <input
+                    id="settings-delivery-min-order"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={profile.delivery_min_order_mxn}
+                    onChange={(e) => handleChange('delivery_min_order_mxn', e.target.value)}
+                    className="glass-input w-full py-2 text-center font-bold"
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="settings-delivery-eta-min" className="text-sm text-slate-300 font-medium mb-1 block">
+                    {t('settings.delivery.etaMin')}
+                  </label>
+                  <input
+                    id="settings-delivery-eta-min"
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={profile.delivery_eta_min_minutes}
+                    onChange={(e) => handleChange('delivery_eta_min_minutes', e.target.value)}
+                    className="glass-input w-full py-2 text-center font-bold"
+                    placeholder="25"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="settings-delivery-eta-max" className="text-sm text-slate-300 font-medium mb-1 block">
+                    {t('settings.delivery.etaMax')}
+                  </label>
+                  <input
+                    id="settings-delivery-eta-max"
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={profile.delivery_eta_max_minutes}
+                    onChange={(e) => handleChange('delivery_eta_max_minutes', e.target.value)}
+                    className="glass-input w-full py-2 text-center font-bold"
+                    placeholder="45"
+                  />
+                </div>
+              </div>
             </div>
           )}
         </div>
