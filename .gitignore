@@ -31,3 +31,4 @@ dist-ssr
 
 # Agent scratch files
 .superpowers/
+.worktrees/
