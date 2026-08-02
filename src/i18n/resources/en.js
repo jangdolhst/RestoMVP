@@ -378,6 +378,20 @@ const en = {
     emptyDescription: 'Try changing the day or search terms.',
     markPaid: 'Mark as Paid',
     orderPaid: 'Order Paid',
+    delivery: {
+      badge: 'Delivery',
+      noAddress: 'No address captured',
+      reference: 'Reference',
+      distance: 'Distance: {{distance}} km',
+      fee: 'Delivery fee',
+      pendingManualFee: 'Pending capture',
+      saveManualFee: 'Save',
+      manualFeeInvalid: 'Enter a valid delivery fee.',
+      manualFeeError: 'Could not save the delivery fee.',
+      completeManualFeeFirst: 'Capture delivery first',
+      markInDelivery: 'Mark in delivery',
+      markDelivered: 'Mark delivered',
+    },
     age: {
       today: 'Today',
       yesterday: 'Yesterday',
@@ -473,6 +487,10 @@ const en = {
     add: '+ ADD ',
     without: '- NO ',
     markReady: 'MARK READY',
+    delivery: {
+      badge: 'DELIVERY',
+      noAddress: 'No address captured',
+    },
   },
   settings: {
     title: 'Settings',

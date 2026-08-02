@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePOS } from '../context/POSContext';
-import { DollarSign, Search, CheckCircle, Receipt, Bell, XCircle, Clock, Phone } from 'lucide-react';
+import { DollarSign, Search, CheckCircle, Receipt, Bell, XCircle, Clock, Phone, Truck, MapPin } from 'lucide-react';
 import OrderCalendar from '../components/ui/OrderCalendar';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
@@ -11,7 +11,7 @@ import PaymentCaptureModal from '../components/payments/PaymentCaptureModal';
 import { getOrderAgeMeta, getStaleOrders, groupOrdersByBusinessDate } from '../lib/orderGrouping';
 import { splitPendingConfirmationOrders } from '../lib/pendingOrders';
 
-const ACTIVE_PAYMENT_STATUSES = new Set(['pendiente_cocina', 'listo']);
+const ACTIVE_PAYMENT_STATUSES = new Set(['pendiente_cocina', 'listo', 'en_entrega', 'entregado']);
 
 const formatCurrency = (value) => `$${Number(value || 0).toFixed(2)}`;
 
@@ -65,6 +65,8 @@ const PagosPage = () => {
   const [isCleaningOldOrders, setIsCleaningOldOrders] = useState(false);
   const [paymentError, setPaymentError] = useState('');
   const [cleanupMessage, setCleanupMessage] = useState('');
+  const [manualDeliveryFees, setManualDeliveryFees] = useState({});
+  const [manualFeeOrderId, setManualFeeOrderId] = useState(null);
   const intervalRef = useRef(null);
 
   const fetchPendingOrders = useCallback(async () => {
@@ -72,7 +74,7 @@ const PagosPage = () => {
     try {
       const { data, error } = await supabase
         .from('orders')
-        .select('id, order_number, client_name, phone, total, type, confirmation_code, created_at')
+        .select('id, order_number, client_name, phone, total, type, confirmation_code, created_at, fulfillment_type, delivery_address, delivery_reference, delivery_fee_status')
         .eq('tenant_id', user.id)
         .eq('status', 'pendiente_confirmacion')
         .order('created_at', { ascending: false });
@@ -179,6 +181,32 @@ const PagosPage = () => {
     setPaymentOrder(null);
   };
 
+  const handleSetManualDeliveryFee = async (order) => {
+    const value = manualDeliveryFees[order.id];
+    const fee = Number(value);
+    if (!Number.isFinite(fee) || fee < 0) {
+      setPaymentError(t('payments.delivery.manualFeeInvalid'));
+      return;
+    }
+
+    setPaymentError('');
+    setManualFeeOrderId(order.id);
+    const { error } = await supabase.rpc('set_manual_delivery_fee', {
+      p_order_id: order.id,
+      p_delivery_fee_mxn: fee,
+    });
+    setManualFeeOrderId(null);
+
+    if (error) {
+      console.error('Error guardando costo manual de entrega:', error.message);
+      setPaymentError(t('payments.delivery.manualFeeError'));
+      return;
+    }
+
+    setManualDeliveryFees((prev) => ({ ...prev, [order.id]: '' }));
+    window.dispatchEvent(new Event('orders-updated'));
+  };
+
   const filteredHistoryOrders = orders.filter((order) => {
     if (order.status === 'pendiente_confirmacion' || order.status === 'cancelado') return false;
 
@@ -230,6 +258,9 @@ const PagosPage = () => {
 
   const renderOrderCard = (order, { allowPrint = false } = {}) => {
     const isPagado = order.status === 'pagado';
+    const isDelivery = order.fulfillmentType === 'delivery';
+    const deliveryAddress = order.deliveryAddress;
+    const deliveryFeeStatus = order.deliveryFeeStatus;
     const ageMeta = getOrderAgeMeta(order.createdAt);
     const ageLabel = t(`payments.age.${ageMeta.key}`, { count: ageMeta.dayDiff });
     const orderDateTime = formatOrderDateTime(order.createdAt, currentLocale);
@@ -269,12 +300,57 @@ const PagosPage = () => {
                 order.tableName
               )}
             </span>
+            {isDelivery && (
+              <span className="ml-2 inline-flex items-center gap-1 rounded bg-sky-500/10 px-2 py-0.5 text-sm font-medium text-sky-300 border border-sky-500/20">
+                <Truck size={13} />
+                {t('payments.delivery.badge')}
+              </span>
+            )}
           </div>
           <div className="text-right">
             <p className="text-2xl font-bold text-emerald-400">{formatCurrency(order.total)}</p>
             {isPagado && <span className="text-xs text-emerald-400 font-semibold uppercase tracking-wider block mt-1">{t('common.states.charged')}</span>}
           </div>
         </div>
+
+        {isDelivery && (
+          <div className="mb-4 rounded-xl border border-sky-500/20 bg-sky-500/10 p-3 text-sm text-slate-200 space-y-1">
+            <p className="flex items-start gap-2">
+              <MapPin size={15} className="mt-0.5 text-sky-300 shrink-0" />
+              <span>{deliveryAddress || t('payments.delivery.noAddress')}</span>
+            </p>
+            {order.deliveryReference && (
+              <p className="text-xs text-slate-400">{t('payments.delivery.reference')}: {order.deliveryReference}</p>
+            )}
+            {order.deliveryDistanceKm != null && (
+              <p className="text-xs text-slate-400">{t('payments.delivery.distance', { distance: Number(order.deliveryDistanceKm).toFixed(1) })}</p>
+            )}
+            <p className="text-xs text-slate-300">
+              {t('payments.delivery.fee')}: {deliveryFeeStatus === 'pending_manual' ? t('payments.delivery.pendingManualFee') : formatCurrency(order.deliveryFeeMxn)}
+            </p>
+            {deliveryFeeStatus === 'pending_manual' && (
+              <div className="mt-2 flex gap-2">
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={manualDeliveryFees[order.id] ?? ''}
+                  onChange={(e) => setManualDeliveryFees((prev) => ({ ...prev, [order.id]: e.target.value }))}
+                  className="glass-input min-w-0 flex-1 py-2"
+                  placeholder="0.00"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleSetManualDeliveryFee(order)}
+                  disabled={manualFeeOrderId === order.id}
+                  className="rounded-lg bg-sky-500 px-3 py-2 text-xs font-bold text-white hover:bg-sky-400 disabled:opacity-60"
+                >
+                  {manualFeeOrderId === order.id ? t('common.actions.processing') : t('payments.delivery.saveManualFee')}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="flex-1 bg-black/20 rounded-lg p-3 mb-4 max-h-40 overflow-y-auto border border-white/5">
           <ul className="space-y-2">
@@ -306,16 +382,37 @@ const PagosPage = () => {
               {t('payments.orderPaid')}
             </button>
           ) : (
-            <button
-              onClick={() => {
-                setPaymentError('');
-                setPaymentOrder(order);
-              }}
-              className="btn-success w-full flex justify-center items-center gap-2 py-2.5"
-            >
-              <CheckCircle size={20} />
-              {t('payments.markPaid')}
-            </button>
+            <>
+              {isDelivery && order.status === 'listo' && (
+                <button
+                  onClick={() => updateOrderStatus(order.id, 'en_entrega')}
+                  className="w-full flex justify-center items-center gap-2 py-2.5 rounded-lg bg-sky-500 hover:bg-sky-400 text-white font-bold transition-colors"
+                >
+                  <Truck size={18} />
+                  {t('payments.delivery.markInDelivery')}
+                </button>
+              )}
+              {isDelivery && order.status === 'en_entrega' && (
+                <button
+                  onClick={() => updateOrderStatus(order.id, 'entregado')}
+                  className="w-full flex justify-center items-center gap-2 py-2.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-500/30 font-bold transition-colors"
+                >
+                  <CheckCircle size={18} />
+                  {t('payments.delivery.markDelivered')}
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  setPaymentError('');
+                  setPaymentOrder(order);
+                }}
+                disabled={deliveryFeeStatus === 'pending_manual'}
+                className="btn-success w-full flex justify-center items-center gap-2 py-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <CheckCircle size={20} />
+                {deliveryFeeStatus === 'pending_manual' ? t('payments.delivery.completeManualFeeFirst') : t('payments.markPaid')}
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -519,6 +616,11 @@ const PagosPage = () => {
             </div>
           )}
         </>
+      )}
+      {!paymentOrder && paymentError && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[120] max-w-sm w-[calc(100%-2rem)] rounded-2xl border border-red-500/30 bg-red-950/90 text-red-100 px-4 py-3 text-sm shadow-2xl">
+          {paymentError}
+        </div>
       )}
     </div>
   );

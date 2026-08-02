@@ -52,3 +52,17 @@ test('customer checkout exposes delivery fulfillment and location capture', () =
   assert.match(clientSource, /delivery_service_mode/);
   assert.match(clientSource, /delivery_fee_mode/);
 });
+
+test('restaurant order management exposes delivery details and status actions', () => {
+  const paymentsSource = readSource('src/pages/PagosPage.jsx');
+  const kitchenSource = readSource('src/pages/CocinaPage.jsx');
+
+  assert.match(paymentsSource, /deliveryAddress/);
+  assert.match(paymentsSource, /deliveryFeeStatus/);
+  assert.match(paymentsSource, /set_manual_delivery_fee/);
+  assert.match(paymentsSource, /en_entrega/);
+  assert.match(paymentsSource, /entregado/);
+  assert.match(kitchenSource, /deliveryAddress/);
+  assert.match(kitchenSource, /delivery/);
+  assert.doesNotMatch(kitchenSource, /set_manual_delivery_fee/);
+});

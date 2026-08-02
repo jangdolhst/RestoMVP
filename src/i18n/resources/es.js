@@ -378,6 +378,20 @@ const es = {
     emptyDescription: 'Prueba cambiando el día o los términos de búsqueda.',
     markPaid: 'Marcar Pagado',
     orderPaid: 'Orden Pagada',
+    delivery: {
+      badge: 'Entrega',
+      noAddress: 'Sin dirección capturada',
+      reference: 'Referencia',
+      distance: 'Distancia: {{distance}} km',
+      fee: 'Costo de entrega',
+      pendingManualFee: 'Pendiente de capturar',
+      saveManualFee: 'Guardar',
+      manualFeeInvalid: 'Captura un costo de entrega válido.',
+      manualFeeError: 'No se pudo guardar el costo de entrega.',
+      completeManualFeeFirst: 'Captura entrega primero',
+      markInDelivery: 'Marcar en entrega',
+      markDelivered: 'Marcar entregado',
+    },
     age: {
       today: 'Hoy',
       yesterday: 'Ayer',
@@ -473,6 +487,10 @@ const es = {
     add: '+ AÑADIR ',
     without: '- SIN ',
     markReady: 'MARCAR LISTO',
+    delivery: {
+      badge: 'ENTREGA',
+      noAddress: 'Sin dirección capturada',
+    },
   },
   settings: {
     title: 'Configuración',

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePOS } from '../context/POSContext';
-import { UtensilsCrossed, Check } from 'lucide-react';
+import { UtensilsCrossed, Check, Truck, MapPin } from 'lucide-react';
 import { getElapsedOrderAge } from '../lib/orderAge';
 
 const OrderCard = ({ order, updateOrderStatus }) => {
@@ -18,6 +18,8 @@ const OrderCard = ({ order, updateOrderStatus }) => {
   }, [order.createdAt]);
 
   const isUrgent = orderAge.totalMinutes >= 10;
+  const isDelivery = order.fulfillmentType === 'delivery';
+  const deliveryAddress = order.deliveryAddress;
 
   return (
     <div 
@@ -39,6 +41,12 @@ const OrderCard = ({ order, updateOrderStatus }) => {
             )}
           </h3>
           <p className="text-sm text-slate-300">{order.clientName}</p>
+          {isDelivery && (
+            <span className="mt-2 inline-flex items-center gap-1 rounded bg-sky-500/10 px-2 py-0.5 text-xs font-bold text-sky-300 border border-sky-500/20">
+              <Truck size={12} />
+              {t('kitchen.delivery.badge')}
+            </span>
+          )}
         </div>
         <div className="text-right">
           <span className="text-xs text-slate-400 block">
@@ -54,6 +62,17 @@ const OrderCard = ({ order, updateOrderStatus }) => {
 
       {/* Ticket Items */}
       <div className="flex-1 p-4 overflow-y-auto space-y-4">
+        {isDelivery && (
+          <div className="rounded-xl border border-sky-500/20 bg-sky-500/10 p-3 text-sm text-slate-200">
+            <p className="flex items-start gap-2">
+              <MapPin size={15} className="mt-0.5 text-sky-300 shrink-0" />
+              <span>{deliveryAddress || t('kitchen.delivery.noAddress')}</span>
+            </p>
+            {order.deliveryReference && (
+              <p className="mt-1 text-xs text-slate-400">{order.deliveryReference}</p>
+            )}
+          </div>
+        )}
         {order.items?.map(item => (
           <div key={item.id || item.cartId} className="border-b border-white/5 pb-3">
             <div className="flex gap-3 text-lg font-bold text-white">
