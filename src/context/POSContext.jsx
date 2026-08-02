@@ -5,8 +5,26 @@ import { useAuth } from './AuthContext';
 import i18n from '../i18n';
 
 const POSContext = createContext();
-const ORDER_SELECT = 'id, tenant_id, order_number, client_name, table_name, phone, type, total, status, created_at, paid_at, payment_cash_mxn_received, payment_cash_usd_received, payment_card_mxn_amount, payment_transfer_mxn_amount, payment_exchange_rate, payment_change_mxn, payment_total_effective_mxn, items:order_items(id, product_name, quantity, price, ingredients, modifications)';
-const PROFILE_SELECT = 'name, logo_url, address, phone, table_count, waiters, fiscal_number, tax_included, tax_rate, accepts_usd, usd_exchange_rate, business_timezone';
+const ORDER_SELECT = 'id, tenant_id, order_number, client_name, table_name, phone, type, total, status, created_at, paid_at, payment_cash_mxn_received, payment_cash_usd_received, payment_card_mxn_amount, payment_transfer_mxn_amount, payment_exchange_rate, payment_change_mxn, payment_total_effective_mxn, fulfillment_type, delivery_address, delivery_reference, delivery_latitude, delivery_longitude, delivery_distance_km, delivery_fee_mxn, delivery_fee_status, delivery_fee_note, items:order_items(id, product_name, quantity, price, ingredients, modifications)';
+const PROFILE_SELECT = 'name, logo_url, address, phone, table_count, waiters, fiscal_number, tax_included, tax_rate, accepts_usd, usd_exchange_rate, business_timezone, delivery_service_mode, delivery_fee_mode, delivery_fixed_fee_mxn, delivery_base_fee_mxn, delivery_fee_per_km_mxn, delivery_max_distance_km, delivery_min_order_mxn, delivery_eta_min_minutes, delivery_eta_max_minutes, latitude, longitude';
+
+const mapOrderFromDb = (order) => ({
+  ...order,
+  orderNumber: order.order_number,
+  clientName: order.client_name,
+  tableName: order.table_name,
+  createdAt: order.created_at,
+  paidAt: order.paid_at,
+  fulfillmentType: order.fulfillment_type,
+  deliveryAddress: order.delivery_address,
+  deliveryReference: order.delivery_reference,
+  deliveryLatitude: order.delivery_latitude,
+  deliveryLongitude: order.delivery_longitude,
+  deliveryDistanceKm: order.delivery_distance_km,
+  deliveryFeeMxn: order.delivery_fee_mxn,
+  deliveryFeeStatus: order.delivery_fee_status,
+  deliveryFeeNote: order.delivery_fee_note,
+});
 
 export const usePOS = () => {
   const context = useContext(POSContext);
@@ -41,6 +59,11 @@ export const POSProvider = ({ children }) => {
   const [tableName, setTableName] = useState('');
   const [phone, setPhone] = useState('');
   const [isOnline, setIsOnline] = useState(false);
+  const [fulfillmentType, setFulfillmentType] = useState('pickup');
+  const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [deliveryReference, setDeliveryReference] = useState('');
+  const [deliveryLatitude, setDeliveryLatitude] = useState(null);
+  const [deliveryLongitude, setDeliveryLongitude] = useState(null);
   const [currentCategoryId, setCurrentCategoryId] = useState(null);
   const [tableCount, setTableCount] = useState(0);
   const [waiters, setWaiters] = useState([]);
@@ -117,14 +140,7 @@ export const POSProvider = ({ children }) => {
 
       // Orders solo si el dueño las cargó
       if (!isClientMenu && results[3]?.data) {
-        setOrders(results[3].data.map(o => ({
-          ...o,
-          orderNumber: o.order_number,
-          clientName: o.client_name,
-          tableName: o.table_name,
-          createdAt: o.created_at,
-          paidAt: o.paid_at
-        })));
+        setOrders(results[3].data.map(mapOrderFromDb));
       }
       
       setIsLoading(false);
@@ -145,14 +161,7 @@ export const POSProvider = ({ children }) => {
           .order('created_at', { ascending: false });
         
         if (data) {
-          setOrders(data.map(o => ({
-            ...o,
-            orderNumber: o.order_number,
-            clientName: o.client_name,
-            tableName: o.table_name,
-            createdAt: o.created_at,
-            paidAt: o.paid_at
-          })));
+          setOrders(data.map(mapOrderFromDb));
         }
       })
       .subscribe();
@@ -198,6 +207,11 @@ export const POSProvider = ({ children }) => {
     setTableName('');
     setPhone('');
     setIsOnline(false);
+    setFulfillmentType('pickup');
+    setDeliveryAddress('');
+    setDeliveryReference('');
+    setDeliveryLatitude(null);
+    setDeliveryLongitude(null);
   };
 
   // Acciones de Órdenes (Supabase)
@@ -241,6 +255,11 @@ export const POSProvider = ({ children }) => {
       status: initialStatus,
       confirmation_code: isOnlineClientOrder ? confirmationCode : null,
 	      order_token: orderToken,
+      fulfillment_type: fulfillmentType,
+      delivery_address: fulfillmentType === 'delivery' ? deliveryAddress : null,
+      delivery_reference: fulfillmentType === 'delivery' ? deliveryReference : null,
+      delivery_latitude: fulfillmentType === 'delivery' ? deliveryLatitude : null,
+      delivery_longitude: fulfillmentType === 'delivery' ? deliveryLongitude : null,
 	    };
 	
 	    try {
@@ -259,6 +278,11 @@ export const POSProvider = ({ children }) => {
 	          p_client_name: clientName || 'Sin Nombre',
 	          p_phone: phone || null,
 	          p_items: publicItems,
+	          p_fulfillment_type: fulfillmentType,
+	          p_delivery_address: fulfillmentType === 'delivery' ? deliveryAddress : null,
+	          p_delivery_reference: fulfillmentType === 'delivery' ? deliveryReference : null,
+	          p_delivery_latitude: fulfillmentType === 'delivery' ? deliveryLatitude : null,
+	          p_delivery_longitude: fulfillmentType === 'delivery' ? deliveryLongitude : null,
 	        });
 
 	        if (error) {
@@ -368,7 +392,7 @@ export const POSProvider = ({ children }) => {
     }
   };
 
-  const VALID_ORDER_STATUSES = ['pendiente_confirmacion', 'pendiente_cocina', 'listo', 'pagado', 'cancelado'];
+  const VALID_ORDER_STATUSES = ['pendiente_confirmacion', 'pendiente_cocina', 'listo', 'en_entrega', 'entregado', 'pagado', 'cancelado'];
 
   const updateOrderStatus = async (orderId, newStatus) => {
     if (!canManageTenant || !VALID_ORDER_STATUSES.includes(newStatus)) return;
@@ -529,6 +553,16 @@ export const POSProvider = ({ children }) => {
     setPhone,
     isOnline,
     setIsOnline,
+    fulfillmentType,
+    setFulfillmentType,
+    deliveryAddress,
+    setDeliveryAddress,
+    deliveryReference,
+    setDeliveryReference,
+    deliveryLatitude,
+    setDeliveryLatitude,
+    deliveryLongitude,
+    setDeliveryLongitude,
     cartTotal,
     currentCategoryId,
     setCurrentCategoryId,
