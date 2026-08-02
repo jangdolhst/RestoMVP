@@ -39,3 +39,16 @@ test('delivery i18n resources are available in Spanish and English', () => {
     }
   }
 });
+
+test('customer checkout exposes delivery fulfillment and location capture', () => {
+  const ticketSource = readSource('src/components/pos/TicketSidebar.jsx');
+  const clientSource = readSource('src/pages/ClientePage.jsx');
+
+  assert.match(ticketSource, /fulfillmentType/);
+  assert.match(ticketSource, /deliveryAddress/);
+  assert.match(ticketSource, /deliveryLatitude/);
+  assert.match(ticketSource, /calculateDeliveryFee/);
+  assert.match(ticketSource, /navigator\.geolocation/);
+  assert.match(clientSource, /delivery_service_mode/);
+  assert.match(clientSource, /delivery_fee_mode/);
+});

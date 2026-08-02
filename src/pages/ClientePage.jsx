@@ -23,7 +23,7 @@ const ClientePage = () => {
       try {
         const { data } = await publicSupabase
           .from('restaurant_profiles')
-          .select('name, logo_url, business_hours')
+          .select('name, logo_url, business_hours, latitude, longitude, delivery_service_mode, delivery_fee_mode, delivery_fixed_fee_mxn, delivery_base_fee_mxn, delivery_fee_per_km_mxn, delivery_max_distance_km, delivery_min_order_mxn, delivery_eta_min_minutes, delivery_eta_max_minutes')
           .eq('id', tenantId)
           .maybeSingle();
 
@@ -99,6 +99,7 @@ const ClientePage = () => {
           isClientMode={true} 
           isOpen={isCartOpen} 
           isStoreOpen={isOpen}
+          restaurantInfo={restaurantInfo}
           onClose={() => setIsCartOpen(false)} 
         />
       </div>

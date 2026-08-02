@@ -1,12 +1,18 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { usePOS } from '../../context/POSContext';
-import { Trash2, Send, X, AlertCircle } from 'lucide-react';
+import { Trash2, Send, X, AlertCircle, MapPin, Truck } from 'lucide-react';
 import PhoneInput from '../ui/PhoneInput';
 import WhatsAppConfirmationModal from '../ui/WhatsAppConfirmationModal';
+import {
+  calculateDeliveryFee,
+  calculateDistanceKm,
+  canUseFulfillment,
+  normalizeDeliverySettings,
+} from '../../lib/delivery';
 
-const TicketSidebar = ({ isClientMode = false, isOpen = false, isStoreOpen = true, onClose }) => {
+const TicketSidebar = ({ isClientMode = false, isOpen = false, isStoreOpen = true, onClose, restaurantInfo = null }) => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { 
@@ -20,14 +26,58 @@ const TicketSidebar = ({ isClientMode = false, isOpen = false, isStoreOpen = tru
     setPhone,
     isOnline,
     setIsOnline,
+    fulfillmentType,
+    setFulfillmentType,
+    deliveryAddress,
+    setDeliveryAddress,
+    deliveryReference,
+    setDeliveryReference,
+    deliveryLatitude,
+    setDeliveryLatitude,
+    deliveryLongitude,
+    setDeliveryLongitude,
     removeFromCart, 
     placeOrder,
     tableCount,
     orders,
     waiters,
     waiterName,
-    setWaiterName
+    setWaiterName,
+    restaurantProfile
   } = usePOS();
+
+  const activeRestaurantProfile = useMemo(
+    () => restaurantProfile || restaurantInfo || {},
+    [restaurantInfo, restaurantProfile]
+  );
+  const deliverySettings = useMemo(
+    () => normalizeDeliverySettings(activeRestaurantProfile),
+    [activeRestaurantProfile]
+  );
+  const canPickup = canUseFulfillment(deliverySettings, 'pickup');
+  const canDelivery = canUseFulfillment(deliverySettings, 'delivery');
+  const deliveryDistanceKm = useMemo(() => calculateDistanceKm(
+    { latitude: activeRestaurantProfile?.latitude, longitude: activeRestaurantProfile?.longitude },
+    { latitude: deliveryLatitude, longitude: deliveryLongitude }
+  ), [activeRestaurantProfile?.latitude, activeRestaurantProfile?.longitude, deliveryLatitude, deliveryLongitude]);
+  const deliveryQuote = useMemo(
+    () => calculateDeliveryFee(deliverySettings, deliveryDistanceKm),
+    [deliverySettings, deliveryDistanceKm]
+  );
+  const confirmedDeliveryFee = fulfillmentType === 'delivery' && deliveryQuote.status === 'confirmed'
+    ? Number(deliveryQuote.fee) || 0
+    : 0;
+  const displayTotal = cartTotal + confirmedDeliveryFee;
+
+  useEffect(() => {
+    if (!isClientMode) return;
+    if (!canPickup && canDelivery && fulfillmentType !== 'delivery') {
+      setFulfillmentType('delivery');
+    }
+    if (canPickup && !canDelivery && fulfillmentType !== 'pickup') {
+      setFulfillmentType('pickup');
+    }
+  }, [canDelivery, canPickup, fulfillmentType, isClientMode, setFulfillmentType]);
 
   // Calcular mesas ocupadas (órdenes activas que tienen mesa asignada)
   const occupiedTables = (orders || []).filter(o => 
@@ -44,6 +94,22 @@ const TicketSidebar = ({ isClientMode = false, isOpen = false, isStoreOpen = tru
     setTimeout(() => setToastMsg(null), 3000);
   };
 
+  const requestDeliveryLocation = () => {
+    if (!navigator.geolocation) {
+      showToast(t('map.unsupported'));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setDeliveryLatitude(position.coords.latitude);
+        setDeliveryLongitude(position.coords.longitude);
+      },
+      () => showToast(t('map.error')),
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  };
+
   const handleEnviar = async () => {
     if (cartItems.length === 0) return showToast(t('pos.errors.emptyOrder'));
     
@@ -51,6 +117,15 @@ const TicketSidebar = ({ isClientMode = false, isOpen = false, isStoreOpen = tru
       if (!clientName.trim()) return showToast(t('pos.errors.clientName'));
       if (!phone.trim()) return showToast(t('pos.errors.phone'));
       if (!isPhoneValid) return showToast(t('pos.errors.invalidPhone'));
+      if (!canUseFulfillment(deliverySettings, fulfillmentType)) return showToast(t('pos.errors.fulfillmentUnavailable'));
+      if (fulfillmentType === 'delivery') {
+        if (!deliveryAddress.trim()) return showToast(t('pos.errors.deliveryAddress'));
+        if ((deliverySettings.delivery_fee_mode === 'per_km' || deliverySettings.delivery_max_distance_km != null) && deliveryDistanceKm == null) {
+          return showToast(t('pos.errors.deliveryLocation'));
+        }
+        if (deliveryQuote.reason === 'outside_delivery_radius') return showToast(t('pos.errors.deliveryOutsideRadius'));
+        if (cartTotal < (deliverySettings.delivery_min_order_mxn || 0)) return showToast(t('pos.errors.deliveryMinOrder', { amount: deliverySettings.delivery_min_order_mxn }));
+      }
     } else {
       if (!clientName.trim()) return showToast(t('pos.errors.ownerName'));
       if (isOnline && !phone.trim()) return showToast(t('pos.errors.onlinePhone'));
@@ -183,7 +258,7 @@ const TicketSidebar = ({ isClientMode = false, isOpen = false, isStoreOpen = tru
       <div className="p-4 border-t border-white/10 bg-black/10">
         <div className="flex justify-between items-center mb-4">
           <span className="text-lg text-slate-300">{t('common.labels.total')}:</span>
-          <span className="text-2xl font-bold text-orange-400">${cartTotal.toFixed(2)}</span>
+          <span className="text-2xl font-bold text-orange-400">${displayTotal.toFixed(2)}</span>
         </div>
 
         <div className="space-y-3 mb-4">
@@ -199,15 +274,103 @@ const TicketSidebar = ({ isClientMode = false, isOpen = false, isStoreOpen = tru
           </div>
 
           {isClientMode ? (
-            <div>
-              <label className="text-sm text-slate-300 mb-1 block">{t('common.labels.phone')}:</label>
-              <PhoneInput
-                value={phone}
-                onChange={setPhone}
-                onValidityChange={setIsPhoneValid}
-                placeholder={t('pos.placeholders.clientPhone')}
-              />
-            </div>
+            <>
+              {(canPickup || canDelivery) && (
+                <div className="grid grid-cols-2 gap-2 rounded-xl bg-white/5 p-1 border border-white/10">
+                  {canPickup && (
+                    <button
+                      type="button"
+                      onClick={() => setFulfillmentType('pickup')}
+                      className={`rounded-lg px-3 py-2 text-xs font-bold transition-all ${
+                        fulfillmentType === 'pickup' ? 'bg-orange-500 text-white' : 'text-slate-300 hover:bg-white/10'
+                      }`}
+                    >
+                      {t('pos.fulfillment.pickup')}
+                    </button>
+                  )}
+                  {canDelivery && (
+                    <button
+                      type="button"
+                      onClick={() => setFulfillmentType('delivery')}
+                      className={`rounded-lg px-3 py-2 text-xs font-bold transition-all ${
+                        fulfillmentType === 'delivery' ? 'bg-sky-500 text-white' : 'text-slate-300 hover:bg-white/10'
+                      }`}
+                    >
+                      {t('pos.fulfillment.delivery')}
+                    </button>
+                  )}
+                </div>
+              )}
+
+              <div>
+                <label className="text-sm text-slate-300 mb-1 block">{t('common.labels.phone')}:</label>
+                <PhoneInput
+                  value={phone}
+                  onChange={setPhone}
+                  onValidityChange={setIsPhoneValid}
+                  placeholder={t('pos.placeholders.clientPhone')}
+                />
+              </div>
+
+              {fulfillmentType === 'delivery' && (
+                <div className="space-y-2 rounded-xl bg-sky-500/10 border border-sky-500/20 p-3 animate-fade-in">
+                  <div>
+                    <label className="text-sm text-slate-300 mb-1 block">{t('pos.delivery.address')}</label>
+                    <input
+                      type="text"
+                      value={deliveryAddress}
+                      onChange={(e) => setDeliveryAddress(e.target.value)}
+                      className="glass-input w-full py-2"
+                      placeholder={t('pos.delivery.addressPlaceholder')}
+                      maxLength={300}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-slate-300 mb-1 block">{t('pos.delivery.reference')}</label>
+                    <input
+                      type="text"
+                      value={deliveryReference}
+                      onChange={(e) => setDeliveryReference(e.target.value)}
+                      className="glass-input w-full py-2"
+                      placeholder={t('pos.delivery.referencePlaceholder')}
+                      maxLength={300}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={requestDeliveryLocation}
+                    className="w-full flex items-center justify-center gap-2 rounded-xl border border-sky-400/30 bg-sky-500/10 px-3 py-2 text-sm font-semibold text-sky-200 hover:bg-sky-500/20"
+                  >
+                    <MapPin size={16} />
+                    {deliveryLatitude && deliveryLongitude ? t('pos.delivery.updateLocation') : t('pos.delivery.useLocation')}
+                  </button>
+                  <div className="rounded-lg bg-black/20 p-2 text-xs text-slate-300 space-y-1">
+                    <div className="flex items-center gap-2 font-semibold text-sky-200">
+                      <Truck size={14} />
+                      {t('pos.delivery.summary')}
+                    </div>
+                    {deliveryDistanceKm != null && (
+                      <p>{t('pos.delivery.distance', { distance: deliveryDistanceKm })}</p>
+                    )}
+                    {deliveryQuote.status === 'confirmed' && (
+                      <p>{t('pos.delivery.fee', { amount: Number(deliveryQuote.fee).toFixed(2) })}</p>
+                    )}
+                    {deliveryQuote.status === 'pending_manual' && (
+                      <p className="text-amber-300">{t('pos.delivery.manualFee')}</p>
+                    )}
+                    {deliveryQuote.reason === 'distance_required' && (
+                      <p className="text-amber-300">{t('pos.delivery.locationRequired')}</p>
+                    )}
+                    {deliveryQuote.reason === 'outside_delivery_radius' && (
+                      <p className="text-red-300">{t('pos.delivery.outsideRadius')}</p>
+                    )}
+                    {deliverySettings.delivery_min_order_mxn != null && (
+                      <p>{t('pos.delivery.minOrder', { amount: deliverySettings.delivery_min_order_mxn })}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </>
           ) : (
             <>
               {/* Mesero dropdown */}
