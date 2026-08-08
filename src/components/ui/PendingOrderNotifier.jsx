@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Bell } from 'lucide-react';
+import { Bell, Truck } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { splitPendingConfirmationOrders } from '../../lib/pendingOrders';
@@ -19,13 +19,17 @@ const PendingOrderNotifier = () => {
   const location = useLocation();
   const { t } = useTranslation();
   const [pendingCount, setPendingCount] = useState(0);
+  const [pendingDeliveryCount, setPendingDeliveryCount] = useState(0);
   const soundIntervalRef = useRef(null);
   const pollIntervalRef = useRef(null);
 
   // Generar sonido con Web Audio API
   const playNotificationSound = useCallback(() => {
     try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return;
+
+      const ctx = new AudioContextClass();
 
       const notes = [880, 1100, 1320];
       notes.forEach((freq, i) => {
@@ -60,13 +64,14 @@ const PendingOrderNotifier = () => {
     try {
       const { data, error } = await supabase
         .from('orders')
-        .select('id, created_at')
+        .select('id, created_at, fulfillment_type, delivery_address, delivery_fee_status')
         .eq('tenant_id', user.id)
         .eq('status', 'pendiente_confirmacion');
 
       if (error) throw error;
 
       const { fresh, expired } = splitPendingConfirmationOrders(data || []);
+      const deliveryCount = fresh.filter((order) => order.fulfillment_type === 'delivery').length;
 
       await Promise.all(expired.map((order) => (
         supabase
@@ -77,6 +82,7 @@ const PendingOrderNotifier = () => {
       )));
 
       setPendingCount(fresh.length);
+      setPendingDeliveryCount(deliveryCount);
     } catch {
       // Silenciar errores de polling
     }
@@ -95,6 +101,7 @@ const PendingOrderNotifier = () => {
       // Parar sonido inmediatamente y refrescar
       stopSound();
       setPendingCount(0);
+      setPendingDeliveryCount(0);
       // Re-fetch para obtener el count real
       setTimeout(fetchPendingCount, 300);
     };
@@ -119,14 +126,18 @@ const PendingOrderNotifier = () => {
 
   if (pendingCount === 0 || isOnOrdersPage) return null;
 
+  const hasDelivery = pendingDeliveryCount > 0;
+  const Icon = hasDelivery ? Truck : Bell;
+  const label = hasDelivery ? t('payments.pendingDeliveryConfirm') : t('payments.pendingConfirm');
+
   return (
     <button
       onClick={() => navigate('/pagos')}
       className="fixed bottom-6 right-6 z-[90] flex items-center gap-2 px-4 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-black font-bold shadow-2xl shadow-amber-500/30 hover:shadow-amber-500/50 transition-all hover:scale-105 active:scale-95 animate-bounce"
       style={{ animationDuration: '1.5s' }}
     >
-      <Bell size={20} className="animate-pulse" />
-      <span>{t('payments.pendingConfirm')} ({pendingCount})</span>
+      <Icon size={20} className="animate-pulse" />
+      <span>{label} ({pendingCount})</span>
     </button>
   );
 };

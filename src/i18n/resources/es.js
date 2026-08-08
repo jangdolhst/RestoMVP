@@ -371,6 +371,7 @@ const es = {
   },
   payments: {
     pendingConfirm: 'Pedidos por Confirmar',
+    pendingDeliveryConfirm: 'Entregas por Confirmar',
     verifyWhatsApp: 'Verifica el WhatsApp antes de confirmar',
     rejectOrder: 'Rechazar orden',
     activeTitle: 'Órdenes por cobrar',

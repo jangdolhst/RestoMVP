@@ -371,6 +371,7 @@ const en = {
   },
   payments: {
     pendingConfirm: 'Orders to Confirm',
+    pendingDeliveryConfirm: 'Deliveries to Confirm',
     verifyWhatsApp: 'Check WhatsApp before confirming',
     rejectOrder: 'Reject order',
     activeTitle: 'Orders to collect',

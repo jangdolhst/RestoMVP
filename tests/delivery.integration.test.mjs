@@ -75,3 +75,13 @@ test('customer order tracking exposes delivery statuses', () => {
   assert.match(source, /orders\.statuses\.inDelivery/);
   assert.match(source, /orders\.delivery\.driverOnTheWay/);
 });
+
+test('pending order notifier includes delivery context and browser audio alert', () => {
+  const source = readSource('src/components/ui/PendingOrderNotifier.jsx');
+
+  assert.match(source, /fulfillment_type/);
+  assert.match(source, /delivery/);
+  assert.match(source, /AudioContext/);
+  assert.equal(typeof resources.es.translation.payments.pendingDeliveryConfirm, 'string');
+  assert.equal(typeof resources.en.translation.payments.pendingDeliveryConfirm, 'string');
+});
