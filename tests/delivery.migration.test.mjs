@@ -15,6 +15,8 @@ test('delivery migration adds profile and order delivery columns', () => {
   assert.match(normalized, /add column if not exists delivery_fee_mxn numeric\(10,2\) not null default 0/);
   assert.match(normalized, /add constraint restaurant_profiles_delivery_service_mode_valid/);
   assert.match(normalized, /add constraint orders_delivery_fee_status_valid/);
+  assert.match(normalized, /create index if not exists idx_order_items_order_id/);
+  assert.match(normalized, /create index if not exists idx_products_tenant_id/);
 });
 
 test('public order rpc accepts delivery metadata but never a client delivery fee', () => {
@@ -45,6 +47,7 @@ test('manual fee rpc is tenant checked and authenticated only', () => {
 test('tracking rpc includes delivery fields for token-only client tracking', () => {
   const normalized = readMigration();
 
+  assert.match(normalized, /drop function if exists public\.get_orders_by_tokens\(uuid\[\]\)/);
   assert.match(normalized, /create or replace function public\.get_orders_by_tokens\(tokens uuid\[\]\)/);
   assert.match(normalized, /fulfillment_type text/);
   assert.match(normalized, /delivery_address text/);

@@ -67,6 +67,21 @@ ALTER TABLE public.orders
 CREATE INDEX IF NOT EXISTS idx_orders_tenant_fulfillment_status
   ON public.orders (tenant_id, fulfillment_type, status, created_at DESC);
 
+CREATE INDEX IF NOT EXISTS idx_categories_tenant_id
+  ON public.categories (tenant_id);
+
+CREATE INDEX IF NOT EXISTS idx_extras_tenant_id
+  ON public.extras (tenant_id);
+
+CREATE INDEX IF NOT EXISTS idx_order_items_order_id
+  ON public.order_items (order_id);
+
+CREATE INDEX IF NOT EXISTS idx_products_category_id
+  ON public.products (category_id);
+
+CREATE INDEX IF NOT EXISTS idx_products_tenant_id
+  ON public.products (tenant_id);
+
 GRANT UPDATE (
   delivery_service_mode,
   delivery_fee_mode,
@@ -488,6 +503,8 @@ BEGIN
   RETURN NEXT;
 END;
 $$;
+
+DROP FUNCTION IF EXISTS public.get_orders_by_tokens(UUID[]);
 
 CREATE OR REPLACE FUNCTION public.get_orders_by_tokens(tokens UUID[])
 RETURNS TABLE (
