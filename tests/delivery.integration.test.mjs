@@ -66,3 +66,12 @@ test('restaurant order management exposes delivery details and status actions', 
   assert.match(kitchenSource, /delivery/);
   assert.doesNotMatch(kitchenSource, /set_manual_delivery_fee/);
 });
+
+test('customer order tracking exposes delivery statuses', () => {
+  const source = readSource('src/pages/OrderTrackingPage.jsx');
+
+  assert.match(source, /en_entrega/);
+  assert.match(source, /entregado/);
+  assert.match(source, /orders\.statuses\.inDelivery/);
+  assert.match(source, /orders\.delivery\.driverOnTheWay/);
+});

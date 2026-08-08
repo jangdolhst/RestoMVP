@@ -228,8 +228,15 @@ const en = {
       pendingConfirmation: 'Waiting for Confirmation',
       kitchen: 'In Kitchen',
       ready: 'Ready!',
+      inDelivery: 'In delivery',
+      delivered: 'Delivered',
       paid: 'Paid',
       canceled: 'Canceled',
+    },
+    delivery: {
+      readyForDelivery: 'Your order is ready. The restaurant will prepare the delivery.',
+      driverOnTheWay: 'The delivery person is already on the way.',
+      delivered: 'Your order was delivered. The restaurant will mark it as paid when charging.',
     },
   },
   map: {

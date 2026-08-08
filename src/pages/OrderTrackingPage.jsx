@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Clock, UtensilsCrossed, CheckCircle2, Package, RefreshCw, Trash2, History, MessageCircle, XCircle, Navigation2 } from 'lucide-react';
+import { ArrowLeft, Clock, UtensilsCrossed, CheckCircle2, Package, RefreshCw, Trash2, History, MessageCircle, XCircle, Navigation2, Truck } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 const STATUS_CONFIG = {
@@ -21,6 +21,20 @@ const STATUS_CONFIG = {
   },
   listo: {
     labelKey: 'orders.statuses.ready',
+    icon: CheckCircle2,
+    color: 'text-emerald-400',
+    bg: 'bg-emerald-500/10 border-emerald-500/20',
+    pulse: false,
+  },
+  en_entrega: {
+    labelKey: 'orders.statuses.inDelivery',
+    icon: Truck,
+    color: 'text-sky-400',
+    bg: 'bg-sky-500/10 border-sky-500/20',
+    pulse: true,
+  },
+  entregado: {
+    labelKey: 'orders.statuses.delivered',
     icon: CheckCircle2,
     color: 'text-emerald-400',
     bg: 'bg-emerald-500/10 border-emerald-500/20',
@@ -309,7 +323,23 @@ const OrderTrackingPage = () => {
                 {order.status === 'listo' && (
                   <div className="px-4 py-2.5 bg-emerald-500/10 border-t border-emerald-500/20">
                     <p className="text-sm text-emerald-400 font-medium text-center">
-                      {t('orders.ready')}
+                      {order.fulfillment_type === 'delivery' ? t('orders.delivery.readyForDelivery') : t('orders.ready')}
+                    </p>
+                  </div>
+                )}
+
+                {order.status === 'en_entrega' && (
+                  <div className="px-4 py-2.5 bg-sky-500/10 border-t border-sky-500/20">
+                    <p className="text-sm text-sky-300 font-medium text-center">
+                      {t('orders.delivery.driverOnTheWay')}
+                    </p>
+                  </div>
+                )}
+
+                {order.status === 'entregado' && (
+                  <div className="px-4 py-2.5 bg-emerald-500/10 border-t border-emerald-500/20">
+                    <p className="text-sm text-emerald-300 font-medium text-center">
+                      {t('orders.delivery.delivered')}
                     </p>
                   </div>
                 )}
@@ -324,7 +354,7 @@ const OrderTrackingPage = () => {
                 )}
 
                 {/* Botón Ir por pedido — abre Google Maps con ruta */}
-                {order.restaurant_latitude && order.restaurant_longitude && order.status !== 'pagado' && order.status !== 'cancelado' && (
+                {order.fulfillment_type !== 'delivery' && order.restaurant_latitude && order.restaurant_longitude && order.status !== 'pagado' && order.status !== 'cancelado' && (
                   <div className="px-4 py-3 border-t border-white/5">
                     <button
                       onClick={() => {

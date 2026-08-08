@@ -228,8 +228,15 @@ const es = {
       pendingConfirmation: 'Esperando Confirmación',
       kitchen: 'En Cocina',
       ready: '¡Listo!',
+      inDelivery: 'En entrega',
+      delivered: 'Entregado',
       paid: 'Pagado',
       canceled: 'Cancelado',
+    },
+    delivery: {
+      readyForDelivery: 'Tu pedido está listo. El restaurante preparará la entrega.',
+      driverOnTheWay: 'El repartidor ya está en proceso de entrega.',
+      delivered: 'Tu pedido fue entregado. El restaurante lo marcará como pagado al cobrar.',
     },
   },
   map: {
