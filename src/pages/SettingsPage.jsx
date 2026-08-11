@@ -505,7 +505,6 @@ const SettingsPage = () => {
 
     try {
       const profilePayload = {
-        id: user.id,
         name: profile.name.trim(),
         description: profile.description.trim(),
         logo_url: profile.logo_url,
@@ -532,11 +531,29 @@ const SettingsPage = () => {
         updated_at: new Date().toISOString(),
       };
 
-      const { error } = await supabase
+      const { data: updatedProfile, error } = await supabase
         .from('restaurant_profiles')
-        .upsert(profilePayload, { onConflict: 'id' });
+        .update(profilePayload)
+        .eq('id', user.id)
+        .select('id')
+        .maybeSingle();
 
       if (error) throw error;
+
+      if (!updatedProfile) {
+        const { error: insertError } = await supabase
+          .from('restaurant_profiles')
+          .insert({ id: user.id });
+
+        if (insertError && insertError.code !== '23505') throw insertError;
+
+        const { error: retryUpdateError } = await supabase
+          .from('restaurant_profiles')
+          .update(profilePayload)
+          .eq('id', user.id);
+
+        if (retryUpdateError) throw retryUpdateError;
+      }
 
       const { error: paymentSettingsError } = await supabase
         .from('restaurant_profiles')

@@ -31,6 +31,13 @@ test('restaurant settings expose delivery configuration controls', () => {
   assert.match(source, /delivery_fee_per_km_mxn/);
 });
 
+test('restaurant settings save existing profiles with update instead of upsert', () => {
+  const source = readSource('src/pages/SettingsPage.jsx');
+
+  assert.match(source, /\.update\(profilePayload\)/);
+  assert.doesNotMatch(source, /\.upsert\(profilePayload/);
+});
+
 test('delivery i18n resources are available in Spanish and English', () => {
   for (const language of ['es', 'en']) {
     const delivery = resources[language].translation.settings.delivery;
