@@ -44,6 +44,13 @@ const es = {
     empty: {
       noName: 'Sin nombre',
     },
+    recovery: {
+      updateTitle: 'Actualizando la app',
+      updateBody: 'Detectamos una versión nueva o un archivo temporal de la app que el navegador no pudo cargar. Recargaremos para sincronizar todo.',
+      errorTitle: 'No se pudo cargar esta pantalla',
+      errorBody: 'La app encontró un problema al abrir esta sección. Recarga para intentarlo de nuevo.',
+      reload: 'Recargar',
+    },
   },
   navigation: {
     home: 'Inicio',

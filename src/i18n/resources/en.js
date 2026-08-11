@@ -44,6 +44,13 @@ const en = {
     empty: {
       noName: 'Unnamed',
     },
+    recovery: {
+      updateTitle: 'Updating the app',
+      updateBody: 'We detected a new version or a temporary app file that the browser could not load. Reloading will sync everything.',
+      errorTitle: 'Could not load this screen',
+      errorBody: 'The app found a problem opening this section. Reload to try again.',
+      reload: 'Reload',
+    },
   },
   navigation: {
     home: 'Home',

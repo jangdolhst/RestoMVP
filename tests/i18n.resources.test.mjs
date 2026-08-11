@@ -10,6 +10,8 @@ import {
 const criticalKeys = [
   'common.language.es',
   'common.language.en',
+  'common.recovery.updateTitle',
+  'common.recovery.reload',
   'marketplace.hero.badge',
   'marketplace.hero.titlePrefix',
   'marketplace.actions.usePreciseLocation',
