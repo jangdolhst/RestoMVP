@@ -1,0 +1,58 @@
+{
+  "id": "/",
+  "name": "Jamm Free",
+  "short_name": "Jamm Free",
+  "description": "Pide, recoge y gestiona pedidos de restaurantes desde Jamm Free.",
+  "lang": "es-MX",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0B0F19",
+  "theme_color": "#0B0F19",
+  "categories": ["food", "business", "productivity"],
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "/assets/pwa-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/pwa-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/pwa-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/assets/pwa-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Inicio",
+      "short_name": "Inicio",
+      "description": "Abrir el marketplace de Jamm Free.",
+      "url": "/",
+      "icons": [{ "src": "/assets/pwa-icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Mi negocio",
+      "short_name": "Negocio",
+      "description": "Abrir el panel del restaurante.",
+      "url": "/pos",
+      "icons": [{ "src": "/assets/pwa-icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
